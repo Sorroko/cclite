@@ -1,0 +1,112 @@
+-- Definition for the IO API
+
+function read( _sFormat )
+	if _sFormat and _sFormat ~= "*l" then
+		error( "Unsupported format" )
+	end
+	return _G.read()
+end
+
+function write( _sText )
+	_G.write( _sText )
+end
+
+function type( _handle )
+	if _G.type( _handle ) == "table" and _handle.bFileHandle == true then
+		if _handle.bClosed then
+			return "closed file"
+		else
+			return "file"
+		end
+	end
+	return nil
+end
+
+function open( _sPath, _sMode )
+	local sMode = _sMode or "r"
+	local file = fs.open( _sPath, sMode )
+	if not file then
+		return nil
+	end
+	
+	if sMode == "r"then
+		return {
+			bFileHandle = true,
+			bClosed = false,				
+			close = function( self )
+				file.close()
+				self.bClosed = true
+			end,
+			read = function( self, _sFormat )
+				local sFormat = _sFormat or "*l"
+				if sFormat == "*l" then
+					return file.readLine()
+				elseif sFormat == "*a" then
+					return file.readAll()
+				else
+					error( "Unsupported format" )
+				end
+				return nil
+			end,
+			lines = function( self )
+				return function()
+					local sLine = file.readLine()
+					if sLine == nil then
+						file.close()
+						self.bClosed = true
+					end
+					return sLine
+				end
+			end,
+		}
+	elseif sMode == "w" or sMode == "a" then
+		return {
+			bFileHandle = true,
+			bClosed = false,				
+			close = function( self )
+				file.close()
+				self.bClosed = true
+			end,
+			write = function( self, _sText )
+				file.write( _sText )
+			end,
+            		flush = function( self )
+                		file.flush()
+            		end,
+		}
+	
+	elseif sMode == "rb" then
+		return {
+			bFileHandle = true,
+			bClosed = false,				
+			close = function( self )
+				file.close()
+				self.bClosed = true
+			end,
+			read = function( self )
+				return file.read()
+			end,
+		}
+		
+	elseif sMode == "wb" or sMode == "ab" then
+		return {
+			bFileHandle = true,
+			bClosed = false,				
+			close = function( self )
+				file.close()
+				self.bClosed = true
+			end,
+			write = function( self, _number )
+				file.write( _number )
+			end,
+            		flush = function( self )
+                		file.flush()
+            		end,
+		}
+	
+	else
+		file.close()
+		error( "Unsupported mode" )
+		
+	end
+end
