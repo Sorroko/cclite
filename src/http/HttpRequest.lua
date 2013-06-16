@@ -13,7 +13,7 @@ function HttpRequest.new()
 
 	local ltn12 			= require("ltn12")
 	
-	self.id					= -- TODO IMPORTANT UUID
+	self.id					= HttpRequest.uuid()
 
 	self.requestThread		= nil
 	self.requestThreadId	= "HttpRequestThread_"..self.id
@@ -44,11 +44,11 @@ function HttpRequest.new()
 	self.send = function(pString)		
 		httpParams.body = pString or ""	
 		
-		self.requestThread = love.thread.newThread(self.requestThreadId, lure.require_path .. "http/HttpRequest_thread")		
+		self.requestThread = love.thread.newThread(self.requestThreadId, "http/HttpRequest_thread.lua")		
 		self.requestThread:start()
-		self.requestThread:send("threadId", self.requestThreadId)
-		self.requestThread:send("socketTimeout", tostring(self.timeout))
-		self.requestThread:send("httpParams", TSerial.pack(httpParams))	
+		self.requestThread:set("threadId", self.requestThreadId)
+		self.requestThread:set("socketTimeout", tostring(self.timeout))
+		self.requestThread:set("httpParams", TSerial.pack(httpParams))	
 	end
 	---------------------------------------------------------------------
 	self.setRequestHeader = function(pName, pValue)
@@ -57,7 +57,7 @@ function HttpRequest.new()
 	---------------------------------------------------------------------		
 	self.receiveThreadResponse = function()			
 		-- look for async thread response message
-		local result = love.thread.getThread("main"):receive(self.requestThreadId.."_response")
+		local result = love.thread.getThread("main"):get(self.requestThreadId.."_response")
 		if result ~= nil then		
 			--unpack message
 			result = TSerial.unpack(result)			
@@ -79,8 +79,8 @@ function HttpRequest.new()
 				index = index + 1
 			end
 			
-			--kill thread
-			self.requestThread:kill()
+			--kill thread (Not supported in 0.8)
+			--self.requestThread:kill()
 		
 			--finally call onReadyStateChange callback
 			self.onReadyStateChange()
@@ -99,6 +99,30 @@ function HttpRequest.checkRequests()
 			HttpRequest.activeRequests[k].receiveThreadResponse()						
 		end
 	end
+end
+
+function HttpRequest.uuid() -- UUID generation _should_ never overlap
+	local chars = {"0","1","2","3","4","5","6","7","8","9","A","B","C","D","E","F"}
+	local uuid = {[9]="-",[14]="-",[15]="4",[19]="-",[24]="-"}
+	local r, index
+	for i = 1,36 do
+		if(uuid[i]==nil)then
+			-- r = 0 | Math.random()*16;
+			r = math.random (16)
+			--if(i == 20 and BinDecHex)then 
+			--	-- (r & 0x3) | 0x8
+			--	index = tonumber(Hex2Dec(BMOr(BMAnd(Dec2Hex(r), Dec2Hex(3)), Dec2Hex(8))))
+			--	if(index < 1 or index > 16)then 
+			--		print("WARNING Index-19:",index)
+			--		return UUID() -- should never happen - just try again if it does ;-)
+			--	end
+			--else
+				index = r
+			--end
+			uuid[i] = chars[index]
+		end
+	end
+	return table.concat(uuid)
 end
 
 -- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::

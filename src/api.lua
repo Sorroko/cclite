@@ -21,6 +21,23 @@ function api.init() -- Called after this file is loaded! Important. Else api.x i
 	}
 end
 
+api.http = {}
+function api.http.request( url, sData )
+	local http = HttpRequest.new() -- test code
+	http.open("GET", url, true)
+
+	http.onReadyStateChange = function()
+		print("STATE CHANGED")
+        print(http.readyState)
+        print(http.status)
+        print(http.statusText)
+        print(http.responseText)    
+    end
+
+    http.send()
+end
+api.http.request( "http://google.com", nil )
+
 api.term = {}
 function api.term.clear()
 	for y = 1, Screen.height do

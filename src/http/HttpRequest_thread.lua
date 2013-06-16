@@ -9,13 +9,13 @@ local httpResponseBody 	= {}
 local httpResponseText 	= ""
 local httpParams 		= {}
 
-local requestDebug		= true
+local requestDebug		= false
 
 function waitForInstructions()
 	--set message vars
-	local threadIdMsg		= love.thread.getThread():receive("threadId")
-	local socketTimeoutMsg	= love.thread.getThread():receive("socketTimeout")
-	local httpParamMsg 		= love.thread.getThread():receive("httpParams")	
+	local threadIdMsg		= love.thread.getThread():get("threadId")
+	local socketTimeoutMsg	= love.thread.getThread():get("socketTimeout")
+	local httpParamMsg 		= love.thread.getThread():get("httpParams")	
 	
 	-- receive thread id
 	if threadIdMsg ~= nil then
@@ -123,7 +123,7 @@ function sendRequest()
 	end
 	
 	-- send results back to main thread
-	love.thread.getThread("main"):send(threadId.."_response", TSerial.pack(result))
+	love.thread.getThread("main"):set(threadId.."_response", TSerial.pack(result))
 	
 	--love.thread.getThread().kill()
 end

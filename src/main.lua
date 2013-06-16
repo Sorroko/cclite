@@ -1,3 +1,5 @@
+require('http.HttpRequest')
+
 require('render')
 require('api')
 
@@ -195,6 +197,7 @@ end
 
 function love.update()
 	local now = love.timer.getTime()
+	HttpRequest.checkRequests()
 	if Emulator.reboot then Emulator:start() end
 
 	updateShortcut("terminate", "lctrl", "t", function()
