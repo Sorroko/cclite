@@ -1,1 +1,2 @@
+@echo off
 love src/
