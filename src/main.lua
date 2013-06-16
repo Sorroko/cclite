@@ -118,7 +118,7 @@ function  love.mousepressed( x, y, _button )
 			and y > 0 and y < Screen.height * Screen.pixelHeight then -- Within screen bounds.
 			local button = 1
 			if _button == "r" then button = 2 end
-			table.insert(Emulator.eventQueue, {"mouse_click", button, math.floor(x / Screen.pixelWidth), math.floor(y / Screen.pixelHeight)})
+			table.insert(Emulator.eventQueue, {"mouse_click", button, math.floor(x / Screen.pixelWidth) - 1, math.floor(y / Screen.pixelHeight) - 1})
 		end
 	elseif _button == "wu" then -- Scroll up
 
