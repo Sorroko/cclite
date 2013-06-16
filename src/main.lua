@@ -162,10 +162,6 @@ end
 	mouse_drag
 	alarm
 
-	Possibly:
-	http_failure
-	http_success
-
 	Not implementing:
 	redstone
 	disk

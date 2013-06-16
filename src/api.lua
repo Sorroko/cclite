@@ -6,6 +6,51 @@
 	os.day
 	os.time
 ]]
+-- HELPER FUNCTIONS
+local function lines(str)
+	local t = {}
+	local function helper(line) table.insert(t, line) return "" end
+	helper((str:gsub("(.-)\r?\n", helper)))
+	return t
+end
+
+-- HELPER CLASSES/HANDLES
+
+-- Possibly use love newFile api/object?
+-- Would need to create a wrapper for it though.
+-- TODO hide private variabes: i.e. lineIndex and contents
+local FileReadHandle = {} -- TODO Make more efficient, use love.filesystem.lines
+function FileReadHandle:close()
+	self = nil
+end
+function FileReadHandle:readLine()
+	local str = self.contents[self.lineIndex]
+	self.lineIndex = self.lineIndex + 1
+	return str
+end
+function FileReadHandle:readAll()
+	if self.lineIndex == 1 then 
+		self.lineIndex = #self.contents
+		return table.concat(self.contents, '\n') .. '\n'
+	else
+		local tData = {}
+		local data = FileReadHandle.readLine(self)
+		while data ~= nil do
+			table.insert(tData, data)
+			data = FileReadHandle.readLine(self)
+		end
+		return table.concat(tData, '\n') .. '\n'
+	end
+end
+
+local FileWriteHandle = {}
+function FileWriteHandle:close()
+	return nil
+end
+function FileWriteHandle:write(data) -- TODO: Does not behave as in vanilla, overwrites existing written data
+	love.filesystem.write(self.path, data)
+end
+-- TODO writeLine !
 
 api = {}
 function api.init() -- Called after this file is loaded! Important. Else api.x is not defined
@@ -22,21 +67,37 @@ function api.init() -- Called after this file is loaded! Important. Else api.x i
 end
 
 api.http = {}
-function api.http.request( url, sData )
-	local http = HttpRequest.new() -- test code
-	http.open("GET", url, true)
+function api.http.request( sUrl, sParams )
+	local http = HttpRequest.new()
+	local method = sParams and "POST" or "GET"
+
+	http.open(method, sUrl, true)
+
+	if method == "POST" then
+		http.setRequestHeader("Content-Type", "application/x-www-form-urlencoded")
+   		http.setRequestHeader("Content-Length", string.len(sParams))
+	end
 
 	http.onReadyStateChange = function()
-		print("STATE CHANGED")
-        print(http.readyState)
-        print(http.status)
-        print(http.statusText)
-        print(http.responseText)    
+		if http.responseText then -- TODO check if timed out instead
+	        local handle = { -- use the read handle from the fs section below, TODO shoudl use own handle
+				contents = lines(http.responseText),
+				lineIndex = 1,
+			}
+			function handle.close() FileReadHandle.close(handle) end
+			function handle.readLine() return FileReadHandle.readLine(handle) end
+			function handle.readAll() return FileReadHandle.readAll(handle) end
+			function handle.getResponseCode()
+				return http.status
+			end
+	        table.insert(Emulator.eventQueue, { "http_success", sUrl, handle })
+	    else
+	    	 table.insert(Emulator.eventQueue, { "http_failure", sUrl })
+	    end
     end
 
-    http.send()
+    http.send(sParams)
 end
-api.http.request( "http://google.com", nil )
 
 api.term = {}
 function api.term.clear()
@@ -162,52 +223,7 @@ function api.os.reboot()
 	Emulator:stop( true ) -- Reboots on next update/tick
 end
 
--- FS HELPER FUNCTIONS/CLASSES
-local function lines(str)
-	local t = {}
-	local function helper(line) table.insert(t, line) return "" end
-	helper((str:gsub("(.-)\r?\n", helper)))
-	return t
-end
-
 api.fs = {} -- This fs api is a bit hacky ;)
--- I'm 99% sure that LOVE sandboxes all the filesystem calls anyway
--- Allows modifying inside of appdata folder only
-
--- Possibly use love newFile api/object?
--- Would need to create a wrapper for it though.
-local FileReadHandle = {} -- TODO Make more efficient, use love.filesystem.lines
-function FileReadHandle:close()
-	self = nil
-end
-function FileReadHandle:readLine()
-	local str = self.contents[self.lineIndex]
-	self.lineIndex = self.lineIndex + 1
-	return str
-end
-function FileReadHandle:readAll()
-	if self.lineIndex == 1 then 
-		self.lineIndex = #self.contents
-		return table.concat(self.contents, '\n') .. '\n'
-	else
-		local tData = {}
-		local data = FileReadHandle.readLine(self)
-		while data ~= nil do
-			table.insert(tData, data)
-			data = FileReadHandle.readLine(self)
-		end
-		return table.concat(tData, '\n') .. '\n'
-	end
-end
-
-local FileWriteHandle = {}
-function FileWriteHandle:close()
-	return nil
-end
-function FileWriteHandle:write(data) -- TODO: Does not behave as in vanilla, overwrites existing written data
-	love.filesystem.write(self.path, data)
-end
--- TODO writeLine !
 
 function api.fs.open(path, mode)
 	path = api.fs.combine("", path)
@@ -448,5 +464,8 @@ api.env = {
 		getMethods = function(side) return nil end,
 		call = function(side, method, ...) return nil end,
 		wrap = function (side) return nil end,
+	},
+	http = {
+		request = api.http.request,
 	}
 }
