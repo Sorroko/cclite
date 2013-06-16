@@ -1,8 +1,6 @@
 --[[
 	TODO
-	Modems?
 	HTTP api?
-	term.scroll
 	the rest of fs api!
 	including file handles.
 	os.day
@@ -275,9 +273,6 @@ end
 function api.fs.move(fromPath, toPath)
 	-- Not implemented
 end
-function api.fs.copy(fromPath, toPath)
-	-- Not implemented
-end
 
 local function deltree(sFolder)
 	local tObjects = love.filesystem.enumerate(sFolder)
@@ -289,11 +284,39 @@ local function deltree(sFolder)
 			if love.filesystem.isFile(pObject) then
 				love.filesystem.remove(pObject)
 			elseif love.filesystem.isDirectory(pObject) then
-				love.filesystem.deltree(pObject)
+				deltree(pObject)
 			end
 		end
 	end
 	return love.filesystem.remove(sFolder)
+end
+
+local function copytree(sFolder, sToFolder)
+	deltree(sToFolder) -- Overwrite existing file for both copy and move
+	-- Is this vanilla behaviour or does it merge files?
+	if not love.filesystem.isDirectory(sFolder) then
+		love.filesystem.write(sToFolder, love.filesystem.read( sFolder ))
+	end
+	local tObjects = love.filesystem.enumerate(sFolder)
+
+	if tObjects then
+   		for nIndex, sObject in pairs(tObjects) do
+	   		local pObject =  sFolder.."/"..sObject
+
+			if love.filesystem.isFile(pObject) then
+				love.filesystem.write(sToFolder .. "/" .. sObject, love.filesystem.read( pObject ))
+			elseif love.filesystem.isDirectory(pObject) then
+				copytree(pObject)
+			end
+		end
+	end
+end
+function api.fs.copy(fromPath, toPath)
+	fromPath = api.fs.combine("", fromPath)
+	toPath = api.fs.combine("", toPath)
+	if string.sub(toPath, 1, 4) ~= "rom/" then -- Stop user overwriting lua/rom/ with data/rom/
+		return copytree("data/" .. fromPath, "data/" .. toPath)
+	else return nil end
 end
 
 function api.fs.delete(path)
@@ -318,7 +341,6 @@ function api.fs.combine(basePath, localPath)
 end
 
 api.env = {
-	-- Default lua apis/functions -- TODO default os api?
 	tostring = tostring,
 	tonumber = tonumber,
 	unpack = unpack,
@@ -335,8 +357,6 @@ api.env = {
 	error = error,
 
 	loadstring = loadstring,
-	--loadfile = loadfile, -- TODO These two should be routed through fs api sandbox.
-	--dofile = dofile, 
 
 	math = math,
 	string = string,

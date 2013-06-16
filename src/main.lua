@@ -106,7 +106,9 @@ function love.load()
 	love.graphics.setCaption( "ComputerCraft Emulator" )
 
 	love.filesystem.setIdentity( "ccemu" )
-	love.filesystem.mkdir( "data/" ) -- Attempt to make the user data folder, TODO should check if exists
+	if not love.filesystem.exists( "data/" ) then
+		love.filesystem.mkdir( "data/" ) -- Make the user data folder
+	end
 
 	love.keyboard.setKeyRepeat( 0.5, 0.05 )
 
@@ -144,7 +146,7 @@ function love.keypressed(key, unicode)
 	end
 
 	if keys[key] then
-   		table.insert(Emulator.eventQueue, {"key", keys[key]}) -- TODO convert key to key code
+   		table.insert(Emulator.eventQueue, {"key", keys[key]})
    	end
 
    	if unicode > 31 and unicode < 127 then
