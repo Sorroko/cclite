@@ -5,6 +5,7 @@
 	including file handles.
 	os.day
 	os.time
+	writeLine!
 ]]
 -- HELPER FUNCTIONS
 local function lines(str)
@@ -237,7 +238,6 @@ function api.fs.open(path, mode)
 		if sPath == nil or sPath == "lua/bios.lua" then return nil end
 
 		local contents, size = love.filesystem.read( sPath )
-
 		local fHandle = {
 			contents = lines(contents),
 			lineIndex = 1,
@@ -247,17 +247,16 @@ function api.fs.open(path, mode)
 		function fHandle.readAll() return FileReadHandle.readAll(fHandle) end
 		return fHandle
 	elseif mode == "w" then
-		if not api.fs.exists( path ) then
-			local fHandle = {
-				path = "data/" .. path,
-			}
-			function fHandle.close() FileWriteHandle.close(fHandle) end
-			function fHandle.writeLine() return nil end
-			function fHandle.write(data) return FileWriteHandle.write(fHandle, data) end
-		return fHandle
-		else
-
+		if api.fs.exists( path ) then -- Write mode overwrites!
+			api.fs.delete( path )
 		end
+		local fHandle = {
+			path = "data/" .. path,
+		}
+		function fHandle.close() FileWriteHandle.close(fHandle) end
+		function fHandle.writeLine() return nil end -- TODO Important!
+		function fHandle.write(data) return FileWriteHandle.write(fHandle, data) end
+		return fHandle
 	end
 	return nil
 end
