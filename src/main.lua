@@ -118,18 +118,21 @@ function love.load()
 end
 
 function  love.mousepressed( x, y, _button )
-	if _button == "r" or _button == "l" then
+	if x > 0 and x < Screen.width * Screen.pixelWidth
+		and y > 0 and y < Screen.height * Screen.pixelHeight then -- Within screen bounds.
 
-		if x > 0 and x < Screen.width * Screen.pixelWidth
-			and y > 0 and y < Screen.height * Screen.pixelHeight then -- Within screen bounds.
-			local button = 1
-			if _button == "r" then button = 2 end
-			table.insert(Emulator.eventQueue, {"mouse_click", button, math.floor(x / Screen.pixelWidth) - 1, math.floor(y / Screen.pixelHeight) - 1})
-		end
-	elseif _button == "wu" then -- Scroll up
+			if _button == "r" or _button == "l" then
+				local button = 1
+				if _button == "r" then button = 2 end
+				table.insert(Emulator.eventQueue, {"mouse_click", button, math.floor(x / Screen.pixelWidth) - 1, math.floor(y / Screen.pixelHeight) - 1})
 
-	elseif _button == "wd" then -- Scroll down
+			elseif _button == "wu" then -- Scroll up
+				table.insert(Emulator.eventQueue, {"mouse_scroll", -1, math.floor(x / Screen.pixelWidth) - 1, math.floor(y / Screen.pixelHeight) - 1})
 
+			elseif _button == "wd" then -- Scroll down
+				table.insert(Emulator.eventQueue, {"mouse_scroll", 1, math.floor(x / Screen.pixelWidth) - 1, math.floor(y / Screen.pixelHeight) - 1})
+
+			end
 	end
 end
 
