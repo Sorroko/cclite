@@ -108,8 +108,6 @@ function love.load()
 	love.filesystem.setIdentity( "ccemu" )
 	love.filesystem.mkdir( "data/" ) -- Attempt to make the user data folder, TODO should check if exists
 
-	love.keyboard.setKeyRepeat( 0.5, 0.2 )
-
 	Emulator:start()
 end
 
