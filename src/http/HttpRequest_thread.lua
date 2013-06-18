@@ -73,25 +73,29 @@ end
 
 -- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-function sendRequest()
-
+function sendRequest(_url)
 	httpRequest.TIMEOUT = socketTimeout
-	
-	
-	
+
 	-- send request:
 	local result  = 
 	{
 		httpRequest.request
 		{
 			method 		= httpParams.method,
-			url			= httpParams.url,
+			url			= _url or httpParams.url,
 			headers		= httpParams.headers,
 			source		= ltn12.source.string(httpParams.body),
 			sink		= ltn12.sink.table(httpResponseBody),
 			redirect	= true
 		}
 	}	
+
+	if result[2] == 302 then
+		if result[3]["location"] then
+			httpResponseBody = {}
+			return sendRequest(result[3]["location"]) -- Hehe, not the best way, maybe limit recursion?
+		end
+	end
 	
 	-- compile responseText
 	for k,v in ipairs(httpResponseBody) do
@@ -100,7 +104,7 @@ function sendRequest()
 		
 	-- insert responseText in to result table
 	table.insert(result, httpResponseText)
-	
+
 	-- DEBUG CODE
 	if requestDebug == true then
 		print("---RESPONSE HEADERS---")
@@ -111,6 +115,9 @@ function sendRequest()
 					print("header: " .. "["..tostring(k2).."] = ".. tbl[k2])
 				end
 			end		
+		end
+		for k, v in pairs(result) do
+			print(v)
 		end
 		print(" ")
 		print("---RESPONSE PARAMS---")
