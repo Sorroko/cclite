@@ -1,3 +1,4 @@
+
 require('http.HttpRequest')
 
 require('render')
@@ -53,6 +54,7 @@ Emulator = {
 	},
 	eventQueue = {},
 }
+
 function Emulator:start()
 	self.reboot = false
 	api.init()
@@ -121,18 +123,16 @@ function  love.mousepressed( x, y, _button )
 	if x > 0 and x < Screen.width * Screen.pixelWidth
 		and y > 0 and y < Screen.height * Screen.pixelHeight then -- Within screen bounds.
 
-			if _button == "r" or _button == "l" then
-				local button = 1
-				if _button == "r" then button = 2 end
-				table.insert(Emulator.eventQueue, {"mouse_click", button, math.floor(x / Screen.pixelWidth) - 1, math.floor(y / Screen.pixelHeight) - 1})
+		if _button == "r" or _button == "l" then
+			local button = 1
+			if _button == "r" then button = 2 end
+			table.insert(Emulator.eventQueue, {"mouse_click", button, math.floor(x / Screen.pixelWidth) - 1, math.floor(y / Screen.pixelHeight) - 1})
+		elseif _button == "wu" then -- Scroll up
+			table.insert(Emulator.eventQueue, {"mouse_scroll", -1, math.floor(x / Screen.pixelWidth) - 1, math.floor(y / Screen.pixelHeight) - 1})
 
-			elseif _button == "wu" then -- Scroll up
-				table.insert(Emulator.eventQueue, {"mouse_scroll", -1, math.floor(x / Screen.pixelWidth) - 1, math.floor(y / Screen.pixelHeight) - 1})
-
-			elseif _button == "wd" then -- Scroll down
-				table.insert(Emulator.eventQueue, {"mouse_scroll", 1, math.floor(x / Screen.pixelWidth) - 1, math.floor(y / Screen.pixelHeight) - 1})
-
-			end
+		elseif _button == "wd" then -- Scroll down
+			table.insert(Emulator.eventQueue, {"mouse_scroll", 1, math.floor(x / Screen.pixelWidth) - 1, math.floor(y / Screen.pixelHeight) - 1})
+		end
 	end
 end
 
@@ -180,14 +180,11 @@ end
 
 function updateShortcut(name, key1, key2, cb)
 	if Emulator.actions[name] ~= nil then
-		if love.keyboard.isDown(key1)
-			and love.keyboard.isDown(key2) then
-
+		if love.keyboard.isDown(key1) and love.keyboard.isDown(key2) then
 			if love.timer.getTime() - Emulator.actions[name] > 1 then
 				Emulator.actions[name] = nil
 				if cb then cb() end
 			end
-
 		else
 			Emulator.actions[name] = nil
 		end
@@ -239,6 +236,6 @@ end
 function love.draw()
 	Screen:draw()
 	if debug then
-		love.graphics.print("FPS: " .. tostring(love.timer.getFPS( )), (Screen.width * Screen.pixelWidth) - 85, 10)
+		love.graphics.print("FPS: " .. tostring(love.timer.getFPS()), (Screen.width * Screen.pixelWidth) - 85, 10)
 	end
 end
