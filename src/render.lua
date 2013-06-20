@@ -41,6 +41,7 @@ Screen = {
 	textB = {},
 	backgroundColourB = {},
 	textColourB = {},
+	font = nil,
 	pixelWidth = 6 * 2,
 	pixelHeight = 9 * 2,
 	showCursor = false,
@@ -59,6 +60,8 @@ function Screen:init()
 			self.textColourB[y][x] = 1
 		end
 	end
+
+	self.font = love.graphics.getFont()
 end
 
 -- Local functions are faster than global
@@ -103,9 +106,10 @@ function Screen:draw()
 	-- Is this actually a performance improvement?
 	for y = 0, self.height - 1 do
 		for x = 0, self.width - 1 do
-		
+			local text = self.textB[y + 1][x + 1]
+			local offset = self.pixelWidth / 2 - self.font:getWidth(text) / 2 -- Could also create a lookup table of widths on load
 			setColor( COLOUR_CODE[ self.textColourB[y + 1][x + 1] ] )
-			lprint( self.textB[y + 1][x + 1], (x * self.pixelWidth), (y * self.pixelHeight) + self.textOffset)
+			lprint( text, (x * self.pixelWidth) + offset, (y * self.pixelHeight) + self.textOffset)
 		
 		end
 	end
