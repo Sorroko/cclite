@@ -1,3 +1,4 @@
+
 COLOUR_RGB = {
 	WHITE = {255, 255, 255},
 	ORANGE = {230, 125, 50},
@@ -16,6 +17,7 @@ COLOUR_RGB = {
 	RED = {230, 20, 20},
 	BLACK = {0, 0, 0},
 }
+
 COLOUR_CODE = {
 	[1] = COLOUR_RGB.WHITE,
 	[2] = COLOUR_RGB.ORANGE,
@@ -82,10 +84,8 @@ local function setColor(c)
 end
 
 function Screen:draw()
-
 	if not Emulator.running then 
-		local text = "Press any key..."
-		lprint(text, ((self.width * self.pixelWidth) / 2) - (font:getWidth(text) / 2), (self.height * self.pixelHeight) / 2)
+		lprint("Press any key...", ((self.width * self.pixelWidth) / 2) - (font:getWidth(text) / 2), (self.height * self.pixelHeight) / 2)
 		return 
 	end
 
@@ -102,6 +102,7 @@ function Screen:draw()
 			
 		end
 	end
+
 	-- Two seperate for loops to not setColor all the time and allow batch gl calls.
 	-- Is this actually a performance improvement?
 	for y = 0, self.height - 1 do
@@ -115,9 +116,8 @@ function Screen:draw()
 	end
 
 	if api.term.blink and self.showCursor then
-		local px = (api.term.cursorX - 1) * self.pixelWidth
-		local py = (api.term.cursorY * self.pixelHeight) - 1
+		local offset = self.pixelWidth / 2 - self.font:getWidth("_") / 2
 		setColor(COLOUR_CODE[ api.term.fg ])
-		ldrawLine(px, py, px + self.pixelWidth, py)
+		lprint("_", (api.term.cursorX - 1) * self.pixelWidth + offset, (api.term.cursorY - 1) * self.pixelHeight + self.textOffset)
 	end
 end
