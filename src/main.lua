@@ -101,11 +101,11 @@ function Emulator:resume( ... )
 end
 
 function love.load()
-	font = love.graphics.newFont( 'res/minecraft.ttf', 16 )
-	love.graphics.setFont(font)
-
 	love.graphics.setMode( Screen.width * Screen.pixelWidth, Screen.height * Screen.pixelHeight, false, true, 0 )
 	love.graphics.setCaption( "ComputerCraft Emulator" )
+	
+	font = love.graphics.newFont( 'res/minecraft.ttf', 16 )
+	love.graphics.setFont(font)
 
 	love.filesystem.setIdentity( "ccemu" )
 	if not love.filesystem.exists( "data/" ) then
