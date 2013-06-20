@@ -3,7 +3,7 @@ require('http.HttpRequest')
 require('render')
 require('api')
 
-local keys = {
+keys = {
 	["q"] = 16, ["w"] = 17, ["e"] = 18, ["r"] = 19,
 	["t"] = 20, ["y"] = 21, ["u"] = 22, ["i"] = 23, 
 	["o"] = 24, ["p"] = 25, ["a"] = 30, ["s"] = 31,
