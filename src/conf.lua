@@ -4,7 +4,7 @@ function love.conf(t)
     t.author = "Sorroko"
     --t.url = nil
     t.version = "0.8.0"
- 
+
     t.modules.physics = false
 
     if debug then

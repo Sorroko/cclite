@@ -15,8 +15,8 @@ function waitForInstructions()
 	--set message vars
 	local threadIdMsg		= love.thread.getThread():get("threadId")
 	local socketTimeoutMsg	= love.thread.getThread():get("socketTimeout")
-	local httpParamMsg 		= love.thread.getThread():get("httpParams")	
-	
+	local httpParamMsg 		= love.thread.getThread():get("httpParams")
+
 	-- receive thread id
 	if threadIdMsg ~= nil then
 		threadId = threadIdMsg
@@ -28,10 +28,10 @@ function waitForInstructions()
 			print(" ")
 		end
 	end
-	
+
 	-- receive socket timeout
 	if socketTimeoutMsg ~= nil then
-		socketTimeout = tonumber(socketTimeoutMsg)		
+		socketTimeout = tonumber(socketTimeoutMsg)
 		-- DEBUG CODE
 		if requestDebug == true then
 			print("---REQUEST TIMEOUT----")
@@ -39,11 +39,11 @@ function waitForInstructions()
 			print(" ")
 		end
 	end
-	
+
 	-- receive request params
 	if httpParamMsg ~= nil and threadIdMsg ~= nil then
 		httpParams = TSerial.unpack(httpParamMsg)
-		
+
 		-- DEBUG CODE
 		if requestDebug == true then
 			print("---REQUEST PARAMS-----")
@@ -64,11 +64,11 @@ function waitForInstructions()
 			end
 			print("     ")
 		end
-			
-		sendRequest()		
+
+		sendRequest()
 	else
 		waitForInstructions()
-	end	
+	end
 end
 
 -- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -77,7 +77,7 @@ function sendRequest(_url)
 	httpRequest.TIMEOUT = socketTimeout
 
 	-- send request:
-	local result  = 
+	local result  =
 	{
 		httpRequest.request
 		{
@@ -88,7 +88,7 @@ function sendRequest(_url)
 			sink		= ltn12.sink.table(httpResponseBody),
 			redirect	= true
 		}
-	}	
+	}
 
 	if result[2] == 302 then
 		if result[3]["location"] then
@@ -96,12 +96,12 @@ function sendRequest(_url)
 			return sendRequest(result[3]["location"]) -- Hehe, not the best way, maybe limit recursion?
 		end
 	end
-	
+
 	-- compile responseText
 	for k,v in ipairs(httpResponseBody) do
 		httpResponseText = httpResponseText .. tostring(v)
 	end
-		
+
 	-- insert responseText in to result table
 	table.insert(result, httpResponseText)
 
@@ -114,7 +114,7 @@ function sendRequest(_url)
 					local tbl = result[k]
 					print("header: " .. "["..tostring(k2).."] = ".. tbl[k2])
 				end
-			end		
+			end
 		end
 		for k, v in pairs(result) do
 			print(v)
@@ -124,14 +124,14 @@ function sendRequest(_url)
 		print("readyState: ".. tostring(result[1]) )
 		print("statusCode: ".. tostring(result[2]) )
 		print("statusText: ".. tostring(result[4]) )
-		print("responseText: " .. httpResponseText )		
+		print("responseText: " .. httpResponseText )
 		print("---------------------")
-		
+
 	end
-	
+
 	-- send results back to main thread
 	love.thread.getThread("main"):set(threadId.."_response", TSerial.pack(result))
-	
+
 	--love.thread.getThread().kill()
 end
 

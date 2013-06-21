@@ -30,7 +30,7 @@ function FileReadHandle:readLine()
 	return str
 end
 function FileReadHandle:readAll()
-	if self.lineIndex == 1 then 
+	if self.lineIndex == 1 then
 		self.lineIndex = #self.contents
 		return table.concat(self.contents, '\n') .. '\n'
 	else
@@ -51,7 +51,7 @@ end
 function FileWriteHandle:write(data) -- TODO: Does not behave as in vanilla, overwrites existing written data
 	love.filesystem.write(self.path, data)
 end
--- TODO writeLine !
+-- TODO: writeLine !
 
 api = {}
 function api.init() -- Called after this file is loaded! Important. Else api.x is not defined
@@ -80,8 +80,8 @@ function api.http.request( sUrl, sParams )
 	end
 
 	http.onReadyStateChange = function()
-		if http.responseText then -- TODO check if timed out instead
-	        local handle = { -- use the read handle from the fs section below, TODO shoudl use own handle
+		if http.responseText then -- TODO: check if timed out instead
+	        local handle = { -- use the read handle from the fs section below, TODO: shoudl use own handle
 				contents = lines(http.responseText),
 				lineIndex = 1,
 			}
@@ -133,7 +133,7 @@ function api.term.write( text )
 
 	for i = 1, #text do
 		local char = string.sub( text, i, i )
-		if api.term.cursorX + i - 1 <= Screen.width 
+		if api.term.cursorX + i - 1 <= Screen.width
 			and api.term.cursorX + i - 1 >= 1 then
 			Screen.textB[api.term.cursorY][api.term.cursorX + i - 1] = char
 			Screen.textColourB[api.term.cursorY][api.term.cursorX + i - 1] = api.term.fg

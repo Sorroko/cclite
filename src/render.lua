@@ -84,9 +84,10 @@ local function setColor(c)
 end
 
 function Screen:draw()
-	if not Emulator.running then 
-		lprint("Press any key...", ((self.width * self.pixelWidth) / 2) - (font:getWidth(text) / 2), (self.height * self.pixelHeight) / 2)
-		return 
+	if not Emulator.running then
+		local text = "Press any key..."
+		lprint(text, ((self.width * self.pixelWidth) / 2) - (font:getWidth(text) / 2), (self.height * self.pixelHeight) / 2)
+		return
 	end
 
 	-- TODO Better damn rendering!
@@ -99,7 +100,7 @@ function Screen:draw()
 
 			setColor( COLOUR_CODE[ self.backgroundColourB[y + 1][x + 1] ] ) -- TODO COLOUR_CODE lookup might be too slow?
 			ldrawRect("fill", x * self.pixelWidth, y * self.pixelHeight, self.pixelWidth, self.pixelHeight )
-			
+
 		end
 	end
 
@@ -111,7 +112,7 @@ function Screen:draw()
 			local offset = self.pixelWidth / 2 - self.font:getWidth(text) / 2 -- Could also create a lookup table of widths on load
 			setColor( COLOUR_CODE[ self.textColourB[y + 1][x + 1] ] )
 			lprint( text, (x * self.pixelWidth) + offset, (y * self.pixelHeight) + self.textOffset)
-		
+
 		end
 	end
 

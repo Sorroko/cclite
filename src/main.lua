@@ -6,12 +6,12 @@ require('api')
 
 keys = {
 	["q"] = 16, ["w"] = 17, ["e"] = 18, ["r"] = 19,
-	["t"] = 20, ["y"] = 21, ["u"] = 22, ["i"] = 23, 
+	["t"] = 20, ["y"] = 21, ["u"] = 22, ["i"] = 23,
 	["o"] = 24, ["p"] = 25, ["a"] = 30, ["s"] = 31,
-	["d"] = 32, ["f"] = 33, ["g"] = 34, ["h"] = 35, 
-	["j"] = 36, ["k"] = 37, ["l"] = 38, ["z"] = 44, 
+	["d"] = 32, ["f"] = 33, ["g"] = 34, ["h"] = 35,
+	["j"] = 36, ["k"] = 37, ["l"] = 38, ["z"] = 44,
 	["x"] = 45, ["c"] = 46, ["v"] = 47, ["b"] = 48,
-	["n"] = 49, ["m"] = 50, 
+	["n"] = 49, ["m"] = 50,
 	["1"] = 2, ["2"] = 3, ["3"] = 4, ["4"] = 5, ["5"] = 6,
 	["6"] = 7, ["7"] = 8, ["8"] = 9, ["9"] = 10, ["0"] = 11,
 	[" "] = 57,
@@ -43,7 +43,7 @@ keys = {
 }
 
 Emulator = {
-	running = false, 
+	running = false,
 	reboot = false, -- Tells update loop to start Emulator automatically
 	actions = { -- Keyboard commands i.e. ctrl + s and timers/alarms
 		terminate = nil,
@@ -105,7 +105,7 @@ end
 function love.load()
 	love.graphics.setMode( Screen.width * Screen.pixelWidth, Screen.height * Screen.pixelHeight, false, true, 0 )
 	love.graphics.setCaption( "ComputerCraft Emulator" )
-	
+
 	font = love.graphics.newFont( 'res/minecraft.ttf', 16 )
 	love.graphics.setFont(font)
 
@@ -114,7 +114,7 @@ function love.load()
 		love.filesystem.mkdir( "data/" ) -- Make the user data folder
 	end
 
-	love.keyboard.setKeyRepeat( 0.5, 0.05 )
+	-- love.keyboard.setKeyRepeat( 0.5, 0.05 ) -- FIXME: This breaks more than is worth.
 
 	Emulator:start()
 end
@@ -127,6 +127,7 @@ function  love.mousepressed( x, y, _button )
 			local button = 1
 			if _button == "r" then button = 2 end
 			table.insert(Emulator.eventQueue, {"mouse_click", button, math.floor(x / Screen.pixelWidth) - 1, math.floor(y / Screen.pixelHeight) - 1})
+
 		elseif _button == "wu" then -- Scroll up
 			table.insert(Emulator.eventQueue, {"mouse_scroll", -1, math.floor(x / Screen.pixelWidth) - 1, math.floor(y / Screen.pixelHeight) - 1})
 
@@ -142,11 +143,11 @@ function love.keypressed(key, unicode)
 		return
 	end
 
-	if love.keyboard.isDown("lctrl") and key == "t" then
+	if Emulator.actions.terminate == nil and love.keyboard.isDown("lctrl") and key == "t" then
 		Emulator.actions.terminate = love.timer.getTime()
-	elseif love.keyboard.isDown("lctrl") and key == "s" then
+	elseif Emulator.actions.shutdown == nil and love.keyboard.isDown("lctrl") and key == "s" then
 		Emulator.actions.shutdown = love.timer.getTime()
-	elseif love.keyboard.isDown("lctrl") and key == "r" then
+	elseif Emulator.actions.reboot == nil and love.keyboard.isDown("lctrl") and key == "r" then
 		Emulator.actions.reboot = love.timer.getTime()
 	end
 
