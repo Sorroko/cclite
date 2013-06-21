@@ -114,7 +114,7 @@ function love.load()
 		love.filesystem.mkdir( "data/" ) -- Make the user data folder
 	end
 
-	-- love.keyboard.setKeyRepeat( 0.5, 0.05 ) -- FIXME: This breaks more than is worth.
+	love.keyboard.setKeyRepeat( 0.5, 0.05 )
 
 	Emulator:start()
 end
@@ -133,22 +133,23 @@ function  love.mousepressed( x, y, _button )
 
 		elseif _button == "wd" then -- Scroll down
 			table.insert(Emulator.eventQueue, {"mouse_scroll", 1, math.floor(x / Screen.pixelWidth) - 1, math.floor(y / Screen.pixelHeight) - 1})
+
 		end
 	end
 end
 
 function love.keypressed(key, unicode)
-	if not Emulator.running then
-		Emulator:start()
-		return
-	end
-
 	if Emulator.actions.terminate == nil and love.keyboard.isDown("lctrl") and key == "t" then
 		Emulator.actions.terminate = love.timer.getTime()
 	elseif Emulator.actions.shutdown == nil and love.keyboard.isDown("lctrl") and key == "s" then
 		Emulator.actions.shutdown = love.timer.getTime()
 	elseif Emulator.actions.reboot == nil and love.keyboard.isDown("lctrl") and key == "r" then
 		Emulator.actions.reboot = love.timer.getTime()
+	else -- Ignore key shortcuts before "press any key" action. TODO: This might be slightly buggy!
+		if not Emulator.running then
+			Emulator:start()
+			return
+		end
 	end
 
 	if keys[key] then
