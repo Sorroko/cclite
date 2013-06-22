@@ -16,42 +16,85 @@ local function lines(str)
 end
 
 -- HELPER CLASSES/HANDLES
-
--- Possibly use love newFile api/object?
--- Would need to create a wrapper for it though.
--- TODO hide private variabes: i.e. lineIndex and contents
-local FileReadHandle = {} -- TODO Make more efficient, use love.filesystem.lines
-function FileReadHandle:close()
-	self = nil
-end
-function FileReadHandle:readLine()
-	local str = self.contents[self.lineIndex]
-	self.lineIndex = self.lineIndex + 1
-	return str
-end
-function FileReadHandle:readAll()
-	if self.lineIndex == 1 then
-		self.lineIndex = #self.contents
-		return table.concat(self.contents, '\n') .. '\n'
-	else
-		local tData = {}
-		local data = FileReadHandle.readLine(self)
-		while data ~= nil do
-			table.insert(tData, data)
-			data = FileReadHandle.readLine(self)
+-- TODO Make more efficient, use love.filesystem.lines
+local function HTTPHandle(contents, status)
+	local lineIndex = 1
+	local handle -- INFO: Hack to access itself
+	handle = {
+		close = function()
+			handle = nil
+		end,
+		readLine = function()
+			local str = contents[lineIndex]
+			lineIndex = lineIndex + 1
+			return str
+		end,
+		readAll = function()
+			if lineIndex == 1 then
+				lineIndex = #contents
+				return table.concat(contents, '\n') .. '\n'
+			else
+				local tData = {}
+				local data = handle.readLine()
+				while data ~= nil do
+					table.insert(tData, data)
+					data = handle.readLine()
+				end
+				return table.concat(tData, '\n') .. '\n'
+			end
+		end,
+		getResponseCode = function()
+			return status
 		end
-		return table.concat(tData, '\n') .. '\n'
-	end
+	}
+	return handle
 end
 
-local FileWriteHandle = {}
-function FileWriteHandle:close()
-	return nil
+local function FileReadHandle(contents)
+	local lineIndex = 1
+	local handle
+	handle = {
+		close = function()
+			handle = nil
+		end,
+		readLine = function()
+			local str = contents[lineIndex]
+			lineIndex = lineIndex + 1
+			return str
+		end,
+		readAll = function()
+			if lineIndex == 1 then
+				lineIndex = #contents
+				return table.concat(contents, '\n') .. '\n'
+			else
+				local tData = {}
+				local data = handle.readLine()
+				while data ~= nil do
+					table.insert(tData, data)
+					data = handle.readLine()
+				end
+				return table.concat(tData, '\n') .. '\n'
+			end
+		end
+	}
+	return handle
 end
-function FileWriteHandle:write(data) -- TODO: Does not behave as in vanilla, overwrites existing written data
-	love.filesystem.write(self.path, data)
+
+local function FileWriteHandle(path)
+	local sData = ""
+	local handle = {
+		close = function(data)
+			love.filesystem.write(path, sData)
+		end,
+		writeLine = function( data )
+			sData = sData .. data
+		end,
+		write = function ( data )
+			sData = sData .. data
+		end
+	}
+	return handle
 end
--- TODO: writeLine !
 
 api = {}
 function api.init() -- Called after this file is loaded! Important. Else api.x is not defined
@@ -81,16 +124,7 @@ function api.http.request( sUrl, sParams )
 
 	http.onReadyStateChange = function()
 		if http.responseText then -- TODO: check if timed out instead
-	        local handle = { -- use the read handle from the fs section below, TODO: shoudl use own handle
-				contents = lines(http.responseText),
-				lineIndex = 1,
-			}
-			function handle.close() FileReadHandle.close(handle) end
-			function handle.readLine() return FileReadHandle.readLine(handle) end
-			function handle.readAll() return FileReadHandle.readAll(handle) end
-			function handle.getResponseCode()
-				return http.status
-			end
+	        local handle = HTTPHandle(lines(http.responseText), http.status)
 	        table.insert(Emulator.eventQueue, { "http_success", sUrl, handle })
 	    else
 	    	 table.insert(Emulator.eventQueue, { "http_failure", sUrl })
@@ -224,7 +258,7 @@ function api.os.reboot()
 	Emulator:stop( true ) -- Reboots on next update/tick
 end
 
-api.fs = {} -- This fs api is a bit hacky ;)
+api.fs = {}
 
 function api.fs.open(path, mode)
 	path = api.fs.combine("", path)
@@ -238,25 +272,14 @@ function api.fs.open(path, mode)
 		if sPath == nil or sPath == "lua/bios.lua" then return nil end
 
 		local contents, size = love.filesystem.read( sPath )
-		local fHandle = {
-			contents = lines(contents),
-			lineIndex = 1,
-		}
-		function fHandle.close() FileReadHandle.close(fHandle) end
-		function fHandle.readLine() return FileReadHandle.readLine(fHandle) end
-		function fHandle.readAll() return FileReadHandle.readAll(fHandle) end
-		return fHandle
+
+		return FileReadHandle(lines(contents))
 	elseif mode == "w" then
-		if api.fs.exists( path ) then -- Write mode overwrites!
+		if api.fs.exists( path ) then -- Write mode overwrites! FIXME: Wait until handle.close() is called
 			api.fs.delete( path )
 		end
-		local fHandle = {
-			path = "data/" .. path,
-		}
-		function fHandle.close() FileWriteHandle.close(fHandle) end
-		function fHandle.writeLine() return nil end -- TODO Important!
-		function fHandle.write(data) return FileWriteHandle.write(fHandle, data) end
-		return fHandle
+
+		return FileWriteHandle("data/" .. path)
 	end
 	return nil
 end
