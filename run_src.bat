@@ -1,2 +1,3 @@
 @echo off
-love src/
+start love src/
+exit
