@@ -158,10 +158,12 @@ function api.term.getCursorPos()
 	return api.term.cursorX, api.term.cursorY
 end
 function api.term.setCursorPos(x, y)
+	if not x or not y then return end
 	api.term.cursorX = math.floor(x)
 	api.term.cursorY = math.floor(y)
 end
 function api.term.write( text )
+	if not text then return end
 	if api.term.cursorY > Screen.height
 		or api.term.cursorY < 1 then return end
 
@@ -177,18 +179,22 @@ function api.term.write( text )
 	api.term.cursorX = api.term.cursorX + #text
 end
 function api.term.setTextColor( num )
+	if not COLOUR_CODE[num] then return end
 	api.term.fg = num
 end
 function api.term.setBackgroundColor( num )
+	if not COLOUR_CODE[num] then return end
 	api.term.bg = num
 end
 function api.term.isColor()
 	return true
 end
 function api.term.setCursorBlink( bool )
+	if type(bool) ~= "boolean" then return end
 	api.term.blink = bool
 end
 function  api.term.scroll( n )
+	if type(n) ~= "number" then return end
 	local textBuffer = {}
 	local backgroundColourBuffer = {}
 	local textColourBuffer = {}
@@ -223,6 +229,7 @@ end
 
 api.os = {}
 function api.os.setComputerLabel(label)
+	if type(label) ~= "string" then return end
 	api.os.label = label
 end
 function api.os.getComputerLabel()
@@ -242,6 +249,7 @@ function api.os.startTimer( nTimeout )
 	return nil -- Erroor
 end
 function api.os.setAlarm( nTime )
+	if type(nTime) ~= "number" then return end
 	local timer = {
 		time = nTime,
 	}
