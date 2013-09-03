@@ -62,13 +62,13 @@ function Emulator:start()
 
 	local fn, err = love.filesystem.load('lua/bios.lua') -- lua/bios.lua
 	local tEnv = {}
-	tEnv._G = tEnv
+	api.env._G = api.env
 	if not fn then
 		print(err)
 		return
 	end
-	setmetatable(tEnv, { __index = api.env } )
-	setfenv( fn, tEnv )
+	
+	setfenv( fn, api.env )
 
 	self.proc = coroutine.create(fn)
 	self.running = true
