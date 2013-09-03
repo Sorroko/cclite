@@ -329,6 +329,15 @@ function read( _sReplaceChar, _tHistory )
 	return sLine
 end
 
+local ls = loadstring
+loadstring = function(str, source)
+	local f, err = ls(str, source)
+	if f then
+		setfenv(f, _G)
+	end
+	return f, err
+end
+
 loadfile = function( _sFile )
 	local file = fs.open( _sFile, "r" )
 	if file then
