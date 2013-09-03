@@ -419,7 +419,13 @@ api.env = {
 	assert = assert,
 	error = error,
 
-	loadstring = loadstring,
+	loadstring = function(str, source)
+		local f, err = loadstring(str, source)
+		if f then
+			setfenv(f, api.env)
+		end
+		return f, err
+	end,
 
 	math = math,
 	string = string,
