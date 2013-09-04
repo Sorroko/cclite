@@ -96,46 +96,8 @@ local function FileWriteHandle(path)
 	return handle
 end
 
-api = {}
-function api.init() -- Called after this file is loaded! Important. Else api.x is not defined
-	api.term = {
-		cursorX = 1,
-		cursorY = 1,
-		bg = 32768,
-		fg = 1,
-		blink = false,
-	}
-	api.os = {
-		label = nil
-	}
-end
-
-api.http = {}
-function api.http.request( sUrl, sParams )
-	local http = HttpRequest.new()
-	local method = sParams and "POST" or "GET"
-
-	http.open(method, sUrl, true)
-
-	if method == "POST" then
-		http.setRequestHeader("Content-Type", "application/x-www-form-urlencoded")
-   		http.setRequestHeader("Content-Length", string.len(sParams))
-	end
-
-	http.onReadyStateChange = function()
-		if http.responseText then -- TODO: check if timed out instead
-	        local handle = HTTPHandle(lines(http.responseText), http.status)
-	        table.insert(Emulator.eventQueue, { "http_success", sUrl, handle })
-	    else
-	    	 table.insert(Emulator.eventQueue, { "http_failure", sUrl })
-	    end
-    end
-
-    http.send(sParams)
-end
-
-api.term = {}
-function api.term.clear()
+local term = {}
+function term.clear()
 	for y = 1, Screen.height do
 		for x = 1, Screen.width do
 			Screen.textB[y][x] = " "
@@ -144,25 +106,25 @@ function api.term.clear()
 		end
 	end
 end
-function api.term.clearLine()
+function term.clearLine()
 	for x = 1, Screen.width do
 		Screen.textB[api.term.cursorY][x] = " "
 		Screen.backgroundColourB[api.term.cursorY][x] = api.term.bg
 		Screen.textColourB[api.term.cursorY][x] = 1 -- Don't need to bother setting text color
 	end
 end
-function api.term.getSize()
+function term.getSize()
 	return Screen.width, Screen.height
 end
-function api.term.getCursorPos()
+function term.getCursorPos()
 	return api.term.cursorX, api.term.cursorY
 end
-function api.term.setCursorPos(x, y)
+function term.setCursorPos(x, y)
 	if not x or not y then return end
 	api.term.cursorX = math.floor(x)
 	api.term.cursorY = math.floor(y)
 end
-function api.term.write( text )
+function term.write( text )
 	if not text then return end
 	if api.term.cursorY > Screen.height
 		or api.term.cursorY < 1 then return end
@@ -178,22 +140,22 @@ function api.term.write( text )
 	end
 	api.term.cursorX = api.term.cursorX + #text
 end
-function api.term.setTextColor( num )
+function term.setTextColor( num )
 	if not COLOUR_CODE[num] then return end
 	api.term.fg = num
 end
-function api.term.setBackgroundColor( num )
+function term.setBackgroundColor( num )
 	if not COLOUR_CODE[num] then return end
 	api.term.bg = num
 end
-function api.term.isColor()
+function term.isColor()
 	return true
 end
-function api.term.setCursorBlink( bool )
+function term.setCursorBlink( bool )
 	if type(bool) ~= "boolean" then return end
 	api.term.blink = bool
 end
-function  api.term.scroll( n )
+function term.scroll( n )
 	if type(n) ~= "number" then return end
 	local textBuffer = {}
 	local backgroundColourBuffer = {}
@@ -225,6 +187,150 @@ function  api.term.scroll( n )
 			end
 		end
 	end
+end
+
+api = {}
+function api.init() -- Called after this file is loaded! Important. Else api.x is not defined
+	api.term = {
+		cursorX = 1,
+		cursorY = 1,
+		bg = 32768,
+		fg = 1,
+		blink = false,
+	}
+	api.os = {
+		label = nil
+	}
+
+	api.env = {
+		tostring = tostring,
+		tonumber = tonumber,
+		unpack = unpack,
+		getfenv = getfenv,
+		setfenv = setfenv,
+		rawset = rawset,
+		rawget = rawget,
+		setmetatable = setmetatable,
+		getmetatable = getmetatable,
+		next = next,
+		type = type,
+		select = select,
+		assert = assert,
+		error = error,
+
+		loadstring = function(str, source)
+			local f, err = loadstring(str, source)
+			if f then
+				setfenv(f, api.env)
+			end
+			return f, err
+		end,
+
+		math = math,
+		string = string,
+		table = table,
+		coroutine = coroutine,
+
+		-- CC apis (BIOS completes api.)
+		term = {
+			native = {
+				clear = term.clear,
+				clearLine = term.clearLine,
+				getSize = term.getSize,
+				getCursorPos = term.getCursorPos,
+				setCursorPos = term.setCursorPos,
+				setTextColor = term.setTextColor,
+				setTextColour = term.setTextColor,
+				setBackgroundColor = term.setBackgroundColor,
+				setBackgroundColour = term.setBackgroundColor,
+				setCursorBlink = term.setCursorBlink,
+				scroll = term.scroll,
+				write = term.write,
+				isColor = term.isColor,
+				isColour = term.isColor,
+			},
+			clear = term.clear,
+			clearLine = term.clearLine,
+			getSize = term.getSize,
+			getCursorPos = term.getCursorPos,
+			setCursorPos = term.setCursorPos,
+			setTextColor = term.setTextColor,
+			setTextColour = term.setTextColor,
+			setBackgroundColor = term.setBackgroundColor,
+			setBackgroundColour = term.setBackgroundColor,
+			setCursorBlink = term.setCursorBlink,
+			scroll = term.scroll,
+			write = term.write,
+			isColor = term.isColor,
+			isColour = term.isColor,
+		},
+		fs = {
+			open = api.fs.open,
+			list = api.fs.list,
+			exists = api.fs.exists,
+			isDir = api.fs.isDir,
+			isReadOnly = api.fs.isReadOnly,
+			getName = api.fs.getName,
+			getDrive = function(path) return nil end, -- Dummy function
+			getSize = api.fs.getSize,
+			getFreeSpace = api.fs.getFreeSpace,
+			makeDir = api.fs.makeDir,
+			move = api.fs.move,
+			copy = api.fs.copy,
+			delete = api.fs.delete,
+			combine = api.fs.combine,
+		},
+		os = {
+			clock = os.clock,
+			getComputerID = function() return 1 end,
+			setComputerLabel = api.os.setComputerLabel,
+			getComputerLabel = api.os.getComputerLabel,
+			computerLabel = api.os.getComputerLabel,
+			queueEvent = api.os.queueEvent,
+			startTimer = api.os.startTimer,
+			setAlarm = api.os.setAlarm,
+			time = api.os.time,
+			day = api.os.day,
+			shutdown = api.os.shutdown,
+			reboot = api.os.reboot,
+		},
+		peripheral = {
+			isPresent = function(side) return false end,
+			getNames = function() return {} end,
+			getType = function(side) return nil end,
+			getMethods = function(side) return nil end,
+			call = function(side, method, ...) return nil end,
+			wrap = function (side) return nil end,
+		},
+		http = {
+			request = api.http.request,
+		}
+	}
+	api.env._G = api.env
+end
+
+api.http = {}
+function api.http.request( sUrl, sParams )
+	local http = HttpRequest.new()
+	local method = sParams and "POST" or "GET"
+
+	http.open(method, sUrl, true)
+
+	if method == "POST" then
+		http.setRequestHeader("Content-Type", "application/x-www-form-urlencoded")
+   		http.setRequestHeader("Content-Length", string.len(sParams))
+	end
+
+	http.onReadyStateChange = function()
+		if http.responseText then -- TODO: check if timed out instead
+	        local handle = HTTPHandle(lines(http.responseText), http.status)
+	        table.insert(Emulator.eventQueue, { "http_success", sUrl, handle })
+	    else
+	    	 table.insert(Emulator.eventQueue, { "http_failure", sUrl })
+	    end
+    end
+
+    http.send(sParams)
 end
 
 api.os = {}
@@ -413,108 +519,3 @@ function api.fs.combine(basePath, localPath)
 	end
 	return table.concat(tPath, "/")
 end
-
-api.env = {
-	tostring = tostring,
-	tonumber = tonumber,
-	unpack = unpack,
-	getfenv = getfenv,
-	setfenv = setfenv,
-	rawset = rawset,
-	rawget = rawget,
-	setmetatable = setmetatable,
-	getmetatable = getmetatable,
-	next = next,
-	type = type,
-	select = select,
-	assert = assert,
-	error = error,
-
-	loadstring = function(str, source)
-		local f, err = loadstring(str, source)
-		if f then
-			setfenv(f, api.env)
-		end
-		return f, err
-	end,
-
-	math = math,
-	string = string,
-	table = table,
-	coroutine = coroutine,
-
-	-- CC apis (BIOS completes api.)
-	term = {
-		native = {
-			clear = api.term.clear,
-			clearLine = api.term.clearLine,
-			getSize = api.term.getSize,
-			getCursorPos = api.term.getCursorPos,
-			setCursorPos = api.term.setCursorPos,
-			setTextColor = api.term.setTextColor,
-			setTextColour = api.term.setTextColor,
-			setBackgroundColor = api.term.setBackgroundColor,
-			setBackgroundColour = api.term.setBackgroundColor,
-			setCursorBlink = api.term.setCursorBlink,
-			scroll = api.term.scroll,
-			write = api.term.write,
-			isColor = api.term.isColor,
-			isColour = api.term.isColor,
-		},
-		clear = api.term.clear,
-		clearLine = api.term.clearLine,
-		getSize = api.term.getSize,
-		getCursorPos = api.term.getCursorPos,
-		setCursorPos = api.term.setCursorPos,
-		setTextColor = api.term.setTextColor,
-		setTextColour = api.term.setTextColor,
-		setBackgroundColor = api.term.setBackgroundColor,
-		setBackgroundColour = api.term.setBackgroundColor,
-		setCursorBlink = api.term.setCursorBlink,
-		scroll = api.term.scroll,
-		write = api.term.write,
-		isColor = api.term.isColor,
-		isColour = api.term.isColor,
-	},
-	fs = {
-		open = api.fs.open,
-		list = api.fs.list,
-		exists = api.fs.exists,
-		isDir = api.fs.isDir,
-		isReadOnly = api.fs.isReadOnly,
-		getName = api.fs.getName,
-		getDrive = function(path) return nil end, -- Dummy function
-		getSize = api.fs.getSize,
-		getFreeSpace = api.fs.getFreeSpace,
-		makeDir = api.fs.makeDir,
-		move = api.fs.move,
-		copy = api.fs.copy,
-		delete = api.fs.delete,
-		combine = api.fs.combine,
-	},
-	os = {
-		clock = os.clock,
-		getComputerID = function() return 1 end,
-		setComputerLabel = api.os.setComputerLabel,
-		getComputerLabel = api.os.getComputerLabel,
-		computerLabel = api.os.getComputerLabel,
-		queueEvent = api.os.queueEvent,
-		startTimer = api.os.startTimer,
-		setAlarm = api.os.setAlarm,
-		time = api.os.time,
-		day = api.os.day,
-		shutdown = api.os.shutdown,
-		reboot = api.os.reboot,
-	},
-	peripheral = {
-		isPresent = function(side) return false end,
-		getNames = function() return {} end,
-		getType = function(side) return nil end,
-		getMethods = function(side) return nil end,
-		call = function(side, method, ...) return nil end,
-		wrap = function (side) return nil end,
-	},
-	http = {
-		request = api.http.request,
-	}
-}
