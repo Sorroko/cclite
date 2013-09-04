@@ -73,7 +73,7 @@ function Emulator:start()
 
 	local fn, err = love.filesystem.load('lua/bios.lua') -- lua/bios.lua
 	local tEnv = {}
-	api.env._G = api.env
+	
 	if not fn then
 		print(err)
 		return
