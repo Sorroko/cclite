@@ -228,6 +228,12 @@ function  api.term.scroll( n )
 end
 
 api.os = {}
+function api.os.time()
+	return Emulator.minecraft.time / 60
+end
+function api.os.day()
+	return Emulator.minecraft.day
+end
 function api.os.setComputerLabel(label)
 	if type(label) ~= "string" then return end
 	api.os.label = label
@@ -250,12 +256,17 @@ function api.os.startTimer( nTimeout )
 end
 function api.os.setAlarm( nTime )
 	if type(nTime) ~= "number" then return end
-	local timer = {
+	if nTime < 0 or nTime > 24 then
+		error( "Number out of range: " .. tostring( nTime ) )
+	end
+	local currentDay = Emulator.minecraft.day
+	local alarm = {
 		time = nTime,
+		day = nTime <= Emulator.minecraft.time / 60 and currentDay + 1 or currentDay
 	}
-	table.insert(Emulator.actions.alarms, timer)
+	table.insert(Emulator.actions.alarms, alarm)
 	for k, v in pairs(Emulator.actions.alarms) do
-		if v == timer then return k end
+		if v == alarm then return k end
 	end
 	return nil -- Erroor
 end
@@ -490,6 +501,8 @@ api.env = {
 		queueEvent = api.os.queueEvent,
 		startTimer = api.os.startTimer,
 		setAlarm = api.os.setAlarm,
+		time = api.os.time,
+		day = api.os.day,
 		shutdown = api.os.shutdown,
 		reboot = api.os.reboot,
 	},

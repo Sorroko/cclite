@@ -53,6 +53,17 @@ Emulator = {
 		alarms = {},
 	},
 	eventQueue = {},
+	lastUpdateClock = os.clock(),
+	minecraft = {
+		time = 0,
+		day = 0,
+		MAX_TIME_IN_DAY = 1440,
+	},
+	mouse = {
+		isPressed = false,
+		lastTermX = nil,
+		lastTermY = nil,
+	}
 }
 
 function Emulator:start()
@@ -67,7 +78,7 @@ function Emulator:start()
 		print(err)
 		return
 	end
-	
+
 	setfenv( fn, api.env )
 
 	self.proc = coroutine.create(fn)
@@ -119,26 +130,40 @@ function love.load()
 	Emulator:start()
 end
 
-function  love.mousepressed( x, y, _button )
+function love.mousereleased( x, y, _button )
+
 	if x > 0 and x < Screen.width * Screen.pixelWidth
 		and y > 0 and y < Screen.height * Screen.pixelHeight then -- Within screen bounds.
 
-		if _button == "r" or _button == "l" then
-			local button = 1
-			if _button == "r" then button = 2 end
-			table.insert(Emulator.eventQueue, {"mouse_click", button, math.floor(x / Screen.pixelWidth) - 1, math.floor(y / Screen.pixelHeight) - 1})
+		Emulator.mouse.isPressed = false
+	end
+end
+
+function  love.mousepressed( x, y, _button )
+
+	if x > 0 and x < Screen.width * Screen.pixelWidth
+		and y > 0 and y < Screen.height * Screen.pixelHeight then -- Within screen bounds.
+
+		local termMouseX = math.floor( x / Screen.pixelWidth ) + 1
+    	local termMouseY = math.floor( y / Screen.pixelHeight ) + 1
+
+		if not Emulator.mousePressed and _button == "r" or _button == "l" then
+			Emulator.mouse.isPressed = true
+			local button = _button == "r" and 2 or 1
+			table.insert(Emulator.eventQueue, {"mouse_click", button, termMouseX, termMouseY})
 
 		elseif _button == "wu" then -- Scroll up
-			table.insert(Emulator.eventQueue, {"mouse_scroll", -1, math.floor(x / Screen.pixelWidth) - 1, math.floor(y / Screen.pixelHeight) - 1})
+			table.insert(Emulator.eventQueue, {"mouse_scroll", -1, termMouseX, termMouseX})
 
 		elseif _button == "wd" then -- Scroll down
-			table.insert(Emulator.eventQueue, {"mouse_scroll", 1, math.floor(x / Screen.pixelWidth) - 1, math.floor(y / Screen.pixelHeight) - 1})
+			table.insert(Emulator.eventQueue, {"mouse_scroll", 1, termMouseX, termMouseY})
 
 		end
 	end
 end
 
 function love.keypressed(key, unicode)
+
 	if Emulator.actions.terminate == nil and love.keyboard.isDown("lctrl") and key == "t" then
 		Emulator.actions.terminate = love.timer.getTime()
 	elseif Emulator.actions.shutdown == nil and love.keyboard.isDown("lctrl") and key == "s" then
@@ -162,11 +187,6 @@ function love.keypressed(key, unicode)
 end
 
 --[[
-	Events TODO:
-	mouse_scroll
-	mouse_drag
-	alarm
-
 	Not implementing:
 	redstone
 	disk
@@ -227,7 +247,50 @@ function love.update()
 		end
 	end
 
-	if #Emulator.eventQueue > 0 then
+	if #Emulator.actions.alarms > 0 then
+		local currentTime = api.env.os.time()
+		local currentDay = api.env.os.day()
+
+		for k, v in pairs(Emulator.actions.alarms) do
+        	if v.day == currentDay and v.time >= currentTime then
+            	table.insert(Emulator.eventQueue, {"alarm", k})
+           		Emulator.actions.alarms[k] = nil
+        	end
+    	end
+	end
+
+	--MOUSE
+	if Emulator.mouse.isPressed then
+    	local mouseX     = love.mouse.getX()
+    	local mouseY     = love.mouse.getY()
+    	local termMouseX = math.floor( mouseX / Screen.pixelWidth ) + 1
+    	local termMouseY = math.floor( mouseY / Screen.pixelHeight ) + 1
+    	if (termMouseX ~= Emulator.mouse.lastTermX or termMouseY ~= Emulator.mouse.lastTermY)
+			and (mouseX > 0 and mouseX < Screen.width * Screen.pixelWidth and
+				mouseY > 0 and mouseY < Screen.height * Screen.pixelHeight) then
+
+        	Emulator.mouse.lastTermX = termMouseX
+       		Emulator.mouse.lastTermY = termMouseY
+
+        	table.insert (Emulator.eventQueue, { "mouse_drag", love.mouse.isDown( "r" ) and 2 or 1, termMouseX, termMouseY})
+    	end
+    end
+
+    local currentClock = os.clock()
+
+    -- Check if a second has passed since the last update.
+    if currentClock - Emulator.lastUpdateClock >= 1 then
+        Emulator.lastUpdateClock = currentClock
+        Emulator.minecraft.time  = Emulator.minecraft.time + 1
+
+        -- Roll over the time and add another day if the time goes over the max day time.
+        if Emulator.minecraft.time > Emulator.minecraft.MAX_TIME_IN_DAY then
+            Emulator.minecraft.time = 0
+            Emulator.minecraft.day  = Emulator.minecraft.day + 1
+        end
+    end
+
+    if #Emulator.eventQueue > 0 then
 		for k, v in pairs(Emulator.eventQueue) do
 			Emulator:resume(unpack(v))
 		end
