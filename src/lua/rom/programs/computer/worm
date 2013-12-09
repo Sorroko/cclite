@@ -6,7 +6,7 @@ local headingColour, textColour, wormColour, fruitColour
 if term.isColour() then
 	headingColour = colours.yellow
 	textColour = colours.white
-	wormColour = colours.lime
+	wormColour = colours.green
 	fruitColour = colours.red
 else
 	headingColour = colours.white

@@ -20,7 +20,7 @@ else
 		return
 	end
 	
-	print( "The disk is #"..disk.getDiskID( sSide ) )
+	print( "The disk is #"..disk.getID( sSide ) )
 
 	local label = disk.getLabel( sSide )
 	if label then

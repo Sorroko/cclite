@@ -1,0 +1,83 @@
+
+CHANNEL_BROADCAST = 65535
+
+function open( sModem )
+	if type( sModem ) ~= "string" then
+		error( "string expected" )
+	end
+	if peripheral.getType( sModem ) ~= "modem" then	
+		error( "No such modem: "..sModem )
+	end
+	peripheral.call( sModem, "open", os.getComputerID() )
+	peripheral.call( sModem, "open", CHANNEL_BROADCAST )
+end
+
+function close( sModem )
+	if type( sModem ) ~= "string" then
+		error( "string expected" )
+	end
+	if peripheral.getType( sModem ) ~= "modem" then	
+		error( "No such modem: "..sModem )
+	end
+	peripheral.call( sModem, "close", os.getComputerID() )
+	peripheral.call( sModem, "close", CHANNEL_BROADCAST )
+end
+
+function isOpen( sModem )
+	if type( sModem ) ~= "string" then
+		error( "string expected" )
+	end
+	if peripheral.getType( sModem ) == "modem" then	
+		return peripheral.call( sModem, "isOpen", os.getComputerID() ) and peripheral.call( sModem, "isOpen", CHANNEL_BROADCAST )
+	end
+	return false
+end
+
+function send( nRecipient, sMessage )
+	for n,sModem in ipairs( peripheral.getNames() ) do
+		if isOpen( sModem ) then
+			peripheral.call( sModem, "transmit", nRecipient, os.getComputerID(), sMessage )
+			return true
+		end
+	end
+	error( "No open sides" )
+end
+
+function broadcast( sMessage )
+	send( CHANNEL_BROADCAST, sMessage )
+end
+
+function receive( nTimeout )
+	local timer = nil
+	local sFilter = nil
+	if nTimeout then
+		timer = os.startTimer( nTimeout )
+		sFilter = nil
+	else
+		sFilter = "rednet_message"
+	end
+	while true do
+		local e, p1, p2, p3, p4, p5 = os.pullEvent( sFilter )
+		if e == "rednet_message" then
+			local nSenderID, sMessage, nDistance = p1, p2, p3
+			return nSenderID, sMessage, nDistance
+		elseif e == "timer" and p1 == timer then
+			return nil
+		end
+	end
+end
+
+local bRunning = false
+function run()
+	if bRunning then
+		error( "rednet is already running" )
+	end
+	bRunning = true
+	
+	while bRunning do
+		local sEvent, sModem, nChannel, nReplyChannel, sMessage, nDistance = os.pullEventRaw( "modem_message" )
+		if sEvent == "modem_message" and isOpen( sModem ) and (nChannel == os.getComputerID() or nChannel == CHANNEL_BROADCAST) then
+			os.queueEvent( "rednet_message", nReplyChannel, sMessage, nDistance )
+		end
+	end
+end

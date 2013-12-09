@@ -179,7 +179,6 @@ if parentShell == nil then
 	-- Then run the user created startup, from the disks or the root
 	local sUserStartup = shell.resolveProgram( "/startup" )
 	for n,sSide in pairs( peripheral.getNames() ) do
-	--for n,sSide in pairs( redstone.getSides() ) do
 		if disk.isPresent( sSide ) and disk.hasData( sSide ) then
 			local sDiskStartup = shell.resolveProgram( fs.combine(disk.getMountPath( sSide ), "startup") )
 			if sDiskStartup then

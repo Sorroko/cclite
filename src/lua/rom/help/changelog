@@ -1,14 +1,18 @@
-New Features in ComputerCraft 1.53:
+New Features in ComputerCraft 1.56:
 
-. Ported to Minecraft 1.5.2
-. Experimental MFR cable integration - use the same way as you would redpower cables
-. Improved redstone logic
-. Improved event queue logic
-. Monitors can now be placed on ceilings and floors
-. Fixed turtle upgrade ID's over 127 not working. Devs - this means you can now use ID's upto 32767
-. Fixed turtle drop behaviour
-. Fixed being able to copy a folder inside itself
-. Fixed rednet deadlock!
+. Added Treasure Disks: Floppy Disks in dungeons which contain interesting community made programs. Find them all!
+. All turtle functions now return additional error messages when they fail.
+. Resource Packs with Lua Programs can now be edited when extracted to a folder, for easier editing.
+
+New Features in ComputerCraft 1.55:
+
+. Ported to Minecraft 1.6.2
+. Added Advanced Turtles
+. Added "turtle_inventory" event. Fires when any change is made to the inventory of a turtle
+. Added missing functions io.close, io.flush, io.input, io.lines, io.output
+. Tweaked the screen colours used by Advanced Computers, Monitors and Turtles
+. Added new features for Peripheral authors
+. Lua programs can now be included in Resource Packs
 
 New Features in ComputerCraft 1.52:
 
@@ -101,7 +105,7 @@ New Features in ComputerCraft 1.4:
 . The size of the the turtle inventory has been increased to 16
 . The size of the turtle screen has been increased
 . New turtle functions: turtle.compareTo( [slotNum] ), turtle.craft(), turtle.attack(), turtle.attackUp(), turtle.attackDown(), turtle.dropUp(), turtle.dropDown(), turtle.getFuelLevel(), turtle.refuel()
-. New disk function: disk.getDiskID()
+. New disk function: disk.getID()
 . New turtle programs: craft, refuel
 . "excavate" program now much smarter: Will return items to a chest when full, attack mobs, and refuel itself automatically
 . New API: keys

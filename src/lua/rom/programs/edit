@@ -27,7 +27,7 @@ if term.isColour() then
 	textColour = colours.white
 	highlightColour = colours.yellow
 	keywordColour = colours.yellow
-	commentColour = colours.lime
+	commentColour = colours.green
 	stringColour = colours.red
 else
 	bgColour = colours.black
@@ -41,10 +41,17 @@ end
 -- Menus
 local bMenu = false
 local nMenuItem = 1
-local tMenuItems = {"Save", "Exit", "Print"}
+
+local tMenuItems
+if bReadOnly then
+	tMenuItems = { "Exit", "Print" }
+else
+	tMenuItems = { "Save", "Exit", "Print" }
+end
+	
 local sStatus = "Press Ctrl to access menu"
 
-local function load(_sPath)
+local function load( _sPath )
 	tLines = {}
 	if fs.exists( _sPath ) then
 		local file = io.open( _sPath, "r" )
@@ -164,9 +171,6 @@ local function redrawLine(_nY)
 	term.clearLine()
 	writeHighlighted( sLine )
 	term.setCursorPos( x - scrollX, _nY - scrollY )
-end
-
-local function setLeftStatus()
 end
 
 local function redrawMenu()
@@ -407,12 +411,8 @@ while bRunning do
 			end
 		elseif param == keys.tab then
 			-- Tab
-			if not bMenu then
-				local sLine = tLines[y]
-
+			if not bMenu and not bReadOnly then
 				-- Indent line
-				-- IN CASE OF INSERT TAB IN PLACE:
-				-- tLines[y] = string.sub(sLine,1,x-1) .. "  " .. string.sub(sLine,x)
 				tLines[y]="  "..tLines[y]
 				x = x + 2
 				setCursor( x, y )
@@ -495,7 +495,7 @@ while bRunning do
 			end
 		elseif param == keys.delete then
 			-- Delete
-			if not bMenu then
+			if not bMenu and not bReadOnly then
 				if  x < string.len( tLines[y] ) + 1 then
 					local sLine = tLines[y]
 					tLines[y] = string.sub(sLine,1,x-1) .. string.sub(sLine,x+1)
@@ -509,7 +509,7 @@ while bRunning do
 			end
 		elseif param == keys.backspace then
 			-- Backspace
-			if not bMenu then
+			if not bMenu and not bReadOnly then
 				if x > 1 then
 					-- Remove character
 					local sLine = tLines[y]
@@ -532,7 +532,7 @@ while bRunning do
 			end
 		elseif param == keys.enter then
 			-- Enter
-			if not bMenu then
+			if not bMenu and not bReadOnly then
 				-- Newline
 				local sLine = tLines[y]
 				local _,spaces=string.find(sLine,"^[ ]+")
@@ -546,7 +546,7 @@ while bRunning do
 				x = spaces+1
 				y = y + 1
 				setCursor( x, y )
-			else
+			elseif bMenu then
 				-- Menu selection
 				doMenuItem( nMenuItem )
 			end
@@ -563,7 +563,7 @@ while bRunning do
 		end
 		
 	elseif sEvent == "char" then
-		if not bMenu then
+		if not bMenu and not bReadOnly then
 			-- Input text
 			local sLine = tLines[y]
 			tLines[y] = string.sub(sLine,1,x-1) .. param .. string.sub(sLine,x)
@@ -571,7 +571,7 @@ while bRunning do
 		
 			x = x + string.len( param )
 			setCursor( x, y )
-		else
+		elseif bMenu then
 			-- Select menu items
 			for n,sMenuItem in ipairs( tMenuItems ) do
 				if string.lower(string.sub(sMenuItem,1,1)) == string.lower(param) then

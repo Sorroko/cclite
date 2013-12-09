@@ -7,7 +7,15 @@ if tArgs[1] ~= nil then
 end
 
 if fs.exists( sPath ) then
-	print( fs.getDrive( sPath ) )
+	write( fs.getDrive( sPath ) .. " (" )
+	local nSpace = fs.getFreeSpace( sPath )
+	if nSpace > 1024 * 1024 then
+		print( (math.floor( nSpace / (100 * 1000) ) / 10) .. "MB remaining)" )
+	elseif nSpace > 1024 then
+		print( math.floor( nSpace / 1000 ) .. "KB remaining)" )
+	else
+		print ( nSpace .. "B remaining)" )
+	end
 else
 	print( "No such path" )
 end

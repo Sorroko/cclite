@@ -94,7 +94,7 @@ function refuel( ammount )
 		return true
 	end
 	
-	local needed = ammount or (xPos + zPos + depth + 1)
+	local needed = ammount or (xPos + zPos + depth + 2)
 	if turtle.getFuelLevel() < needed then
 		local fueled = false
 		for n=1,16 do
