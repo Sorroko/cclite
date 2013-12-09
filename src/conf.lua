@@ -1,5 +1,5 @@
-debug = false
 function love.conf(t)
+    local _debug = true
     t.title = "ComputerCraft Emulator"
     t.author = "Sorroko"
     --t.url = nil
@@ -7,7 +7,7 @@ function love.conf(t)
 
     t.modules.physics = false
 
-    if debug then
+    if _debug then
    	    t.console = true
         t.release = false
 	else

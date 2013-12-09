@@ -415,6 +415,7 @@ function api.fs.combine(basePath, localPath)
 end
 
 api.env = {
+	_VERSION = "Lua 5.1",
 	tostring = tostring,
 	tonumber = tonumber,
 	unpack = unpack,
@@ -422,6 +423,7 @@ api.env = {
 	setfenv = setfenv,
 	rawset = rawset,
 	rawget = rawget,
+	rawequal = rawequal,
 	setmetatable = setmetatable,
 	getmetatable = getmetatable,
 	next = next,
@@ -506,6 +508,19 @@ api.env = {
 		shutdown = api.os.shutdown,
 		reboot = api.os.reboot,
 	},
+	redstone = {
+		getSides = function() return { "top", "bottom", "left", "right", "front", "back" } end,
+		getInput = function(side) return false end,
+		setOutput = function(side, value) return end,
+		getOutput = function(side) return false end,
+		getAnalogInput = function(side) return 0 end,
+		setAnalogOutput = function(side, value) return end,
+		getAnalogOutput = function(side) return 0 end,
+		getBundledInput = function(side) return 0 end,
+		getBundledOutput = function(side) return 0 end,
+		setBundledOutput = function(side, value) return end,
+		testBundledInput = function(side, value) return false end,
+	},
 	peripheral = {
 		isPresent = function(side) return false end,
 		getNames = function() return {} end,
@@ -518,3 +533,4 @@ api.env = {
 		request = api.http.request,
 	}
 }
+api.env.rs = api.env.redstone -- Not sure why this isn't in bios?!?! what was dan thinking

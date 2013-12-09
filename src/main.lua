@@ -41,6 +41,7 @@ keys = {
 	["ralt"] = 184,
 	["lalt"] = 56,
 }
+local showFPS = false
 
 Emulator = {
 	running = false,
@@ -163,6 +164,7 @@ function  love.mousepressed( x, y, _button )
 end
 
 function love.keypressed(key, unicode)
+	if key == "f1" then showFPS = not showFPS end
 
 	if Emulator.actions.terminate == nil and love.keyboard.isDown("lctrl") and key == "t" then
 		Emulator.actions.terminate = love.timer.getTime()
@@ -300,7 +302,7 @@ end
 
 function love.draw()
 	Screen:draw()
-	if debug then
+	if showFPS then
 		love.graphics.print("FPS: " .. tostring(love.timer.getFPS()), (Screen.width * Screen.pixelWidth) - 85, 10)
 	end
 end
