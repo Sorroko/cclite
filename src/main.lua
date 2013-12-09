@@ -41,6 +41,8 @@ keys = {
 	["ralt"] = 184,
 	["lalt"] = 56,
 }
+
+local FPS = 30
 local showFPS = false
 
 Emulator = {
@@ -74,13 +76,12 @@ function Emulator:start()
 
 	local fn, err = love.filesystem.load('lua/bios.lua') -- lua/bios.lua
 	local tEnv = {}
-	api.env._G = api.env
 	if not fn then
 		print(err)
 		return
 	end
 
-	setfenv( fn, api.env )
+	setfenv( fn, api.env ) -- TODO: api.env()
 
 	self.proc = coroutine.create(fn)
 	self.running = true
@@ -215,7 +216,7 @@ function updateShortcut(name, key1, key2, cb)
 	end
 end
 
-function love.update()
+function love.update(dt)
 	local now = love.timer.getTime()
 	HttpRequest.checkRequests()
 	if Emulator.reboot then Emulator:start() end
@@ -302,7 +303,48 @@ end
 
 function love.draw()
 	Screen:draw()
-	if showFPS then
-		love.graphics.print("FPS: " .. tostring(love.timer.getFPS()), (Screen.width * Screen.pixelWidth) - 85, 10)
+end
+
+function love.run()
+	math.randomseed(os.time()) -- Not sure why this is necessary
+	math.random() math.random() -- But it's in the default function too.
+
+	if love.load then love.load(arg) end
+
+	local dt = 0
+	local fps = 1 / FPS
+	-- Main loop time.
+	while true do
+		-- Process events.
+		if love.event then
+			love.event.pump()
+			for e,a,b,c,d in love.event.poll() do
+				if e == "quit" then
+					if love.audio then
+						love.audio.stop()
+					end
+					return
+				else
+					love.handlers[e](a,b,c,d)
+				end
+			end
+		end
+
+		-- Update dt, as we'll be passing it to update
+		love.timer.step()
+		dt = love.timer.getDelta()
+
+		-- Call update and draw
+		if love.update then love.update(dt) end
+
+		love.graphics.clear()
+		if love.draw then love.draw(dt) end
+		if showFPS then
+			love.graphics.print("FPS: " .. tostring(love.timer.getFPS()), 10, 10)
+		end
+
+		love.graphics.present()
+
+		love.timer.sleep(fps)
 	end
 end

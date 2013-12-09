@@ -1,10 +1,9 @@
 --[[
 	TODO
-	HTTP api?
-	the rest of fs api!
-	including file handles.
-	os.day
-	os.time
+	Fix user can overide native librarys i.e. math.cos = nil
+	Fix persistance of globals accross resets
+	Virtual peripherals, merge gamaxs fork?
+	FS api needs a rewrite! Better file handles!
 	writeLine!
 ]]
 -- HELPER FUNCTIONS
@@ -533,4 +532,5 @@ api.env = {
 		request = api.http.request,
 	}
 }
+api.env._G = api.env
 api.env.rs = api.env.redstone -- Not sure why this isn't in bios?!?! what was dan thinking

@@ -106,10 +106,17 @@ function Screen:draw()
 
 	-- Two seperate for loops to not setColor all the time and allow batch gl calls.
 	-- Is this actually a performance improvement?
+	local text, byte, offset
 	for y = 0, self.height - 1 do
 		for x = 0, self.width - 1 do
-			local text = self.textB[y + 1][x + 1]
-			local offset = self.pixelWidth / 2 - self.font:getWidth(text) / 2 -- Could also create a lookup table of widths on load
+			text = self.textB[y + 1][x + 1]
+			byte = string.byte(text)
+			if byte == 9 then
+				text = " "
+			elseif byte < 32 or byte > 126 or byte == 96 then
+				text = "?"
+			end
+			offset = self.pixelWidth / 2 - self.font:getWidth(text) / 2 -- Could also create a lookup table of widths on load (done in gamax92s fork)
 			setColor( COLOUR_CODE[ self.textColourB[y + 1][x + 1] ] )
 			lprint( text, (x * self.pixelWidth) + offset, (y * self.pixelHeight) + self.textOffset)
 
