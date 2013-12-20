@@ -1,0 +1,90 @@
+Computer = class('Computer')
+
+function Computer:initialize()
+	self.screen = Screen:new(self)
+
+	self.running = false
+	self.reboot = false -- Tells update loop to start Instance automatically
+	self.actions = { -- Keyboard commands i.e. ctrl + s and timers/alarms
+		terminate = nil,
+		shutdown = nil,
+		reboot = nil,
+		timers = {},
+		alarms = {},
+	}
+	self.eventQueue = {}
+	self.lastUpdateClock = os.clock()
+	self.minecraft = {
+		time = 0,
+		day = 0,
+		MAX_TIME_IN_DAY = 1440,
+	}
+	self.mouse = {
+		isPressed = false,
+		lastTermX = nil,
+		lastTermY = nil,
+	}
+	self.textB = {}
+	self.backgroundColourB = {}
+	self.textColourB = {}
+	self.api = nil
+end
+
+function Computer:start()
+	self.reboot = false
+
+	-- Reset buffers
+	local x,y
+	for y = 1, Screen.height do
+		self.textB[y] = {}
+		self.backgroundColourB[y] = {}
+		self.textColourB[y] = {}
+		for x = 1, Screen.width do
+			self.textB[y][x] = " "
+			self.backgroundColourB[y][x] = 32768
+			self.textColourB[y][x] = 1
+		end
+	end
+
+	local fn, err = love.filesystem.load('lua/bios.lua') -- lua/bios.lua
+	local tEnv = {}
+	if not fn then
+		print(err)
+		return
+	end
+
+	self.api = NativeAPI:new(self)
+	setfenv( fn,  self.api.env )
+
+	self.proc = coroutine.create(fn)
+	self.running = true
+	self:resume({})
+end
+
+function Computer:stop( _reboot )
+	self.proc = nil
+	self.running = false
+	self.reboot = _reboot
+
+	-- Reset events/key shortcuts
+	self.actions.terminate = nil
+	self.actions.shutdown = nil
+	self.actions.reboot = nil
+	self.actions.timers = {}
+	self.actions.alarms = {}
+	self.eventQueue = {}
+	self.api = nil
+end
+
+function Computer:resume( ... )
+	if not self.running then return end
+	local ok, err = coroutine.resume(self.proc, ...)
+	if not self.proc then return end -- Instance:stop could be called within the coroutine resulting in proc being nil
+	if coroutine.status(self.proc) == "dead" then -- Which could cause an error here
+		self:stop()
+	end
+	if not ok then
+    	print(err) -- Print to debug console, errors are handled in bios.
+    end
+    return ok, err
+end
