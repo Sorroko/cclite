@@ -28,8 +28,15 @@ require 'computer'
 require 'emulator'
 
 function love.load()
-	love.graphics.setMode( Screen.width * Screen.pixelWidth, Screen.height * Screen.pixelHeight, false, true, 0 )
-	love.graphics.setCaption( "ComputerCraft Emulator" )
+	love.window.setMode( Screen.width * Screen.pixelWidth, Screen.height * Screen.pixelHeight, {
+		fullscreen = false,
+		vsync = true,
+		fsaa = 0,
+		resizable = false,
+		borderless = false
+	} )
+	love.window.setTitle( "ComputerCraft Emulator" )
+	--love.window.setIcon
 
 	font = love.graphics.newFont( 'res/minecraft.ttf', 16 )
 	love.graphics.setFont(font)
@@ -46,7 +53,8 @@ end
 
 function love.mousereleased( x, y, _button ) Emulator.mousereleased( x, y, _button ) end
 function love.mousepressed( x, y, _button ) Emulator.mousepressed(x, y, _button) end
-function love.keypressed(key, unicode) Emulator.keypressed(key, unicode) end
+function love.keypressed(key, isrepeat) Emulator.keypressed(key, isrepeat) end
+function love.textinput(text) Emulator.textinput(text) end
 function love.update(dt) Emulator.update(dt) end
 function love.draw() Emulator.draw() end
 

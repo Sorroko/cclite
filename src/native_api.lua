@@ -307,7 +307,7 @@ function NativeAPI:initialize(_computer)
 			res = love.filesystem.enumerate("data/" .. path)
 		end
 		if love.filesystem.exists("lua/" .. path) then
-			for k, v in pairs(love.filesystem.enumerate("lua/" .. path)) do
+			for k, v in pairs(love.filesystem.getDirectoryItems("lua/" .. path)) do
 				if v ~= "bios.lua" then table.insert(res, v) end
 			end
 		end

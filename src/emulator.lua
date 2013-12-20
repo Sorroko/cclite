@@ -24,6 +24,7 @@ function Emulator.static.update(dt)
 	HttpRequest.checkRequests()
 	if Emulator.activeComputer.reboot then Emulator.activeComputer:start() end
 
+	-- TODO: See below todo about pasive/active checking
 	updateShortcut("terminate", "lctrl", "t", function()
 			table.insert(Emulator.activeComputer.eventQueue, {"terminate"})
 		end)
@@ -94,27 +95,43 @@ function Emulator.static.update(dt)
 	end
 end
 
-function Emulator.static.keypressed( key, unicode )
-	if Emulator.activeComputer.actions.terminate == nil and love.keyboard.isDown("lctrl") and key == "t" then
-		Emulator.activeComputer.actions.terminate = love.timer.getTime()
-	elseif Emulator.activeComputer.actions.shutdown == nil and love.keyboard.isDown("lctrl") and key == "s" then
-		Emulator.activeComputer.actions.shutdown = love.timer.getTime()
-	elseif Emulator.activeComputer.actions.reboot == nil and love.keyboard.isDown("lctrl") and key == "r" then
-		Emulator.activeComputer.actions.reboot = love.timer.getTime()
-	else -- Ignore key shortcuts before "press any key" action. TODO: This might be slightly buggy!
-		if not Emulator.activeComputer.running then
-			Emulator.activeComputer:start()
-			return
+function Emulator.static.keypressed( key, isrepeat )
+	-- TODO: love.system.getClipboardText( ) on ctrl + v shortcut. & queue as char events & normalize line breaks (possibly?)
+	if not isrepeat then
+		if Emulator.activeComputer.actions.terminate == nil and love.keyboard.isDown("lctrl") and key == "t" then
+			Emulator.activeComputer.actions.terminate = love.timer.getTime()
+		elseif Emulator.activeComputer.actions.shutdown == nil and love.keyboard.isDown("lctrl") and key == "s" then
+			Emulator.activeComputer.actions.shutdown = love.timer.getTime()
+		elseif Emulator.activeComputer.actions.reboot == nil and love.keyboard.isDown("lctrl") and key == "r" then
+			Emulator.activeComputer.actions.reboot = love.timer.getTime()
+		else -- Ignore key shortcuts before "press any key" action. TODO: This might be slightly buggy!
+			if not Emulator.activeComputer.running then
+				Emulator.activeComputer:start()
+				return
+			end
 		end
 	end
 
 	if Util.KEYS[key] then
    		table.insert(Emulator.activeComputer.eventQueue, {"key", Util.KEYS[key]})
    	end
+end
 
-   	if unicode > 31 and unicode < 127 then
-    	table.insert(Emulator.activeComputer.eventQueue, {"char", string.char(unicode)})
-    end
+function Emulator.static.keyreleased( key, unicode )
+	-- TODO: Better key combo/shortcut system
+	-- Watch keys passively rather than actively checking.
+end
+
+function Emulator.static.textinput( text )
+	-- Can this be multiple characters?
+	-- Just in case
+	if string.len(text) > 1 then -- Speedy check
+		for char in string.gmatch(text, "(.-)") do
+			table.insert(Emulator.activeComputer.eventQueue, {"char", char})
+		end
+	else
+		table.insert(Emulator.activeComputer.eventQueue, {"char", text})
+	end
 end
 
 function Emulator.static.mousepressed( x, y, _button )
