@@ -1,11 +1,12 @@
 --[[ TODO
- Separate emulator from api
  Run emulator in a thread to avoid stalling main thread (user code protection)
  There should be spaces on the borders of the screen, where the cells are slightly larger than they are near the middle.
---]]
-
---[[
-	Not implementing:
+ Better shortcuts/key combos
+ Fix font initializing
+ Term api draws directly to a love2d canvas, passive screen api.
+ Look up table of font widths (gamax92s fix)
+ See native_api.lua for more TODOs
+ Implement:
 	redstone
 	disk
 	disk_eject
@@ -14,8 +15,6 @@
 	modem_message
 	monitor_touch
 	monitor_resize
-
-	Emulator does not handle peripherals.
 ]]
 
 require 'lib.middleclass'
@@ -43,7 +42,7 @@ function love.load()
 
 	love.filesystem.setIdentity( "cclite" ) -- WARN: CHANGED SAVE DIRECTORY
 	if not love.filesystem.exists( "data/" ) then
-		love.filesystem.mkdir( "data/" ) -- Make the user data folder
+		love.filesystem.createDirectory( "data/" ) -- Make the user data folder
 	end
 
 	love.keyboard.setKeyRepeat( 0.5, 0.05 )
@@ -60,45 +59,62 @@ function love.draw() Emulator.draw() end
 
 local FPS = 30
 function love.run()
-	math.randomseed(os.time()) -- Not sure why this is necessary
-	math.random() math.random() -- But it's in the default function too.
 
-	if love.load then love.load(arg) end
+    if love.math then
+        love.math.setRandomSeed(os.time())
+    end
 
-	local dt = 0
-	local fps = 1 / FPS
-	-- Main loop time.
-	while true do
-		-- Process events.
-		if love.event then
-			love.event.pump()
-			for e,a,b,c,d in love.event.poll() do
-				if e == "quit" then
-					if love.audio then
-						love.audio.stop()
-					end
-					return
-				else
-					love.handlers[e](a,b,c,d)
-				end
+    if love.event then
+        love.event.pump()
+    end
+
+    if love.load then love.load(arg) end
+
+    -- We don't want the first frame's dt to include time taken by love.load.
+    if love.timer then love.timer.step() end
+
+    local dt = 0
+    local fps = 1 / FPS
+    local showFPS = false
+
+    -- Main loop time.
+    while true do
+        -- Process events.
+        if love.event then
+            love.event.pump()
+            for e,a,b,c,d in love.event.poll() do
+                if e == "quit" then
+                    if not love.quit or not love.quit() then
+                        if love.audio then
+                            love.audio.stop()
+                        end
+                        return
+                    end
+                end
+                love.handlers[e](a,b,c,d)
+            end
+        end
+
+        -- Update dt, as we'll be passing it to update
+        if love.timer then
+            love.timer.step()
+            dt = love.timer.getDelta()
+        end
+
+        -- Call update and draw
+        if love.update then love.update(dt) end -- will pass 0 if love.timer is disabled
+
+        if love.window and love.graphics and love.window.isCreated() then
+            love.graphics.clear()
+            love.graphics.origin()
+            if love.draw then love.draw() end
+            if showFPS then
+				love.graphics.print("FPS: " .. tostring(love.timer.getFPS()), 10, 10)
 			end
-		end
+            love.graphics.present()
+        end
 
-		-- Update dt, as we'll be passing it to update
-		love.timer.step()
-		dt = love.timer.getDelta()
+        if love.timer then love.timer.sleep(fps) end
+    end
 
-		-- Call update and draw
-		if love.update then love.update(dt) end
-
-		love.graphics.clear()
-		if love.draw then love.draw(dt) end
-		if showFPS then
-			love.graphics.print("FPS: " .. tostring(love.timer.getFPS()), 10, 10)
-		end
-
-		love.graphics.present()
-
-		love.timer.sleep(fps)
-	end
 end

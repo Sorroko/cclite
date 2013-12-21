@@ -1,3 +1,3 @@
 @echo off
-start love src/
+start love-dist\windows\love.exe src/
 exit

@@ -7,6 +7,9 @@ NativeAPI = class('NativeAPI')
 	Virtual peripherals, merge gamaxs fork?
 	FS api needs a rewrite! Better file handles!
 	writeLine!
+	use new love 0.9.0 functions such as love.filesystem.append().
+	Make os.clock accurate, (and not use love executions os.clock)
+	Check all parameters are valid for api functions
 ]]
 
 -- HELPER FUNCTIONS
@@ -18,7 +21,7 @@ local function lines(str)
 end
 
 local function deltree(sFolder)
-	local tObjects = love.filesystem.enumerate(sFolder)
+	local tObjects = love.filesystem.getDirectoryItems(sFolder)
 
 	if tObjects then
    		for nIndex, sObject in pairs(tObjects) do
@@ -40,7 +43,7 @@ local function copytree(sFolder, sToFolder)
 	if not love.filesystem.isDirectory(sFolder) then
 		love.filesystem.write(sToFolder, love.filesystem.read( sFolder ))
 	end
-	local tObjects = love.filesystem.enumerate(sFolder)
+	local tObjects = love.filesystem.getDirectoryItems(sFolder)
 
 	if tObjects then
    		for nIndex, sObject in pairs(tObjects) do
@@ -167,10 +170,13 @@ function NativeAPI:initialize(_computer)
 		select = select,
 		assert = assert,
 		error = error,
+
+		-- TODO: These need sandboxing, deepcopy the tables.
 		math = math,
 		string = string,
 		table = table,
 		coroutine = coroutine,
+
 		loadstring = function(str, source)
 			local f, err = loadstring(str, source)
 			if f then
@@ -304,7 +310,7 @@ function NativeAPI:initialize(_computer)
 		path = self.env.fs.combine("", path)
 		local res = {}
 		if love.filesystem.exists("data/" .. path) then -- This path takes precedence
-			res = love.filesystem.enumerate("data/" .. path)
+			res = love.filesystem.getDirectoryItems("data/" .. path)
 		end
 		if love.filesystem.exists("lua/" .. path) then
 			for k, v in pairs(love.filesystem.getDirectoryItems("lua/" .. path)) do
@@ -336,7 +342,7 @@ function NativeAPI:initialize(_computer)
 	self.env.fs.makeDir = function(path) -- All write functions are within data/
 		path = self.env.fs.combine("", path)
 		if string.sub(path, 1, 4) ~= "rom/" then -- Stop user overwriting lua/rom/ with data/rom/
-			return love.filesystem.mkdir( "data/" .. path )
+			return love.filesystem.createDirectory( "data/" .. path )
 		else return nil end
 	end
 	self.env.fs.move = function(fromPath, toPath)

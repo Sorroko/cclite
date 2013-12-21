@@ -46,13 +46,12 @@ function Screen:draw()
 
 	for y = 0, Screen.height - 1 do
 		for x = 0, Screen.width - 1 do
-			setColor( Util.COLOUR_CODE[ self.computer.backgroundColourB[y + 1][x + 1] ] ) -- TODO COLOUR_CODE lookup might be too slow? Possibly keep color in pixel?
+			setColor( Util.COLOUR_CODE[ self.computer.backgroundColourB[y + 1][x + 1] ] )
 			ldrawRect("fill", x * Screen.pixelWidth, y * Screen.pixelHeight, Screen.pixelWidth, Screen.pixelHeight )
 		end
 	end
 
 	-- Two seperate for loops to not setColor all the time and allow batch gl calls.
-	-- Is this actually a performance improvement?
 	local text, byte, offset
 	for y = 0, Screen.height - 1 do
 		for x = 0, Screen.width - 1 do

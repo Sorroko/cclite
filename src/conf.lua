@@ -1,5 +1,5 @@
 function love.conf(t)
-    local _debug = true
+    local _debug = false
     t.title = "ComputerCraft Emulator"
     t.author = "Sorroko"
     --t.url = nil
