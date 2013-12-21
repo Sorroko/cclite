@@ -9,7 +9,7 @@ end
 local function runUntilLimit( _routines, _limit )
     local count = #_routines
     local living = count
-    
+
     local tFilters = {}
     local eventData = {}
     while true do

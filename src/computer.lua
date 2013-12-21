@@ -28,6 +28,7 @@ function Computer:initialize()
 	self.backgroundColourB = {}
 	self.textColourB = {}
 	self.api = nil
+	self.waitForEvent = nil
 end
 
 function Computer:start()
@@ -74,17 +75,23 @@ function Computer:stop( _reboot )
 	self.actions.alarms = {}
 	self.eventQueue = {}
 	self.api = nil
+	self.waitForEvent = nil
 end
 
 function Computer:resume( ... )
 	if not self.running then return end
-	local ok, err = coroutine.resume(self.proc, ...)
+	local tEvent = { ... }
+	if self.waitForEvent ~= nil and #tEvent > 0 then
+		if tEvent[1] ~= self.waitForEvent then return end
+	end
+	local ok, param = coroutine.resume(self.proc, ...)
 	if not self.proc then return end -- Instance:stop could be called within the coroutine resulting in proc being nil
 	if coroutine.status(self.proc) == "dead" then -- Which could cause an error here
 		self:stop()
 	end
-	if not ok then
-    	print(err) -- Print to debug console, errors are handled in bios.
-    end
-    return ok, err
+	if ok then
+		self.waitForEvent = param -- TODO: This may not be necessary, parallel api already handles filters
+	else
+		print(param) -- Print to debug console, errors are handled in bios.
+	end
 end

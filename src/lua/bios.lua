@@ -7,7 +7,7 @@ xpcall = function( _fn, _fnErrorHandler )
 	local co = coroutine.create( _fn )
 	local tResults = { coroutine.resume( co ) }
 	while coroutine.status( co ) ~= "dead" do
-		tResults = { coroutine.resume( co, coroutine.yield() ) }
+		tResults = { coroutine.resume( co, coroutine.yield(unpack(tResults, 2)) ) }
 	end
 	if tResults[1] == true then
 		return true, unpack( tResults, 2 )
