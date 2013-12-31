@@ -1,25 +1,18 @@
 Screen = class('Screen')
 
+-- Constants
 Screen.static.width = 51
 Screen.static.height = 19
 Screen.static.pixelWidth = 12--6 * 2
 Screen.static.pixelHeight = 18--9 * 2
 Screen.static.textOffset = 3 -- Small correction for font, align the bottom of font with bottom of pixel.
+Screen.static.tCharOffset = {}
 
-function Screen:initialize(_computer)
-	self.computer = _computer
-	self.showCursor = false
-	self.lastCursor = nil
-end
-
--- Local functions are faster than global
--- Source: https://love2d.org/forums/viewtopic.php?f=3&t=3500
--- Unconfirmed, saw a drop from 12% to 10% cpu usage, too small a diff to confirm.
+-- Internal helpers
 local lsetCol = love.graphics.setColor
 local ldrawRect = love.graphics.rectangle
 local ldrawLine = love.graphics.line
 local lprint = love.graphics.print
-
 local lastColor
 local function setColor(c)
 	if lastColor ~= c then
@@ -29,21 +22,34 @@ local function setColor(c)
 	return self
 end
 
+-- Static screen init
+function Screen.static.setup()
+	Screen.static.font = love.graphics.getFont()
+	local char
+	for i = 32,127 do -- TODO: Make it 170 possibly? Find a beter, complete font.
+		char = string.char(i)
+		Screen.tCharOffset[char] = math.floor(Screen.pixelWidth / 2 - Screen.font:getWidth(char) / 2) -- Center all chars
+	end
+end
+
+
+-- Screen instance init
+function Screen:initialize(_computer)
+	self.computer = _computer
+	self.showCursor = false
+	self.lastCursor = nil
+end
+
 function Screen:draw()
-	if not self.font then self.font = love.graphics.getFont() end -- TODO: This needs a nicer solution
 	local now = love.timer.getTime()
 
 	if not self.computer.running then
 		local text = "Press any key..."
-		lprint(text, ((Screen.width * Screen.pixelWidth) / 2) - (self.font:getWidth(text) / 2), (Screen.height * Screen.pixelHeight) / 2)
+		lprint(text, ((Screen.width * Screen.pixelWidth) / 2) - (Screen.font:getWidth(text) / 2), (Screen.height * Screen.pixelHeight) / 2)
 		return
 	end
 
-	-- TODO Better damn rendering!
 	-- term api draws directly to buffer
-	-- i.e. each pixel is updated independantly on a canvas
-	-- copy the canvas to main canvas only when dirty/changed (blinking cursor)
-
 	for y = 0, Screen.height - 1 do
 		for x = 0, Screen.width - 1 do
 			setColor( Util.COLOUR_CODE[ self.computer.backgroundColourB[y + 1][x + 1] ] )
@@ -59,13 +65,13 @@ function Screen:draw()
 			byte = string.byte(text)
 			if byte == 9 then
 				text = " "
-			elseif byte < 32 or byte > 126 or byte == 96 then
+			elseif byte < 32 or byte > 127 then
 				text = "?"
 			end
-			offset = Screen.pixelWidth / 2 - self.font:getWidth(text) / 2 -- Could also create a lookup table of widths on load (done in gamax92s fork)
 			setColor( Util.COLOUR_CODE[ self.computer.textColourB[y + 1][x + 1] ] )
-			lprint( text, (x * Screen.pixelWidth) + offset, (y * Screen.pixelHeight) + Screen.textOffset)
-
+			if Screen.tCharOffset[text] then -- Just incase
+				lprint( text, (x * Screen.pixelWidth) + Screen.tCharOffset[text], (y * Screen.pixelHeight) + Screen.textOffset)
+			end
 		end
 	end
 
@@ -79,9 +85,8 @@ function Screen:draw()
 		end
 
 		if self.showCursor then
-			local offset = Screen.pixelWidth / 2 - self.font:getWidth("_") / 2
 			setColor(Util.COLOUR_CODE[ self.computer.api.data.term.fg ])
-			lprint("_", (self.computer.api.data.term.cursorX - 1) * Screen.pixelWidth + offset, (self.computer.api.data.term.cursorY - 1) * Screen.pixelHeight + Screen.textOffset)
+			lprint("_", ((self.computer.api.data.term.cursorX - 1) * Screen.pixelWidth) + Screen.tCharOffset["_"], (self.computer.api.data.term.cursorY - 1) * Screen.pixelHeight + Screen.textOffset)
 		end
 	end
 end

@@ -75,3 +75,20 @@ Util.static.COLOUR_CODE = {
 	[16384] = Util.COLOUR_RGB.RED,
 	[32768] = Util.COLOUR_RGB.BLACK,
 }
+
+local function deep_copy(orig) -- Simple table deep copy.
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in next, orig, nil do
+            copy[deep_copy(orig_key)] = deep_copy(orig_value)
+        end
+        setmetatable(copy, deep_copy(getmetatable(orig)))
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
+end
+
+Util.static.deep_copy = deep_copy

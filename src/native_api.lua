@@ -2,14 +2,9 @@ NativeAPI = class('NativeAPI')
 
 --[[
 	TODO
-	Fix user can overide native librarys i.e. math.cos = nil
-	Fix persistance of globals accross resets
-	Virtual peripherals, merge gamaxs fork?
 	FS api needs a rewrite! Better file handles!
-	writeLine!
 	use new love 0.9.0 functions such as love.filesystem.append().
 	Make os.clock accurate, (and not use love executions os.clock)
-	Check all parameters are valid for api functions
 ]]
 
 -- HELPER FUNCTIONS
@@ -153,7 +148,7 @@ function NativeAPI:initialize(_computer)
 			label = nil
 		}
 	}
-	self.env = { -- TODO: Deep copy all default Lua tables (math, string etc.)
+	self.env = { -- TODO: Better way of copying? Include metatables too?
 		_VERSION = "Lua 5.1",
 		tostring = tostring,
 		tonumber = tonumber,
@@ -171,11 +166,10 @@ function NativeAPI:initialize(_computer)
 		assert = assert,
 		error = error,
 
-		-- TODO: These need sandboxing, deepcopy the tables.
-		math = math,
-		string = string,
-		table = table,
-		coroutine = coroutine,
+		math = Util.deep_copy(math),
+		string = Util.deep_copy(string),
+		table = Util.deep_copy(table),
+		coroutine = Util.deep_copy(coroutine),
 
 		loadstring = function(str, source)
 			local f, err = loadstring(str, source)
@@ -211,12 +205,14 @@ function NativeAPI:initialize(_computer)
 		return self.data.term.cursorX, self.data.term.cursorY
 	end
 	self.env.term.native.setCursorPos = function(x, y)
-		if not x or not y then return end
+		assert(type(x) == "number")
+		assert(type(y) == "number")
 		self.data.term.cursorX = math.floor(x)
 		self.data.term.cursorY = math.floor(y)
 	end
 	self.env.term.native.write = function( text )
-		if not text then return end
+		assert(text)
+		text = tostring(text)
 		if self.data.term.cursorY > Screen.height
 			or self.data.term.cursorY < 1 then return end
 
@@ -232,12 +228,14 @@ function NativeAPI:initialize(_computer)
 		self.data.term.cursorX = self.data.term.cursorX + #text
 	end
 	self.env.term.native.setTextColor = function( num )
-		if not Util.COLOUR_CODE[num] then return end
+		assert(type(num) == "number")
+		assert(Util.COLOUR_CODE[num] ~= nil)
 		self.data.term.fg = num
 	end
 	self.env.term.native.setTextColour = self.env.term.native.setTextColor
 	self.env.term.native.setBackgroundColor = function( num )
-		if not Util.COLOUR_CODE[num] then return end
+		assert(type(num) == "number")
+		assert(Util.COLOUR_CODE[num] ~= nil)
 		self.data.term.bg = num
 	end
 	self.env.term.native.setBackgroundColour = self.env.term.native.setBackgroundColor
@@ -246,11 +244,11 @@ function NativeAPI:initialize(_computer)
 	end
 	self.env.term.native.isColour = self.env.term.native.isColor
 	self.env.term.native.setCursorBlink = function( bool )
-		if type(bool) ~= "boolean" then return end
+		assert(type(bool) == "boolean")
 		self.data.term.blink = bool
 	end
 	self.env.term.native.scroll = function( n )
-		if type(n) ~= "number" then return end
+		assert(type(n) == "number")
 		local textBuffer = {}
 		local backgroundColourBuffer = {}
 		local textColourBuffer = {}
@@ -284,6 +282,8 @@ function NativeAPI:initialize(_computer)
 	end
 	self.env.fs = {}
 	self.env.fs.open = function(path, mode)
+		assert(type(path) == "string")
+		assert(type(mode) == "string")
 		path = self.env.fs.combine("", path)
 		if mode == "r" then
 			local sPath = nil
@@ -307,6 +307,7 @@ function NativeAPI:initialize(_computer)
 		return nil
 	end
 	self.env.fs.list = function(path)
+		assert(type(path) == "string")
 		path = self.env.fs.combine("", path)
 		local res = {}
 		if love.filesystem.exists("data/" .. path) then -- This path takes precedence
@@ -320,19 +321,23 @@ function NativeAPI:initialize(_computer)
 		return res
 	end
 	self.env.fs.exists = function(path)
+		assert(type(path) == "string")
 		if path == "/bios.lua" then return false end
 		path = self.env.fs.combine("", path)
 		return love.filesystem.exists("data/" .. path) or love.filesystem.exists("lua/" .. path)
 	end
 	self.env.fs.isDir = function(path)
+		assert(type(path) == "string")
 		path = self.env.fs.combine("", path)
 		return love.filesystem.isDirectory("data/" .. path) or love.filesystem.isDirectory("lua/" .. path)
 	end
 	self.env.fs.isReadOnly = function(path)
+		assert(type(path) == "string")
 		path = self.env.fs.combine("", path)
 		return string.sub(path, 1, 4) == "rom/"
 	end
 	self.env.fs.getName = function(path)
+		assert(type(path) == "string")
 		local fpath, name, ext = string.match(path, "(.-)([^\\/]-%.?([^%.\\/]*))$")
 		return name
 	end
@@ -340,6 +345,7 @@ function NativeAPI:initialize(_computer)
 	self.env.fs.getSize = function(path) return nil end
 	self.env.fs.getFreeSpace = function(path) return nil end
 	self.env.fs.makeDir = function(path) -- All write functions are within data/
+		assert(type(path) == "string")
 		path = self.env.fs.combine("", path)
 		if string.sub(path, 1, 4) ~= "rom/" then -- Stop user overwriting lua/rom/ with data/rom/
 			return love.filesystem.createDirectory( "data/" .. path )
@@ -349,6 +355,8 @@ function NativeAPI:initialize(_computer)
 		-- Not implemented
 	end
 	self.env.fs.copy = function(fromPath, toPath)
+		assert(type(fromPath) == "string")
+		assert(type(toPath) == "string")
 		fromPath = self.env.fs.combine("", fromPath)
 		toPath = self.env.fs.combine("", toPath)
 		if string.sub(toPath, 1, 4) ~= "rom/" then -- Stop user overwriting lua/rom/ with data/rom/
@@ -356,12 +364,15 @@ function NativeAPI:initialize(_computer)
 		else return nil end
 	end
 	self.env.fs.delete = function(path)
+		assert(type(path) == "string")
 		path = self.env.fs.combine("", path)
 		if string.sub(path, 1, 4) ~= "rom/" then -- Stop user overwriting lua/rom/ with data/rom/
 			return deltree( "data/" .. path )
 		else return nil end
 	end
 	self.env.fs.combine = function(basePath, localPath)
+		assert(type(basePath) == "string")
+		assert(type(localPath) == "string")
 		local path = "/" .. basePath .. "/" .. localPath
 		local tPath = {}
 		for part in path:gmatch("[^/]+") do
@@ -379,7 +390,7 @@ function NativeAPI:initialize(_computer)
 	self.env.os.clock = os.clock
 	self.env.os.getComputerID = function() return 1 end
 	self.env.os.setComputerLabel = function( label )
-		if type(label) ~= "string" then return end
+		assert(type(label) == "string")
 		self.data.os.label = label
 	end
 	self.env.os.getComputerLabel = function()
@@ -387,9 +398,14 @@ function NativeAPI:initialize(_computer)
 	end
 	self.env.os.computerLabel = self.env.os.getComputerLabel
 	self.env.os.queueEvent = function( sEvent, ... )
-		table.insert(self.computer.eventQueue, { sEvent, unpack({...}) })
+		if sEvent ~= "string" then
+			-- TODO: queueEvent() without an sEvent is possible in cc (I think) however it breaks our emulator.
+			sEvent = "none"
+		end
+		table.insert(self.computer.eventQueue, { sEvent, ... })
 	end
 	self.env.os.startTimer = function(nTimeout)
+		assert(type(nTimeout) == "number")
 		local timer = {
 			expires = love.timer.getTime() + nTimeout,
 		}
@@ -400,11 +416,12 @@ function NativeAPI:initialize(_computer)
 		return nil -- Error
 	end
 	self.env.os.setAlarm = function(nTime)
-		if type(nTime) ~= "number" then return end
+		assert(type(nTime) == "number")
 		if nTime < 0 or nTime > 24 then
 			error( "Number out of range: " .. tostring( nTime ) )
 		end
 		local currentDay = self.computer.minecraft.day
+		-- TODO: Revise this. Look into merging gamax92s changes.
 		local alarm = {
 			time = nTime,
 			day = nTime <= self.computer.minecraft.time / 60 and currentDay + 1 or currentDay
@@ -450,6 +467,8 @@ function NativeAPI:initialize(_computer)
 	}
 	self.env.http = {}
 	self.env.http.request = function( sUrl, sParams )
+		assert(type(sUrl) == "string")
+		-- TODO: Is sParams a requirement?
 		local http = HttpRequest.new()
 		local method = sParams and "POST" or "GET"
 

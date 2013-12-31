@@ -12,4 +12,12 @@ if exist love-dist\windows (
 	copy /b %win_build_folder%\love.exe+build\cclite-%version%.love %win_build_folder%\cclite.exe
 	7z a -tzip ".\build\cclite-%version%-win.zip" %win_build_folder% -mx5
 )
+
+REM OSX build
+set win_build_folder=.\build\cclite-%version%-osx\
+REM TODO: Copy love.app, insert OSX_Info.plist and .love into Resources/
+if exist love-dist\macosx (
+	
+)
+
 pause

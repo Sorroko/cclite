@@ -2,10 +2,8 @@
  Run emulator in a thread to avoid stalling main thread (user code protection)
  There should be spaces on the borders of the screen, where the cells are slightly larger than they are near the middle.
  Better shortcuts/key combos
- Fix font initializing
  Term api draws directly to a love2d canvas, passive screen api.
- Look up table of font widths (gamax92s fix)
- See native_api.lua for more TODOs
+ Virtual peripherals
  Implement:
 	redstone
 	disk
@@ -35,18 +33,19 @@ function love.load()
 		borderless = false
 	} )
 	love.window.setTitle( "ComputerCraft Emulator" )
-	--love.window.setIcon
+	-- TODO: Some nice icons? love.window.setIcon
 
 	font = love.graphics.newFont( 'res/minecraft.ttf', 16 )
 	love.graphics.setFont(font)
 
-	love.filesystem.setIdentity( "cclite" ) -- WARN: CHANGED SAVE DIRECTORY
+	love.filesystem.setIdentity( "cclite" )
 	if not love.filesystem.exists( "data/" ) then
-		love.filesystem.createDirectory( "data/" ) -- Make the user data folder
+		love.filesystem.createDirectory( "data/" )
 	end
 
 	love.keyboard.setKeyRepeat( 0.5, 0.05 )
 
+    Screen.setup()
 	Emulator.activeComputer:start()
 end
 
