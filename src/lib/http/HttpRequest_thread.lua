@@ -1,138 +1,120 @@
-local threadId			= nil
-local socketTImeout		= 10
+local httpRequest       = require("socket.http")
+local httpMime          = require("mime")
+local ltn12             = require("ltn12")
 
-local httpRequest 		= require("socket.http")
-local httpMime			= require("mime")
-local ltn12 			= require("ltn12")
+local cChannel          = nil
+local socketTimeout     = 10
 
-local httpResponseBody 	= {}
-local httpResponseText 	= ""
-local httpParams 		= {}
+local httpResponseBody  = {}
+local httpResponseText  = ""
+local httpParams        = {}
 
-local requestDebug		= false
+local requestDebug      = false
 
-function waitForInstructions()
-	--set message vars
-	local threadIdMsg		= love.thread.getThread():get("threadId")
-	local socketTimeoutMsg	= love.thread.getThread():get("socketTimeout")
-	local httpParamMsg 		= love.thread.getThread():get("httpParams")
+function waitForInstructions(channel, debug)
+    cChannel = channel
+    requestDebug = debug or false
 
-	-- receive thread id
-	if threadIdMsg ~= nil then
-		threadId = threadIdMsg
-		-- DEBUG CODE
-		if requestDebug == true then
-			print(" ")
-			print("---REQUEST THREAD ID--")
-			print("threadId: "..threadId)
-			print(" ")
-		end
-	end
+    --set message vars
+    local tData = cChannel:demand()
 
-	-- receive socket timeout
-	if socketTimeoutMsg ~= nil then
-		socketTimeout = tonumber(socketTimeoutMsg)
-		-- DEBUG CODE
-		if requestDebug == true then
-			print("---REQUEST TIMEOUT----")
-			print("timeout: "..socketTimeout)
-			print(" ")
-		end
-	end
+    assert(type(tData) == "table", "No data received.")
 
-	-- receive request params
-	if httpParamMsg ~= nil and threadIdMsg ~= nil then
-		httpParams = TSerial.unpack(httpParamMsg)
+    local socketTimeoutMsg = tData[1]
+    local httpParamsMsg = tData[2]
 
-		-- DEBUG CODE
-		if requestDebug == true then
-			print("---REQUEST PARAMS-----")
-			for k,v in pairs(httpParams) do
-				if k ~= "headers" then
-					print(k .. ": " .. tostring(httpParams[k]))
-				end
-			end
-			print(" ")
-			print("---REQUEST HEADERS----")
-			for k,v in pairs(httpParams) do
-				--print(k .. ": " .. tostring(httpParams[k]))
-				if k == "headers" then
-					for k2,v2 in pairs(httpParams[k]) do
-						print("header: ["..tostring(k2).."] = "..tostring(v2))
-					end
-				end
-			end
-			print("     ")
-		end
+    assert(type(socketTimeoutMsg) == "string", "Socket timeout invalid.")
+    assert(type(httpParamsMsg) == "string", "Socket timeout invalid.")
 
-		sendRequest()
-	else
-		waitForInstructions()
-	end
+    socketTimeout = tonumber(socketTimeoutMsg)
+    httpParams = TSerial.unpack(httpParamsMsg)
+
+    if requestDebug == true then
+        print("---REQUEST TIMEOUT----")
+        print("Timeout: "..socketTimeout)
+        print("---REQUEST PARAMS-----")
+        for k,v in pairs(httpParams) do
+            if k ~= "headers" then
+                print(k .. ": " .. tostring(httpParams[k]))
+            end
+        end
+        print(" ")
+        print("---REQUEST HEADERS----")
+        for k,v in pairs(httpParams) do
+            --print(k .. ": " .. tostring(httpParams[k]))
+            if k == "headers" then
+                for k2,v2 in pairs(httpParams[k]) do
+                    print("header: ["..tostring(k2).."] = "..tostring(v2))
+                end
+            end
+        end
+        print("     ")
+    end
+
+    httpParams.redirects = 0
+    sendRequest()
 end
 
 -- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-function sendRequest(_url)
-	httpRequest.TIMEOUT = socketTimeout
+function sendRequest()
+    httpRequest.TIMEOUT = socketTimeout
 
-	-- send request:
-	local result  =
-	{
-		httpRequest.request
-		{
-			method 		= httpParams.method,
-			url			= _url or httpParams.url,
-			headers		= httpParams.headers,
-			source		= ltn12.source.string(httpParams.body),
-			sink		= ltn12.sink.table(httpResponseBody),
-			redirect	= true
-		}
-	}
+    -- send request:
+    local result  =
+    {
+        httpRequest.request
+        {
+            method      = httpParams.method,
+            url         = httpParams.url,
+            headers     = httpParams.headers,
+            source      = ltn12.source.string(httpParams.body),
+            sink        = ltn12.sink.table(httpResponseBody),
+            redirect    = true
+        }
+    }
 
-	if result[2] == 302 then
-		if result[3]["location"] then
-			httpResponseBody = {}
-			return sendRequest(result[3]["location"]) -- Hehe, not the best way, maybe limit recursion?
-		end
-	end
+    if result[2] == 302 or result[2] == 301 and httpParams.redirects < 3 then
+        httpResponseBody = {}
+        httpParams.url = result[3]["location"]
+        httpParams.redirects = httpParams.redirects + 1
+        return sendRequest()
+    end
 
-	-- compile responseText
-	for k,v in ipairs(httpResponseBody) do
-		httpResponseText = httpResponseText .. tostring(v)
-	end
+    -- compile responseText
+    for k,v in ipairs(httpResponseBody) do
+        httpResponseText = httpResponseText .. tostring(v)
+    end
 
-	-- insert responseText in to result table
-	table.insert(result, httpResponseText)
+    -- insert responseText in to result table
+    table.insert(result, httpResponseText)
 
-	-- DEBUG CODE
-	if requestDebug == true then
-		print("---RESPONSE HEADERS---")
-		for k, v in pairs(result) do
-			if type(result[k]) == "table" then
-				for k2, v2 in pairs(result[k]) do
-					local tbl = result[k]
-					print("header: " .. "["..tostring(k2).."] = ".. tbl[k2])
-				end
-			end
-		end
-		for k, v in pairs(result) do
-			print(v)
-		end
-		print(" ")
-		print("---RESPONSE PARAMS---")
-		print("readyState: ".. tostring(result[1]) )
-		print("statusCode: ".. tostring(result[2]) )
-		print("statusText: ".. tostring(result[4]) )
-		print("responseText: " .. httpResponseText )
-		print("---------------------")
+    -- DEBUG CODE
+    if requestDebug == true then
+        print("---RESPONSE HEADERS---")
+        for k, v in pairs(result) do
+            if type(result[k]) == "table" then
+                for k2, v2 in pairs(result[k]) do
+                    local tbl = result[k]
+                    print("header: " .. "["..tostring(k2).."] = ".. tbl[k2])
+                end
+            end
+        end
+        for k, v in pairs(result) do
+            print(v)
+        end
+        print(" ")
+        print("---RESPONSE PARAMS---")
+        print("readyState: ".. tostring(result[1]) )
+        print("statusCode: ".. tostring(result[2]) )
+        print("statusText: ".. tostring(result[4]) )
+        print("responseText: " .. httpResponseText )
+        print("---------------------")
 
-	end
+    end
 
-	-- send results back to main thread
-	love.thread.getThread("main"):set(threadId.."_response", TSerial.pack(result))
-
-	--love.thread.getThread().kill()
+    -- send results back to handler
+    cChannel:push(TSerial.pack(result))
 end
 
 -- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -143,35 +125,35 @@ end
 -- Usage: table = TSerial.unpack( TSerial.pack(table) )
 TSerial = {}
 function TSerial.pack(t)
-	assert(type(t) == "table", "Can only TSerial.pack tables.")
-	local s = "{"
-	for k, v in pairs(t) do
-		local tk, tv = type(k), type(v)
-		if tk == "boolean" then k = k and "[true]" or "[false]"
-		elseif tk == "string" then if string.find(k, "[%c%p%s]") then k = '["'..k..'"]' end
-		elseif tk == "number" then k = "["..k.."]"
-		elseif tk == "table" then k = "["..TSerial.pack(k).."]"
-		else error("Attempted to Tserialize a table with an invalid key: "..tostring(k))
-		end
-		if tv == "boolean" then v = v and "true" or "false"
-		elseif tv == "string" then v = string.format("%q", v)
-		elseif tv == "number" then	-- no change needed
-		elseif tv == "table" then v = TSerial.pack(v)
-		else error("Attempted to Tserialize a table with an invalid value: "..tostring(v))
-		end
-		s = s..k.."="..v..","
-	end
-	return s.."}"
+    assert(type(t) == "table", "Can only TSerial.pack tables.")
+    local s = "{"
+    for k, v in pairs(t) do
+        local tk, tv = type(k), type(v)
+        if tk == "boolean" then k = k and "[true]" or "[false]"
+        elseif tk == "string" then if string.find(k, "[%c%p%s]") then k = '["'..k..'"]' end
+        elseif tk == "number" then k = "["..k.."]"
+        elseif tk == "table" then k = "["..TSerial.pack(k).."]"
+        else error("Attempted to Tserialize a table with an invalid key: "..tostring(k))
+        end
+        if tv == "boolean" then v = v and "true" or "false"
+        elseif tv == "string" then v = string.format("%q", v)
+        elseif tv == "number" then  -- no change needed
+        elseif tv == "table" then v = TSerial.pack(v)
+        else error("Attempted to Tserialize a table with an invalid value: "..tostring(v))
+        end
+        s = s..k.."="..v..","
+    end
+    return s.."}"
 end
 
 function TSerial.unpack(s)
-	assert(type(s) == "string", "Can only TSerial.unpack strings.")
-	assert(loadstring("TSerial.table="..s))()
-	local t = TSerial.table
-	TSerial.table = nil
-	return t
+    assert(type(s) == "string", "Can only TSerial.unpack strings.")
+    assert(loadstring("TSerial.table="..s))()
+    local t = TSerial.table
+    TSerial.table = nil
+    return t
 end
 
 -- ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-waitForInstructions()
+waitForInstructions(...)

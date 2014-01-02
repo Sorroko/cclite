@@ -56,7 +56,6 @@ function love.textinput(text) Emulator.textinput(text) end
 function love.update(dt) Emulator.update(dt) end
 function love.draw() Emulator.draw() end
 
-local FPS = 30
 function love.run()
 
     if love.math then
@@ -73,7 +72,7 @@ function love.run()
     if love.timer then love.timer.step() end
 
     local dt = 0
-    local fps = 1 / FPS
+    local fps = 1 / _FPS
     local showFPS = false
 
     -- Main loop time.
@@ -107,7 +106,7 @@ function love.run()
             love.graphics.clear()
             love.graphics.origin()
             if love.draw then love.draw() end
-            if showFPS then
+            if _DEBUG then
 				love.graphics.print("FPS: " .. tostring(love.timer.getFPS()), 10, 10)
 			end
             love.graphics.present()
