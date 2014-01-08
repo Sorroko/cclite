@@ -9,6 +9,7 @@ end
 local tShortcuts = {
 	["shutdown"] = {
 		keys = ["lctrl", "s"],
+		delay = 1,
 		nSince = nil,
 		action = function()
 			Emulator.activeComputer:stop()
@@ -16,6 +17,7 @@ local tShortcuts = {
 	},
 	["reboot"] = {
 		keys = ["lctrl", "r"],
+		delay = 1,
 		nSince = nil,
 		action = function()
 			Emulator.activeComputer:stop( true )
@@ -23,9 +25,17 @@ local tShortcuts = {
 	},
 	["terminate"] = {
 		keys = ["lctrl", "t"],
+		delay = 1,
 		nSince = nil,
 		action = function()
 			table.insert(Emulator.activeComputer.eventQueue, {"terminate"})
+		end
+	}
+	["paste_text"] = {
+		keys = ["lctrl", "v"],
+		action = function()
+			local clipboard = love.system.getClipboardText():sub(1,128):gsub("\r\n","\n")
+			Emulator.textinput(clipboard)
 		end
 	}
 }
@@ -47,14 +57,16 @@ function Emulator.static.update(dt)
 
 	local allDown
 	for _k, shortcut in pairs(tShortcuts) do
-		allDown = true
-		for __k, key in pairs(shortcut.keys) do
-			if not love.keyboard.isDown(key) then allDown = false end
-		end
+		if shortcut.delay ~= nil then
+			allDown = true
+			for __k, key in pairs(shortcut.keys) do
+				if not love.keyboard.isDown(key) then allDown = false end
+			end
 
-		if allDown and shortcut.nSince and now - shortcut.nSince > 1 then
-			shortcut.nSince = nil
-			shortcut.action()
+			if allDown and shortcut.nSince and now - shortcut.nSince > shortcut.delay then
+				shortcut.nSince = nil
+				shortcut.action()
+			end
 		end
 	end
 
@@ -121,7 +133,6 @@ function Emulator.static.keypressed( key, isrepeat )
 		Emulator.activeComputer:start()
 		return
 	end
-	-- TODO: love.system.getClipboardText( ) on ctrl + v shortcut. & queue as char events & normalize line breaks (possibly?)
 	if not isrepeat then
 		local now, allDown = love.timer.getTime(), nil
 		for _k, shortcut in pairs(tShortcuts) do
@@ -129,7 +140,17 @@ function Emulator.static.keypressed( key, isrepeat )
 			for __k, key in pairs(shortcut.keys) do
 				if not love.keyboard.isDown(key) then allDown = false end
 			end
-			if allDown then shortcut.nSince = now
+			if allDown then
+				if shortcut.delay ~= nil then
+					-- Delayed action
+					shortcut.nSince = now
+				else
+					-- Instant action
+					shortcut.action()
+				end
+
+				return -- No need to check the rest, and don't send event to queue
+			end
 		end
 	end
 
