@@ -161,6 +161,8 @@ function Emulator.static.mousepressed( x, y, _button )
 
 		if _button == "r" or _button == "l" then
 			mouse.isPressed = true
+			mouse.lastTermX = termMouseX
+			mouse.lastTermY = termMouseY
 			table.insert(Emulator.activeComputer.eventQueue, {"mouse_click", _button == "r" and 2 or 1, termMouseX, termMouseY})
 		elseif _button == "wu" then -- Scroll up
 			table.insert(Emulator.activeComputer.eventQueue, {"mouse_scroll", -1, termMouseX, termMouseX})
