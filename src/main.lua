@@ -15,6 +15,14 @@
 	monitor_resize
 ]]
 
+-- Simple logger
+function log(msg, level)
+    if not _DEBUG then return end
+    if level ~= "ERROR" or level ~= "WARNING" then level = "INFO" end
+    local str = "[" .. os.date("%X") .. "][" .. level .. "]: " .. tostring(msg)
+    print(str)
+end
+
 require 'lib.middleclass'
 require 'lib.http.HttpRequest'
 
@@ -25,6 +33,7 @@ require 'computer'
 require 'emulator'
 
 function love.load()
+    log("Application starting...")
 	love.window.setMode( Screen.width * Screen.pixelWidth, Screen.height * Screen.pixelHeight, {
 		fullscreen = false,
 		vsync = true,
@@ -40,6 +49,7 @@ function love.load()
 
 	love.filesystem.setIdentity( "cclite" )
 	if not love.filesystem.exists( "data/" ) then
+        log("Creating save directory")
 		love.filesystem.createDirectory( "data/" )
 	end
 

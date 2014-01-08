@@ -76,6 +76,13 @@ Util.static.COLOUR_CODE = {
 	[32768] = Util.COLOUR_RGB.BLACK,
 }
 
+Util.static.lines = function(str)
+	local t = {}
+	local function helper(line) table.insert(t, line) return "" end
+	helper((str:gsub("(.-)\r?\n", helper)))
+	return t
+end
+
 local function deep_copy(orig) -- Simple table deep copy.
     local orig_type = type(orig)
     local copy

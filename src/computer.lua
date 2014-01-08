@@ -1,6 +1,7 @@
 Computer = class('Computer')
 
 function Computer:initialize()
+	log("Computer -> initialize()")
 	self.screen = Screen:new(self)
 
 	self.running = false
@@ -32,6 +33,7 @@ function Computer:initialize()
 end
 
 function Computer:start()
+	log("Computer -> start()")
 	self.reboot = false
 
 	-- Reset buffers
@@ -63,6 +65,7 @@ function Computer:start()
 end
 
 function Computer:stop( _reboot )
+	log("Computer -> stop(): reboot - " .. tostring(_reboot or false))
 	self.proc = nil
 	self.running = false
 	self.reboot = _reboot

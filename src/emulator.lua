@@ -22,7 +22,10 @@ end
 function Emulator.static.update(dt)
 	local now = love.timer.getTime()
 	HttpRequest.checkRequests()
-	if Emulator.activeComputer.reboot then Emulator.activeComputer:start() end
+	if Emulator.activeComputer.reboot then
+		log("Restarting computer.")
+		Emulator.activeComputer:start()
+	end
 
 	-- TODO: See below todo about pasive/active checking
 	updateShortcut("terminate", "lctrl", "t", function()

@@ -2,20 +2,24 @@ NativeAPI = class('NativeAPI')
 
 --[[
 	TODO
-	FS api needs a rewrite! Better file handles!
-	use new love 0.9.0 functions such as love.filesystem.append().
 	Make os.clock accurate, (and not use love executions os.clock)
+	term.write with correct formatting of lua types. https://github.com/Sorroko/cclite/issues/12
 ]]
 
--- HELPER FUNCTIONS
-local function lines(str)
-	local t = {}
-	local function helper(line) table.insert(t, line) return "" end
-	helper((str:gsub("(.-)\r?\n", helper)))
-	return t
+-- Wrapper that adds error level to assert.
+function assert(test, msg, level, ...)
+  if test then return test, msg, level, ... end
+  error(msg, (level or 1) + 1) -- +1 is for this wrapper
 end
 
-local function deltree(sFolder)
+function string.startsWith(_self, testStr)
+	return testStr == string.sub(_self, 1, #testStr)
+end
+
+FileSystem = class('FileSystem')
+
+function FileSystem.static.deleteTree(sFolder)
+	log("FileSystem -> deleteTree(): source - " .. tostring(sFolder))
 	local tObjects = love.filesystem.getDirectoryItems(sFolder)
 
 	if tObjects then
@@ -25,15 +29,16 @@ local function deltree(sFolder)
 			if love.filesystem.isFile(pObject) then
 				love.filesystem.remove(pObject)
 			elseif love.filesystem.isDirectory(pObject) then
-				deltree(pObject)
+				FileSystem.deleteTree(pObject)
 			end
 		end
 	end
 	return love.filesystem.remove(sFolder)
 end
 
-local function copytree(sFolder, sToFolder)
-	deltree(sToFolder) -- Overwrite existing file for both copy and move
+function FileSystem.static.copyTree(sFolder, sToFolder)
+	log("FileSystem -> deleteTree(): source - " .. tostring(sFolder) .. ", destination - " .. tostring(sToFolder))
+	FileSystem.deleteTree(sToFolder) -- Overwrite existing file for both copy and move
 	-- Is this vanilla behaviour or does it merge files?
 	if not love.filesystem.isDirectory(sFolder) then
 		love.filesystem.write(sToFolder, love.filesystem.read( sFolder ))
@@ -47,94 +52,257 @@ local function copytree(sFolder, sToFolder)
 			if love.filesystem.isFile(pObject) then
 				love.filesystem.write(sToFolder .. "/" .. sObject, love.filesystem.read( pObject ))
 			elseif love.filesystem.isDirectory(pObject) then
-				copytree(pObject)
+				FileSystem.copyTree(pObject)
 			end
 		end
 	end
 end
 
--- HELPER CLASSES/HANDLES
--- TODO Make more efficient, use love.filesystem.lines
+function FileSystem.static.cleanPath( sPath )
+	sPath = "/" .. sPath
+	local tPath = {}
+	for part in sPath:gmatch("[^/]+") do
+	   	if part ~= "" and part ~= "." then
+	   		if part == ".." and #tPath > 0 then
+	   			table.remove(tPath)
+	   		else
+	   			table.insert(tPath, part)
+	   		end
+	   	end
+	end
+	return "/" .. table.concat(tPath, "/")
+end
+
+function FileSystem:initialize( bCache )
+	log("FileSystem -> initialize()")
+	if bCache then log("FileSystem: Cache enabled, this may cause strange filesystem issues.", "WARNING") end
+	self.mountMap = {}
+	self.cache = {
+		find = {},
+		list = {}
+	}
+
+	-- EXPERIMENTAL: DO NOT ENABLE.
+	self.enableCache = bCache or false -- TODO: Cache should be updated by file changes. (move, copy, delete, write)
+
+	self:mount("/", "/data") -- Do not include trailing slash in paths!
+	self:mount("/rom", "/lua/rom", {readOnly = true})
+end
+
+function FileSystem:mount(sMount, sPath, tFlags) -- Assume clean paths
+	log("FileSystem -> mount(): Mounted '" .. tostring(sPath) .. "'' at '" .. tostring(sMount) .. "'")
+	if (not sMount) or (not sPath) then return end
+	tFlags = tFlags or {}
+	self.mountMap[sMount] = { sMount, sPath, tFlags }
+end
+
+function FileSystem:unmount(sPath) -- Assume clean path
+	log("FileSystem -> unmount(): Unmounted '" .. tostring(sPath) .. "'")
+	self.mountMap[sMount] = nil
+end
+
+function FileSystem:find(sPath)
+	if self.enableCache and self.cache.find[sPath] then
+		return unpack(self.cache.find[sPath])
+	end
+
+	local _sMount, _sPath, _tFlags
+	for k, v in pairs(self.mountMap) do
+		_sMount = v[1]
+		_sPath = v[2]
+		_tFlags = v[3]
+		if sPath:startsWith(_sMount) then
+			local bPath = string.sub(sPath, #_sMount + 1, -1)
+			if love.filesystem.exists(_sPath .. "/" .. bPath) then
+				if self.enableCache then
+					self.cache.find[sPath] = { _sPath .. "/" .. bPath, _sMount }
+				end
+				return _sPath .. "/" .. bPath, _sMount
+			end
+		end
+	end
+	return nil
+end
+
+function FileSystem:isReadOnly(sPath)
+	local file, mount = self:find(sPath)
+	if not file then return nil end
+
+	local flags = self.mountMap[mount][3]
+	return flags.readOnly
+end
+
+function FileSystem:isDirectory(sPath)
+	local file, mount = self:find(sPath)
+	if not file then return false end -- false or nil?
+
+	return love.filesystem.isDirectory(file)
+end
+
+function FileSystem:open( sPath, sMode ) -- TODO: Compact this code
+	log("FileSystem -> open(): Path '" .. tostring(sPath) .. "' with mode " .. tostring(sMode))
+	if sMode == "r" then
+		local file, mount = self:find(sPath)
+		if not file then return end
+		local iterator = love.filesystem.lines(file)
+
+		local handle = {}
+		function handle.close()
+			handle = nil
+		end
+		function handle.readLine()
+			return iterator()
+		end
+		function handle.readAll()
+			if lineIndex == 1 then
+				lineIndex = #contents
+				return table.concat(contents, '\n') .. '\n'
+			else
+				local data = ""
+				for line in iterator do
+  					data = data .. "\n" .. line
+				end
+				data = data .. "\n"
+				return data
+			end
+		end
+		return handle
+	elseif sMode == "w" then
+		if self:isReadOnly(sPath) then return nil end
+
+		local sData = ""
+
+		local handle = {}
+		function handle.close()
+			love.filesystem.write("/data" .. sPath, sData)
+			handle = nil -- this does not properly destory the object
+		end
+		function handle.flush()
+			if not love.filesystem.exists("/data" .. sPath) then
+				love.filesystem.write("/data" .. sPath, sData)
+				sData = ""
+			else
+				-- Append any new additions
+				love.filesystem.append( "/data" .. sPath, sData )
+			end
+		end
+		function handle.writeLine( data )
+			sData = sData .. data .. "\n"
+		end
+		function handle.write( data )
+			sData = sData .. data
+		end
+		return handle
+	elseif sMode == "a" then
+		if not self:find(sPath) then return end
+		if self:isReadOnly(sPath) then return nil end
+
+		local sData = ""
+
+		local handle = {}
+		function handle.close()
+			love.filesystem.append( "/data" .. sPath, sData )
+			handle = nil
+		end
+		function handle.flush()
+			love.filesystem.append( "/data" .. sPath, sData )
+			sData = ""
+		end
+		function handle.writeLine( data )
+			sData = sData .. data .. "\n"
+		end
+		function handle.write( data )
+			sData = sData .. data
+		end
+		return handle
+	end
+end
+
+function FileSystem:makeDirectory(sPath)
+	log("FileSystem -> makeDirectory(): " .. tostring(sPath))
+	local file, mount = self:find(sPath)
+	if file then return false end
+
+	return love.filesystem.createDirectory("/data" .. sPath)
+end
+
+function FileSystem:copy( fromPath, toPath )
+	local fFile, fMount = self:find(fromPath)
+	local tFile, tMount = self:find(toPath)
+
+	if not fFile then return nil end
+	if tFile then
+		if self.mountMap[tMount][3].readOnly then return nil end
+		if not self:delete(tFile) then return nil end
+	end
+
+	return FileSystem.copyTree(fFile, "/data" .. toPath)
+end
+
+function FileSystem:delete( sPath )
+	local file, mount = self:find(sPath)
+	if not file then return nil end
+	if self.mountMap[mount][3].readOnly then return nil end
+
+	return FileSystem.deleteTree(file)
+end
+
+function FileSystem:list( sPath ) -- TODO: IMPORTANT: Make sure mount paths are added to items
+	if self.enableCache and self.cache.list[sPath] then
+		return self.cache.list[sPath]
+	end
+	local res = {}
+	local _sMount, _sPath, _tFlags
+	for k, v in pairs(self.mountMap) do
+		_sMount = v[1]
+		_sPath = v[2]
+		_tFlags = v[3]
+		if sPath:startsWith(_sMount) then
+			local bPath = string.sub(sPath, #_sMount + 1, -1)
+			local fsPath = _sPath .. "/" .. bPath
+			if love.filesystem.exists(fsPath) and love.filesystem.isDirectory(fsPath) then
+				local items = love.filesystem.getDirectoryItems(fsPath)
+				for k,v in pairs(items) do res[k] = v end
+			end
+		end
+	end
+	self.cache.list[sPath] = res
+	return res
+end
+
 local function HTTPHandle(contents, status)
 	local lineIndex = 1
-	local handle -- INFO: Hack to access itself
-	handle = {
-		close = function()
-			handle = nil
-		end,
-		readLine = function()
-			local str = contents[lineIndex]
-			lineIndex = lineIndex + 1
-			return str
-		end,
-		readAll = function()
-			if lineIndex == 1 then
-				lineIndex = #contents
-				return table.concat(contents, '\n') .. '\n'
-			else
-				local tData = {}
-				local data = handle.readLine()
-				while data ~= nil do
-					table.insert(tData, data)
-					data = handle.readLine()
-				end
-				return table.concat(tData, '\n') .. '\n'
+	local handle = {}
+	function handle.close()
+		handle = nil
+	end
+	function handle.readLine()
+		local str = contents[lineIndex]
+		lineIndex = lineIndex + 1
+		return str
+	end
+	function handle.readAll()
+		if lineIndex == 1 then
+			lineIndex = #contents
+			return table.concat(contents, '\n') .. '\n'
+		else
+			local tData = {}
+			local data = handle.readLine()
+			while data ~= nil do
+				table.insert(tData, data)
+				data = handle.readLine()
 			end
-		end,
-		getResponseCode = function()
-			return status
+			return table.concat(tData, '\n') .. '\n'
 		end
-	}
-	return handle
-end
-
-local function FileReadHandle(contents)
-	local lineIndex = 1
-	local handle
-	handle = {
-		close = function()
-			handle = nil
-		end,
-		readLine = function()
-			local str = contents[lineIndex]
-			lineIndex = lineIndex + 1
-			return str
-		end,
-		readAll = function()
-			if lineIndex == 1 then
-				lineIndex = #contents
-				return table.concat(contents, '\n') .. '\n'
-			else
-				local tData = {}
-				local data = handle.readLine()
-				while data ~= nil do
-					table.insert(tData, data)
-					data = handle.readLine()
-				end
-				return table.concat(tData, '\n') .. '\n'
-			end
-		end
-	}
-	return handle
-end
-
-local function FileWriteHandle(path)
-	local sData = ""
-	local handle = {
-		close = function(data)
-			love.filesystem.write(path, sData)
-		end,
-		writeLine = function( data )
-			sData = sData .. data
-		end,
-		write = function ( data )
-			sData = sData .. data
-		end
-	}
+	end
+	function handle.getResponseCode()
+		return status
+	end
 	return handle
 end
 
 function NativeAPI:initialize(_computer)
+	log("NativeAPI -> initialize()")
 	self.computer = _computer
 	self.data = {
 		term = {
@@ -146,7 +314,8 @@ function NativeAPI:initialize(_computer)
 		},
 		os = {
 			label = nil
-		}
+		},
+		fileSystem = FileSystem:new()
 	}
 	self.env = { -- TODO: Better way of copying? Include metatables too?
 		_VERSION = "Lua 5.1",
@@ -211,7 +380,6 @@ function NativeAPI:initialize(_computer)
 		self.data.term.cursorY = math.floor(y)
 	end
 	self.env.term.native.write = function( text )
-		assert(text)
 		text = tostring(text)
 		if self.data.term.cursorY > Screen.height
 			or self.data.term.cursorY < 1 then return end
@@ -281,111 +449,72 @@ function NativeAPI:initialize(_computer)
 		end
 	end
 	self.env.fs = {}
-	self.env.fs.open = function(path, mode)
-		assert(type(path) == "string")
-		assert(type(mode) == "string")
-		path = self.env.fs.combine("", path)
-		if mode == "r" then
-			local sPath = nil
-			if love.filesystem.exists("data/" .. path) then
-				sPath = "data/" .. path
-			elseif love.filesystem.exists("lua/" .. path) then
-				sPath = "lua/" .. path
-			end
-			if sPath == nil or sPath == "lua/bios.lua" then return nil end
-
-			local contents, size = love.filesystem.read( sPath )
-
-			return FileReadHandle(lines(contents))
-		elseif mode == "w" then
-			if self.env.fs.exists( path ) then -- Write mode overwrites! FIXME: Wait until handle.close() is called
-				self.env.fs.delete( path )
-			end
-
-			return FileWriteHandle("data/" .. path)
-		end
-		return nil
+	self.env.fs.open = function(sPath, sMode)
+		assert(type(sPath) == "string")
+		assert(type(sMode) == "string")
+		sPath = FileSystem.cleanPath(sPath)
+		return self.data.fileSystem:open(sPath, sMode)
 	end
-	self.env.fs.list = function(path)
-		assert(type(path) == "string")
-		path = self.env.fs.combine("", path)
-		local res = {}
-		if love.filesystem.exists("data/" .. path) then -- This path takes precedence
-			res = love.filesystem.getDirectoryItems("data/" .. path)
-		end
-		if love.filesystem.exists("lua/" .. path) then
-			for k, v in pairs(love.filesystem.getDirectoryItems("lua/" .. path)) do
-				if v ~= "bios.lua" then table.insert(res, v) end
-			end
-		end
-		return res
+	self.env.fs.list = function(sPath)
+		assert(type(sPath) == "string")
+		sPath = FileSystem.cleanPath(sPath)
+		return self.data.fileSystem:list(sPath)
 	end
-	self.env.fs.exists = function(path)
-		assert(type(path) == "string")
-		if path == "/bios.lua" then return false end
-		path = self.env.fs.combine("", path)
-		return love.filesystem.exists("data/" .. path) or love.filesystem.exists("lua/" .. path)
+	self.env.fs.exists = function(sPath)
+		assert(type(sPath) == "string")
+		sPath = FileSystem.cleanPath(sPath)
+		return self.data.fileSystem:find(sPath) ~= nil
 	end
-	self.env.fs.isDir = function(path)
-		assert(type(path) == "string")
-		path = self.env.fs.combine("", path)
-		return love.filesystem.isDirectory("data/" .. path) or love.filesystem.isDirectory("lua/" .. path)
+	self.env.fs.isDir = function(sPath)
+		assert(type(sPath) == "string")
+		sPath = FileSystem.cleanPath(sPath)
+		return self.data.fileSystem:isDirectory(sPath)
 	end
-	self.env.fs.isReadOnly = function(path)
-		assert(type(path) == "string")
-		path = self.env.fs.combine("", path)
-		return string.sub(path, 1, 4) == "rom/"
+	self.env.fs.isReadOnly = function(sPath)
+		assert(type(sPath) == "string")
+		sPath = FileSystem.cleanPath(sPath)
+		return self.data.fileSystem:isReadOnly(sPath)
 	end
-	self.env.fs.getName = function(path)
-		assert(type(path) == "string")
-		local fpath, name, ext = string.match(path, "(.-)([^\\/]-%.?([^%.\\/]*))$")
+	self.env.fs.getName = function(sPath)
+		assert(type(sPath) == "string")
+		local fpath, name, ext = string.match(sPath, "(.-)([^\\/]-%.?([^%.\\/]*))$")
 		return name
 	end
-	self.env.fs.getDrive = function(path) return nil end
-	self.env.fs.getSize = function(path) return nil end
-	self.env.fs.getFreeSpace = function(path) return nil end
-	self.env.fs.makeDir = function(path) -- All write functions are within data/
-		assert(type(path) == "string")
-		path = self.env.fs.combine("", path)
-		if string.sub(path, 1, 4) ~= "rom/" then -- Stop user overwriting lua/rom/ with data/rom/
-			return love.filesystem.createDirectory( "data/" .. path )
-		else return nil end
+	self.env.fs.makeDir = function(sPath)
+		assert(type(sPath) == "string")
+		sPath = FileSystem.cleanPath(sPath)
+		return self.data.fileSystem:makeDirectory(sPath)
 	end
 	self.env.fs.move = function(fromPath, toPath)
-		-- Not implemented
+		assert(type(fromPath) == "string")
+		assert(type(toPath) == "string")
+		fromPath = FileSystem.cleanPath(fromPath)
+		toPath = FileSystem.cleanPath(toPath)
+
+		return self.data.fileSystem:copy(fromPath, toPath) and self.data.fileSystem:delete(fromPath)
 	end
 	self.env.fs.copy = function(fromPath, toPath)
 		assert(type(fromPath) == "string")
 		assert(type(toPath) == "string")
-		fromPath = self.env.fs.combine("", fromPath)
-		toPath = self.env.fs.combine("", toPath)
-		if string.sub(toPath, 1, 4) ~= "rom/" then -- Stop user overwriting lua/rom/ with data/rom/
-			return copytree("data/" .. fromPath, "data/" .. toPath)
-		else return nil end
+		fromPath = FileSystem.cleanPath(fromPath)
+		toPath = FileSystem.cleanPath(toPath)
+
+		return self.data.fileSystem:copy(fromPath, toPath)
 	end
-	self.env.fs.delete = function(path)
-		assert(type(path) == "string")
-		path = self.env.fs.combine("", path)
-		if string.sub(path, 1, 4) ~= "rom/" then -- Stop user overwriting lua/rom/ with data/rom/
-			return deltree( "data/" .. path )
-		else return nil end
+	self.env.fs.delete = function(sPath)
+		assert(type(sPath) == "string")
+		sPath = FileSystem.cleanPath(sPath)
+		return self.data.fileSystem:delete(sPath)
 	end
 	self.env.fs.combine = function(basePath, localPath)
 		assert(type(basePath) == "string")
 		assert(type(localPath) == "string")
-		local path = "/" .. basePath .. "/" .. localPath
-		local tPath = {}
-		for part in path:gmatch("[^/]+") do
-	   		if part ~= "" and part ~= "." then
-	   			if part == ".." and #tPath > 0 then
-	   				table.remove(tPath)
-	   			else
-	   				table.insert(tPath, part)
-	   			end
-	   		end
-		end
-		return table.concat(tPath, "/")
+		local res = FileSystem.cleanPath(basePath .. "/" .. localPath)
+		return string.sub(res, 2, #res)
 	end
+	self.env.fs.getDrive = function(sPath) return nil end -- TODO: A long with peripheral api
+	self.env.fs.getSize = function(sPath) return nil end
+	self.env.fs.getFreeSpace = function(sPath) return nil end
 	self.env.os = {}
 	self.env.os.clock = os.clock
 	self.env.os.getComputerID = function() return 1 end
@@ -481,7 +610,7 @@ function NativeAPI:initialize(_computer)
 
 		http.onReadyStateChange = function()
 			if http.responseText then -- TODO: check if timed out instead
-		        local handle = HTTPHandle(lines(http.responseText), http.status)
+		        local handle = HTTPHandle(Util.lines(http.responseText), http.status)
 		        table.insert(self.computer.eventQueue, { "http_success", sUrl, handle })
 		    else
 		    	table.insert(self.computer.eventQueue, { "http_failure", sUrl })
@@ -492,4 +621,12 @@ function NativeAPI:initialize(_computer)
 	end
 	self.env.rs = self.env.redstone -- Not sure why this isn't in bios?!?! what was dan thinking
 	self.env._G = self.env
+
+	if _DEBUG then
+		log("NativeAPI: Debug api available. _G.emu", "WARNING")
+		self.env.emu = {
+			log = log,
+			env = _G,
+		}
+	end
 end
