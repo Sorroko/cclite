@@ -4,6 +4,7 @@
  Better shortcuts/key combos
  Term api draws directly to a love2d canvas, passive screen api.
  Virtual peripherals
+ Crash screen
  Implement:
 	redstone
 	disk

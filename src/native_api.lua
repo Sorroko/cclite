@@ -4,6 +4,7 @@ NativeAPI = class('NativeAPI')
 	TODO
 	Make os.clock accurate, (and not use love executions os.clock)
 	term.write with correct formatting of lua types. https://github.com/Sorroko/cclite/issues/12
+	Make errors returned accurate
 ]]
 
 -- Wrapper that adds error level to assert.
