@@ -5,11 +5,8 @@ function Computer:initialize()
 	self.screen = Screen:new(self)
 
 	self.running = false
-	self.reboot = false -- Tells update loop to start Instance automatically
-	self.actions = { -- Keyboard commands i.e. ctrl + s and timers/alarms
-		terminate = nil,
-		shutdown = nil,
-		reboot = nil,
+	self.reboot = false
+	self.actions = {
 		timers = {},
 		alarms = {},
 	}
@@ -19,11 +16,6 @@ function Computer:initialize()
 		time = 0,
 		day = 0,
 		MAX_TIME_IN_DAY = 1440,
-	}
-	self.mouse = {
-		isPressed = false,
-		lastTermX = nil,
-		lastTermY = nil,
 	}
 	self.textB = {}
 	self.backgroundColourB = {}
@@ -71,9 +63,6 @@ function Computer:stop( _reboot )
 	self.reboot = _reboot
 
 	-- Reset events/key shortcuts
-	self.actions.terminate = nil
-	self.actions.shutdown = nil
-	self.actions.reboot = nil
 	self.actions.timers = {}
 	self.actions.alarms = {}
 	self.eventQueue = {}

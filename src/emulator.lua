@@ -6,37 +6,73 @@ function Emulator.static.draw()
 	Emulator.activeComputer.screen:draw()
 end
 
-local function updateShortcut(name, key1, key2, cb)
-	if Emulator.activeComputer.actions[name] ~= nil then
-		if love.keyboard.isDown(key1) and love.keyboard.isDown(key2) then
-			if love.timer.getTime() - Emulator.activeComputer.actions[name] > 1 then
-				Emulator.activeComputer.actions[name] = nil
-				if cb then cb() end
-			end
-		else
-			Emulator.activeComputer.actions[name] = nil
+local tShortcuts = {
+	["shutdown"] = {
+		keys = ["lctrl", "s"],
+		nSince = nil,
+		action = function()
+			Emulator.activeComputer:stop()
 		end
-	end
-end
+	},
+	["reboot"] = {
+		keys = ["lctrl", "r"],
+		nSince = nil,
+		action = function()
+			Emulator.activeComputer:stop( true )
+		end
+	},
+	["terminate"] = {
+		keys = ["lctrl", "t"],
+		nSince = nil,
+		action = function()
+			table.insert(Emulator.activeComputer.eventQueue, {"terminate"})
+		end
+	}
+}
+
+local mouse = {
+	isPressed = false,
+	lastTermX = nil,
+	lastTermY = nil,
+}
 
 function Emulator.static.update(dt)
 	local now = love.timer.getTime()
 	HttpRequest.checkRequests()
-	if Emulator.activeComputer.reboot then
+
+	if Emulator.activeComputer.reboot and not Emulator.activeComputer.running then
 		log("Restarting computer.")
 		Emulator.activeComputer:start()
 	end
 
-	-- TODO: See below todo about pasive/active checking
-	updateShortcut("terminate", "lctrl", "t", function()
-			table.insert(Emulator.activeComputer.eventQueue, {"terminate"})
-		end)
-	updateShortcut("shutdown", "lctrl", "s", function()
-			Emulator.activeComputer:stop()
-		end)
-	updateShortcut("reboot", "lctrl", "r", function()
-			Emulator.activeComputer:stop( true )
-		end)
+	local allDown
+	for _k, shortcut in pairs(tShortcuts) do
+		allDown = true
+		for __k, key in pairs(shortcut.keys) do
+			if not love.keyboard.isDown(key) then allDown = false end
+		end
+
+		if allDown and shortcut.nSince and now - shortcut.nSince > 1 then
+			shortcut.nSince = nil
+			shortcut.action()
+		end
+	end
+
+	--MOUSE
+	if mouse.isPressed then
+    	local mouseX     = love.mouse.getX()
+    	local mouseY     = love.mouse.getY()
+    	local termMouseX = math.floor( mouseX / Screen.pixelWidth ) + 1
+    	local termMouseY = math.floor( mouseY / Screen.pixelHeight ) + 1
+    	if (termMouseX ~= mouse.lastTermX or termMouseY ~= mouse.lastTermY)
+			and (mouseX > 0 and mouseX < Screen.width * Screen.pixelWidth and
+				mouseY > 0 and mouseY < Screen.height * Screen.pixelHeight) then
+
+        	mouse.lastTermX = termMouseX
+       		mouse.lastTermY = termMouseY
+        	table.insert (Emulator.activeComputer.eventQueue, { "mouse_drag", love.mouse.isDown( "r" ) and 2 or 1, termMouseX, termMouseY})
+    	end
+    end
 
 	if #Emulator.activeComputer.actions.timers > 0 then
 		for k, v in pairs(Emulator.activeComputer.actions.timers) do
@@ -59,26 +95,8 @@ function Emulator.static.update(dt)
     	end
 	end
 
-	--MOUSE
-	if Emulator.activeComputer.mouse.isPressed then
-    	local mouseX     = love.mouse.getX()
-    	local mouseY     = love.mouse.getY()
-    	local termMouseX = math.floor( mouseX / Screen.pixelWidth ) + 1
-    	local termMouseY = math.floor( mouseY / Screen.pixelHeight ) + 1
-    	if (termMouseX ~= Emulator.activeComputer.mouse.lastTermX or termMouseY ~= Emulator.activeComputer.mouse.lastTermY)
-			and (mouseX > 0 and mouseX < Screen.width * Screen.pixelWidth and
-				mouseY > 0 and mouseY < Screen.height * Screen.pixelHeight) then
-
-        	Emulator.activeComputer.mouse.lastTermX = termMouseX
-       		Emulator.activeComputer.mouse.lastTermY = termMouseY
-
-        	table.insert (Emulator.activeComputer.eventQueue, { "mouse_drag", love.mouse.isDown( "r" ) and 2 or 1, termMouseX, termMouseY})
-    	end
-    end
-
-    local currentClock = os.clock()
-
     -- Check if a second has passed since the last update.
+    local currentClock = os.clock()
     if currentClock - Emulator.activeComputer.lastUpdateClock >= 1 then
         Emulator.activeComputer.lastUpdateClock = currentClock
         Emulator.activeComputer.minecraft.time  = Emulator.activeComputer.minecraft.time + 1
@@ -91,7 +109,7 @@ function Emulator.static.update(dt)
     end
 
     if #Emulator.activeComputer.eventQueue > 0 then
-		for k, v in pairs(Emulator.activeComputer.eventQueue) do -- TODO: Limit amount of resumes on one tick
+		for k, v in pairs(Emulator.activeComputer.eventQueue) do
 			Emulator.activeComputer:resume(unpack(v))
 		end
 		Emulator.activeComputer.eventQueue = {}
@@ -99,19 +117,19 @@ function Emulator.static.update(dt)
 end
 
 function Emulator.static.keypressed( key, isrepeat )
+	if not Emulator.activeComputer.running then
+		Emulator.activeComputer:start()
+		return
+	end
 	-- TODO: love.system.getClipboardText( ) on ctrl + v shortcut. & queue as char events & normalize line breaks (possibly?)
 	if not isrepeat then
-		if Emulator.activeComputer.actions.terminate == nil and love.keyboard.isDown("lctrl") and key == "t" then
-			Emulator.activeComputer.actions.terminate = love.timer.getTime()
-		elseif Emulator.activeComputer.actions.shutdown == nil and love.keyboard.isDown("lctrl") and key == "s" then
-			Emulator.activeComputer.actions.shutdown = love.timer.getTime()
-		elseif Emulator.activeComputer.actions.reboot == nil and love.keyboard.isDown("lctrl") and key == "r" then
-			Emulator.activeComputer.actions.reboot = love.timer.getTime()
-		else -- Ignore key shortcuts before "press any key" action. TODO: This might be slightly buggy!
-			if not Emulator.activeComputer.running then
-				Emulator.activeComputer:start()
-				return
+		local now, allDown = love.timer.getTime(), nil
+		for _k, shortcut in pairs(tShortcuts) do
+			allDown = true
+			for __k, key in pairs(shortcut.keys) do
+				if not love.keyboard.isDown(key) then allDown = false end
 			end
+			if allDown then shortcut.nSince = now
 		end
 	end
 
@@ -120,14 +138,11 @@ function Emulator.static.keypressed( key, isrepeat )
    	end
 end
 
-function Emulator.static.keyreleased( key, unicode )
-	-- TODO: Better key combo/shortcut system
-	-- Watch keys passively rather than actively checking.
+function Emulator.static.keyreleased( key )
+
 end
 
 function Emulator.static.textinput( text )
-	-- Can this be multiple characters?
-	-- Just in case
 	if string.len(text) > 1 then -- Speedy check
 		for char in string.gmatch(text, "(.-)") do
 			table.insert(Emulator.activeComputer.eventQueue, {"char", char})
@@ -144,25 +159,17 @@ function Emulator.static.mousepressed( x, y, _button )
 		local termMouseX = math.floor( x / Screen.pixelWidth ) + 1
     	local termMouseY = math.floor( y / Screen.pixelHeight ) + 1
 
-		if not Emulator.activeComputer.mousePressed and _button == "r" or _button == "l" then
-			Emulator.activeComputer.mouse.isPressed = true
-			local button = _button == "r" and 2 or 1
-			table.insert(Emulator.activeComputer.eventQueue, {"mouse_click", button, termMouseX, termMouseY})
-
+		if _button == "r" or _button == "l" then
+			mouse.isPressed = true
+			table.insert(Emulator.activeComputer.eventQueue, {"mouse_click", _button == "r" and 2 or 1, termMouseX, termMouseY})
 		elseif _button == "wu" then -- Scroll up
 			table.insert(Emulator.activeComputer.eventQueue, {"mouse_scroll", -1, termMouseX, termMouseX})
-
 		elseif _button == "wd" then -- Scroll down
 			table.insert(Emulator.activeComputer.eventQueue, {"mouse_scroll", 1, termMouseX, termMouseY})
-
 		end
 	end
 end
 
 function Emulator.static.mousereleased( x, y, _button )
-	if x > 0 and x < Screen.width * Screen.pixelWidth
-		and y > 0 and y < Screen.height * Screen.pixelHeight then -- Within screen bounds.
-
-		Emulator.activeComputer.mouse.isPressed = false
-	end
+	mouse.isPressed = false
 end
