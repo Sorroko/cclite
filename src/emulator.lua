@@ -8,7 +8,7 @@ end
 
 local tShortcuts = {
 	["shutdown"] = {
-		keys = ["lctrl", "s"],
+		keys = {"lctrl", "s"},
 		delay = 1,
 		nSince = nil,
 		action = function()
@@ -16,7 +16,7 @@ local tShortcuts = {
 		end
 	},
 	["reboot"] = {
-		keys = ["lctrl", "r"],
+		keys = {"lctrl", "r"},
 		delay = 1,
 		nSince = nil,
 		action = function()
@@ -24,15 +24,15 @@ local tShortcuts = {
 		end
 	},
 	["terminate"] = {
-		keys = ["lctrl", "t"],
+		keys = {"lctrl", "t"},
 		delay = 1,
 		nSince = nil,
 		action = function()
 			table.insert(Emulator.activeComputer.eventQueue, {"terminate"})
 		end
-	}
+	},
 	["paste_text"] = {
-		keys = ["lctrl", "v"],
+		keys = {"lctrl", "v"},
 		action = function()
 			local clipboard = love.system.getClipboardText():sub(1,128):gsub("\r\n","\n")
 			Emulator.textinput(clipboard)
@@ -129,11 +129,12 @@ function Emulator.static.update(dt)
 end
 
 function Emulator.static.keypressed( key, isrepeat )
-	if not Emulator.activeComputer.running then
-		Emulator.activeComputer:start()
-		return
-	end
 	if not isrepeat then
+		if not Emulator.activeComputer.running then
+			Emulator.activeComputer:start()
+			return
+		end
+
 		local now, allDown = love.timer.getTime(), nil
 		for _k, shortcut in pairs(tShortcuts) do
 			allDown = true
@@ -165,8 +166,12 @@ end
 
 function Emulator.static.textinput( text )
 	if string.len(text) > 1 then -- Speedy check
-		for char in string.gmatch(text, "(.-)") do
-			table.insert(Emulator.activeComputer.eventQueue, {"char", char})
+		for char in string.gmatch(text, ".") do
+			if char == "\n" then
+				table.insert(Emulator.activeComputer.eventQueue, {"key", Util.KEYS["return"]})
+			else
+				table.insert(Emulator.activeComputer.eventQueue, {"char", char})
+			end
 		end
 	else
 		table.insert(Emulator.activeComputer.eventQueue, {"char", text})
