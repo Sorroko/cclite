@@ -88,6 +88,8 @@ function FileSystem:initialize( bCache )
 
 	self:mount("/", "/data") -- Do not include trailing slash in paths!
 	self:mount("/rom", "/lua/rom", {readOnly = true})
+	self:mount("/treasure", "/lua/treasure", {readOnly = true})
+	if _DEBUG then self:mount("/debug", "/lua/debug", {readOnly = true}) end
 end
 
 function FileSystem:mount(sMount, sPath, tFlags) -- Assume clean paths
@@ -252,7 +254,16 @@ function FileSystem:list( sPath ) -- TODO: IMPORTANT: Make sure mount paths are 
 	if self.enableCache and self.cache.list[sPath] then
 		return self.cache.list[sPath]
 	end
+
 	local res = {}
+
+	for k, mount in pairs(self.mountMap) do
+		local rootdir, file = string.match(mount[1], "(.-)([^\\/]-%.?([^%.\\/]*))$") -- Should not include the trailing slash! however it must have one at start
+		if (rootdir == sPath or rootdir == sPath .. "/") and file ~= "" then -- Fix the trailing slash issue
+			table.insert(res, file)
+		end
+	end
+
 	local _sMount, _sPath, _tFlags
 	for k, v in pairs(self.mountMap) do
 		_sMount = v[1]
@@ -263,7 +274,7 @@ function FileSystem:list( sPath ) -- TODO: IMPORTANT: Make sure mount paths are 
 			local fsPath = _sPath .. "/" .. bPath
 			if love.filesystem.exists(fsPath) and love.filesystem.isDirectory(fsPath) then
 				local items = love.filesystem.getDirectoryItems(fsPath)
-				for k,v in pairs(items) do res[k] = v end
+				for k,_v in pairs(items) do table.insert(res, _v) end
 			end
 		end
 	end
