@@ -129,19 +129,19 @@ function Emulator.static.update(dt)
 end
 
 function Emulator.static.keypressed( key, isrepeat )
-	if not isrepeat then
-		if not Emulator.activeComputer.running then
-			Emulator.activeComputer:start()
-			return
-		end
+	if not isrepeat and not Emulator.activeComputer.running then
+		Emulator.activeComputer:start()
+		return
+	end
 
-		local now, allDown = love.timer.getTime(), nil
-		for _k, shortcut in pairs(tShortcuts) do
-			allDown = true
-			for __k, key in pairs(shortcut.keys) do
-				if not love.keyboard.isDown(key) then allDown = false end
-			end
-			if allDown then
+	local now, allDown = love.timer.getTime(), nil
+	for _k, shortcut in pairs(tShortcuts) do
+		allDown = true
+		for __k, key in pairs(shortcut.keys) do
+			if not love.keyboard.isDown(key) then allDown = false end
+		end
+		if allDown then
+			if not isrepeat then
 				if shortcut.delay ~= nil then
 					-- Delayed action
 					shortcut.nSince = now
@@ -149,9 +149,8 @@ function Emulator.static.keypressed( key, isrepeat )
 					-- Instant action
 					shortcut.action()
 				end
-
-				return -- No need to check the rest, and don't send event to queue
 			end
+			return -- No need to check the rest, and don't send event to queue
 		end
 	end
 
