@@ -39,21 +39,21 @@ Util.static.KEYS = {
 }
 
 Util.static.COLOUR_RGB = {
-	WHITE = {255, 255, 255},
-	ORANGE = {230, 125, 50},
-	MAGENTA = {230, 50, 145},
-	LIGHT_BLUE = {16, 106, 232},
-	YELLOW = {240, 230, 50},
-	LIME = {50, 240, 50},
-	PINK = {230, 50, 225},
-	GRAY = {90, 90, 90},
-	LIGHT_GRAY = {150, 150, 150},
-	CYAN = {50, 230, 230},
-	PURPLE = {130, 50, 230},
-	BLUE = {50, 60, 230},
-	BROWN = {150, 85, 75},
-	GREEN = {60, 220, 40},
-	RED = {230, 20, 20},
+	WHITE = {255, 255, 255}, --Colors from GravityScore. Updated by awsmazinggenius.
+	ORANGE = {235, 136, 68},
+	MAGENTA = {195, 84, 205},
+	LIGHT_BLUE = {102, 137, 211},
+	YELLOW = {222, 222, 108},
+	LIME = {65, 205, 52},
+	PINK = {216, 129, 152},
+	GRAY = {67, 67, 67},
+	LIGHT_GRAY = {153, 153, 153},
+	CYAN = {40, 118, 151},
+	PURPLE = {123, 47, 190},
+	BLUE = {37, 49, 146},
+	BROWN = {81, 48, 26},
+	GREEN = {59, 81, 26},
+	RED = {179, 49, 44},
 	BLACK = {0, 0, 0},
 }
 
