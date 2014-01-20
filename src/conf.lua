@@ -8,9 +8,9 @@ function love.conf(t)
     t.modules.physics = false
 
     if _DEBUG then
-   	    t.console = true
+   	t.console = true
         t.release = false
-	else
+    else
         t.console = false
         t.release = true
     end
