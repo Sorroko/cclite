@@ -132,7 +132,7 @@ function FileSystem:isReadOnly(sPath)
 	if not file then return nil end
 
 	local flags = self.mountMap[mount][3]
-	return flags.readOnly
+	return flags.readOnly or false
 end
 
 function FileSystem:isDirectory(sPath)
