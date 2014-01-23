@@ -373,6 +373,8 @@ function NativeAPI:initialize(_computer)
 		end
 	end
 	self.env.term.native.clearLine = function()
+		if self.data.term.cursorY > Screen.height
+			or self.data.term.cursorY < 1 then return end
 		for x = 1, Screen.width do
 			self.computer.textB[self.data.term.cursorY][x] = " "
 			self.computer.backgroundColourB[self.data.term.cursorY][x] = self.data.term.bg
@@ -393,6 +395,8 @@ function NativeAPI:initialize(_computer)
 	end
 	self.env.term.native.write = function( text )
 		text = tostring(text)
+
+		self.data.term.cursorX = self.data.term.cursorX + #text
 		if self.data.term.cursorY > Screen.height
 			or self.data.term.cursorY < 1 then return end
 
@@ -405,7 +409,6 @@ function NativeAPI:initialize(_computer)
 				self.computer.backgroundColourB[self.data.term.cursorY][self.data.term.cursorX + i - 1] = self.data.term.bg
 			end
 		end
-		self.data.term.cursorX = self.data.term.cursorX + #text
 	end
 	self.env.term.native.setTextColor = function( num )
 		assert(type(num) == "number")

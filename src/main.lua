@@ -1,7 +1,6 @@
 --[[ TODO
  Run emulator in a thread to avoid stalling main thread (user code protection)
  There should be spaces on the borders of the screen, where the cells are slightly larger than they are near the middle.
- Better shortcuts/key combos
  Term api draws directly to a love2d canvas, passive screen api.
  Virtual peripherals
  Crash screen
