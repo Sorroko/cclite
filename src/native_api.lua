@@ -190,9 +190,11 @@ function FileSystem:open( sPath, sMode ) -- TODO: Compact this code
 			end
 		end
 		function handle.writeLine( data )
+			data = tostring(data)
 			sData = sData .. data .. "\n"
 		end
 		function handle.write( data )
+			data = tostring(data)
 			sData = sData .. data
 		end
 		return handle
@@ -212,9 +214,11 @@ function FileSystem:open( sPath, sMode ) -- TODO: Compact this code
 			sData = ""
 		end
 		function handle.writeLine( data )
+			data = tostring(data)
 			sData = sData .. data .. "\n"
 		end
 		function handle.write( data )
+			data = tostring(data)
 			sData = sData .. data
 		end
 		return handle
