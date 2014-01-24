@@ -254,7 +254,7 @@ function FileSystem:delete( sPath )
 	return FileSystem.deleteTree(file)
 end
 
-function FileSystem:list( sPath ) -- TODO: IMPORTANT: Make sure mount paths are added to items
+function FileSystem:list( sPath )
 	if self.enableCache and self.cache.list[sPath] then
 		return self.cache.list[sPath]
 	end
@@ -400,9 +400,11 @@ function NativeAPI:initialize(_computer)
 	self.env.term.native.write = function( text )
 		text = tostring(text)
 
-		self.data.term.cursorX = self.data.term.cursorX + #text
 		if self.data.term.cursorY > Screen.height
-			or self.data.term.cursorY < 1 then return end
+			or self.data.term.cursorY < 1 then
+			self.data.term.cursorX = self.data.term.cursorX + #text
+			return
+		end
 
 		for i = 1, #text do
 			local char = string.sub( text, i, i )
@@ -413,6 +415,7 @@ function NativeAPI:initialize(_computer)
 				self.computer.backgroundColourB[self.data.term.cursorY][self.data.term.cursorX + i - 1] = self.data.term.bg
 			end
 		end
+		self.data.term.cursorX = self.data.term.cursorX + #text
 	end
 	self.env.term.native.setTextColor = function( num )
 		assert(type(num) == "number")
@@ -561,7 +564,7 @@ function NativeAPI:initialize(_computer)
 		for k, v in pairs(self.computer.actions.timers) do
 			if v == timer then return k end
 		end
-		return nil -- Error
+		log("Could not find timer!", "ERROR")
 	end
 	self.env.os.setAlarm = function(nTime)
 		assert(type(nTime) == "number")
@@ -578,7 +581,7 @@ function NativeAPI:initialize(_computer)
 		for k, v in pairs(self.computer.actions.alarms) do
 			if v == alarm then return k end
 		end
-		return nil -- Error
+		log("Could not find alarm!", "ERROR")
 	end
 	self.env.os.time = function()
 		return self.computer.minecraft.time / 60
@@ -628,7 +631,7 @@ function NativeAPI:initialize(_computer)
 		end
 
 		http.onReadyStateChange = function()
-			if http.responseText then -- TODO: check if timed out instead
+			if http.responseText then
 		        local handle = HTTPHandle(Util.lines(http.responseText), http.status)
 		        table.insert(self.computer.eventQueue, { "http_success", sUrl, handle })
 		    else
@@ -638,7 +641,7 @@ function NativeAPI:initialize(_computer)
 
 		http.send(sParams)
 	end
-	self.env.rs = self.env.redstone -- Not sure why this isn't in bios?!?! what was dan thinking
+	self.env.rs = self.env.redstone
 	self.env._G = self.env
 
 	if _DEBUG then
