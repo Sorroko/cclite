@@ -1,6 +1,6 @@
 Emulator = class('Emulator')
 
-Emulator.static.activeComputer = Computer:new()
+Emulator.activeComputer = Computer:new()
 
 function Emulator.static.draw()
 	Emulator.activeComputer.screen:draw()
@@ -70,6 +70,8 @@ function Emulator.static.update(dt)
 		end
 	end
 
+	if not Emulator.activeComputer.running then return end -- Don't update computer specific things
+
 	--MOUSE
 	if mouse.isPressed then
     	local mouseX     = love.mouse.getX()
@@ -86,39 +88,35 @@ function Emulator.static.update(dt)
     	end
     end
 
-	if #Emulator.activeComputer.actions.timers > 0 then
-		for k, v in pairs(Emulator.activeComputer.actions.timers) do
-			if now > v.expires then
+	if #Emulator.activeComputer.timers > 0 then
+		for k, v in pairs(Emulator.activeComputer.timers) do
+			if Emulator.activeComputer.clock >= v.expires then
 				table.insert(Emulator.activeComputer.eventQueue, {"timer", k})
-				Emulator.activeComputer.actions.timers[k] = nil
+				Emulator.activeComputer.timers[k] = nil
 			end
 		end
 	end
 
-	if #Emulator.activeComputer.actions.alarms > 0 then
-		local currentTime = api.env.os.time()
-		local currentDay = api.env.os.day()
-
-		for k, v in pairs(Emulator.activeComputer.actions.alarms) do
-        	if v.day == currentDay and v.time >= currentTime then
+	if #Emulator.activeComputer.alarms > 0 then
+		for k, v in pairs(Emulator.activeComputer.alarms) do
+        	if v.day >= Emulator.activeComputer.day and v.time >= Emulator.activeComputer.time then
             	table.insert(Emulator.activeComputer.eventQueue, {"alarm", k})
-           		Emulator.activeComputer.actions.alarms[k] = nil
+           		Emulator.activeComputer.alarms[k] = nil
         	end
     	end
 	end
 
-    -- Check if a second has passed since the last update.
-    local currentClock = os.clock()
-    if currentClock - Emulator.activeComputer.lastUpdateClock >= 1 then
-        Emulator.activeComputer.lastUpdateClock = currentClock
-        Emulator.activeComputer.minecraft.time  = Emulator.activeComputer.minecraft.time + 1
+	-- Minecraft runs at 20 ticks per seconds
+	local time = (dt * 20) / 1000
+	Emulator.activeComputer.time = Emulator.activeComputer.time + time
+	if Emulator.activeComputer.time >= 24 then
+		Emulator.activeComputer.day = Emulator.activeComputer.day + 1
+		Emulator.activeComputer.time = 24 - Emulator.activeComputer.time
+	end
+	Emulator.activeComputer.clock = Emulator.activeComputer.clock + dt
 
-        -- Roll over the time and add another day if the time goes over the max day time.
-        if Emulator.activeComputer.minecraft.time > Emulator.activeComputer.minecraft.MAX_TIME_IN_DAY then
-            Emulator.activeComputer.minecraft.time = 0
-            Emulator.activeComputer.minecraft.day  = Emulator.activeComputer.minecraft.day + 1
-        end
-    end
+	-- if not test then test = 0 end
+	-- if test == 20 then print(Emulator.time) else test = test + 1 end
 
     if #Emulator.activeComputer.eventQueue > 0 then
 		for k, v in pairs(Emulator.activeComputer.eventQueue) do

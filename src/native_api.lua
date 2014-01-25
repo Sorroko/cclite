@@ -538,8 +538,10 @@ function NativeAPI:initialize(_computer)
 	self.env.fs.getSize = function(sPath) return nil end
 	self.env.fs.getFreeSpace = function(sPath) return nil end
 	self.env.os = {}
-	self.env.os.clock = os.clock
-	self.env.os.getComputerID = function() return 1 end
+	self.env.os.clock = function()
+		return math.floor(self.computer.clock * 1000) / 1000 -- Round to 3 d.p.
+	end
+	self.env.os.getComputerID = function() return self.computer.id end
 	self.env.os.setComputerLabel = function( label )
 		assert(type(label) == "string")
 		self.data.os.label = label
@@ -558,10 +560,10 @@ function NativeAPI:initialize(_computer)
 	self.env.os.startTimer = function(nTimeout)
 		assert(type(nTimeout) == "number")
 		local timer = {
-			expires = love.timer.getTime() + nTimeout,
+			expires = self.computer.clock + nTimeout,
 		}
-		table.insert(self.computer.actions.timers, timer)
-		for k, v in pairs(self.computer.actions.timers) do
+		table.insert(self.computer.timers, timer)
+		for k, v in pairs(self.computer.timers) do
 			if v == timer then return k end
 		end
 		log("Could not find timer!", "ERROR")
@@ -571,23 +573,21 @@ function NativeAPI:initialize(_computer)
 		if nTime < 0 or nTime > 24 then
 			error( "Number out of range: " .. tostring( nTime ) )
 		end
-		local currentDay = self.computer.minecraft.day
-		-- TODO: Revise this. Look into merging gamax92s changes.
 		local alarm = {
 			time = nTime,
-			day = nTime <= self.computer.minecraft.time / 60 and currentDay + 1 or currentDay
+			day = nTime >= self.computer.time and self.computer.day + 1 or self.computer.day
 		}
-		table.insert(self.computer.actions.alarms, alarm)
-		for k, v in pairs(self.computer.actions.alarms) do
+		table.insert(self.computer.alarms, alarm)
+		for k, v in pairs(self.computer.alarms) do
 			if v == alarm then return k end
 		end
 		log("Could not find alarm!", "ERROR")
 	end
 	self.env.os.time = function()
-		return self.computer.minecraft.time / 60
+		return math.floor(self.computer.time * 1000) / 1000 -- Round to 3d.p.
 	end
 	self.env.os.day = function()
-		return self.computer.minecraft.day
+		return self.computer.day
 	end
 	self.env.os.shutdown = function()
 		self.computer:stop()

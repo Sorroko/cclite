@@ -4,19 +4,15 @@ function Computer:initialize()
 	log("Computer -> initialize()")
 	self.screen = Screen:new(self)
 
+	self.id = 1 -- Temporary
 	self.running = false
 	self.reboot = false
-	self.actions = {
-		timers = {},
-		alarms = {},
-	}
+	self.timers = {}
+	self.alarms = {}
 	self.eventQueue = {}
-	self.lastUpdateClock = os.clock()
-	self.minecraft = {
-		time = 0,
-		day = 0,
-		MAX_TIME_IN_DAY = 1440,
-	}
+	self.time = 0
+	self.day = 0
+	self.clock = 0 -- In seconds since emulator start
 	self.textB = {}
 	self.backgroundColourB = {}
 	self.textColourB = {}
@@ -63,8 +59,9 @@ function Computer:stop( _reboot )
 	self.reboot = _reboot
 
 	-- Reset events/key shortcuts
-	self.actions.timers = {}
-	self.actions.alarms = {}
+	self.timers = {}
+	self.alarms = {}
+	self.clock = 0
 	self.eventQueue = {}
 	self.api = nil
 	self.waitForEvent = nil
