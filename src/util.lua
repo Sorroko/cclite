@@ -76,6 +76,15 @@ Util.static.COLOUR_CODE = {
 	[32768] = Util.COLOUR_RGB.BLACK,
 }
 
+-- Better key down check
+Util.static.isKeyDown = function(key)
+	if key == "ctrl" then
+		return Util.isKeyDown("lctrl") or Util.isKeyDown("rctrl")
+	else
+		return love.keyboard.isDown(key)
+	end
+end
+
 Util.static.lines = function(str)
 	local t = {}
 	local function helper(line) table.insert(t, line) return "" end
@@ -83,19 +92,19 @@ Util.static.lines = function(str)
 	return t
 end
 
-local function deep_copy(orig) -- Simple table deep copy.
+-- TODO: Maybe replace with non-recursive
+Util.static.deep_copy = function(orig) -- Simple table deep copy.
     local orig_type = type(orig)
     local copy
     if orig_type == 'table' then
         copy = {}
         for orig_key, orig_value in next, orig, nil do
-            copy[deep_copy(orig_key)] = deep_copy(orig_value)
+            copy[Util.deep_copy(orig_key)] = Util.deep_copy(orig_value)
         end
-        setmetatable(copy, deep_copy(getmetatable(orig)))
+        setmetatable(copy, Util.deep_copy( getmetatable(orig) ) )
     else -- number, string, boolean, etc
         copy = orig
     end
     return copy
 end
 
-Util.static.deep_copy = deep_copy

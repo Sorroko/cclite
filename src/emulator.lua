@@ -8,7 +8,7 @@ end
 
 local tShortcuts = {
 	["shutdown"] = {
-		keys = {"lctrl", "s"},
+		keys = {"ctrl", "s"},
 		delay = 1,
 		nSince = nil,
 		action = function()
@@ -16,7 +16,7 @@ local tShortcuts = {
 		end
 	},
 	["reboot"] = {
-		keys = {"lctrl", "r"},
+		keys = {"ctrl", "r"},
 		delay = 1,
 		nSince = nil,
 		action = function()
@@ -24,7 +24,7 @@ local tShortcuts = {
 		end
 	},
 	["terminate"] = {
-		keys = {"lctrl", "t"},
+		keys = {"ctrl", "t"},
 		delay = 1,
 		nSince = nil,
 		action = function()
@@ -32,7 +32,7 @@ local tShortcuts = {
 		end
 	},
 	["paste_text"] = {
-		keys = {"lctrl", "v"},
+		keys = {"ctrl", "v"},
 		action = function()
 			local clipboard = love.system.getClipboardText():sub(1,128):gsub("\r\n","\n")
 			Emulator.textinput(clipboard)
@@ -60,7 +60,7 @@ function Emulator.static.update(dt)
 		if shortcut.delay ~= nil then
 			allDown = true
 			for __k, key in pairs(shortcut.keys) do
-				if not love.keyboard.isDown(key) then allDown = false end
+				if not Util.isKeyDown(key) then allDown = false end
 			end
 
 			if allDown and shortcut.nSince and now - shortcut.nSince > shortcut.delay then
@@ -136,7 +136,7 @@ function Emulator.static.keypressed( key, isrepeat )
 	for _k, shortcut in pairs(tShortcuts) do
 		allDown = true
 		for __k, key in pairs(shortcut.keys) do
-			if not love.keyboard.isDown(key) then allDown = false end
+			if not Util.isKeyDown(key) then allDown = false end
 		end
 		if allDown then
 			if not isrepeat then

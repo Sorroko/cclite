@@ -45,8 +45,15 @@ function love.load()
 	love.window.setTitle( "ComputerCraft Emulator" )
 	-- TODO: Some nice icons? love.window.setIcon
 
-	font = love.graphics.newFont( 'res/minecraft.ttf', 16 )
-	love.graphics.setFont(font)
+
+	local font = love.graphics.newFont( 'res/minecraft.ttf', 16 )
+    -- local glyphs = ""
+    -- for i = 32,126 do
+    --     glyphs = glyphs .. string.char(i)
+    -- end
+    -- local font = love.graphics.newImageFont("res/minecraft.png", glyphs)
+    -- font:setFilter("nearest","nearest")
+    Screen.setFont(font)
 
 	love.filesystem.setIdentity( "cclite" )
 	if not love.filesystem.exists( "data/" ) then
