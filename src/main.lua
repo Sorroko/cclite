@@ -4,6 +4,7 @@
  Term api draws directly to a love2d canvas, passive screen api.
  Virtual peripherals
  Crash screen
+ Add bit api
  Image fonts (gamax92)
  Implement:
 	redstone
@@ -28,23 +29,19 @@ require 'lib.middleclass'
 require 'lib.http.HttpRequest'
 
 require 'util'
-require 'native_api'
-require 'screen'
-require 'computer'
-require 'emulator'
+require 'emulator.emulator'
+require 'ui.window'
+require 'ui.panel'
 
+local emulator, panel
 function love.load()
     log("Application starting...")
-	love.window.setMode( Screen.width * Screen.pixelWidth, Screen.height * Screen.pixelHeight, {
-		fullscreen = false,
-		vsync = true,
-		fsaa = 0,
-		resizable = false,
-		borderless = false
-	} )
-	love.window.setTitle( "ComputerCraft Emulator" )
-	-- TODO: Some nice icons? love.window.setIcon
 
+    Window.main = Window( "ComputerCraft Emulator" )
+    emulator = Emulator(0, 0)
+    --panel = Panel(emulator:getWidth(), 0)
+
+	-- TODO: Some nice icons? love.window.setIcon
 
 	local font = love.graphics.newFont( 'res/minecraft.ttf', 16 )
     -- local glyphs = ""
@@ -63,19 +60,34 @@ function love.load()
 
 	love.keyboard.setKeyRepeat( 0.5, 0.05 )
 
-    Screen.setup()
-	Emulator.activeComputer:start()
+    Window.main:create()
+
+    emulator.computer:start()
 end
 
-function love.mousereleased( x, y, _button ) Emulator.mousereleased( x, y, _button ) end
-function love.mousepressed( x, y, _button ) Emulator.mousepressed(x, y, _button) end
-function love.keypressed(key, isrepeat) Emulator.keypressed(key, isrepeat) end
-function love.textinput(text) Emulator.textinput(text) end
-function love.update(dt) Emulator.update(dt) end
-function love.draw() Emulator.draw() end
+function love.update(dt)
+    HttpRequest.checkRequests()
+    emulator:update(dt)
+end
+function love.draw()
+    Window.main:draw()
+end
+
+local _events = {}
+function love.on(event, callback)
+    if type(callback) ~= "function" then return end
+    if not _events[event] then _events[event] = {} end
+    table.insert(_events[event], callback)
+end
+
+function love.emit(event, ...)
+    if not _events[event] then return end
+    for k, v in pairs(_events[event]) do
+        pcall(v, ...)
+    end
+end
 
 function love.run()
-
     if love.math then
         love.math.setRandomSeed(os.time())
     end
@@ -100,14 +112,13 @@ function love.run()
             love.event.pump()
             for e,a,b,c,d in love.event.poll() do
                 if e == "quit" then
-                    if not love.quit or not love.quit() then
-                        if love.audio then
-                            love.audio.stop()
-                        end
-                        return
+                    if love.audio then
+                        love.audio.stop()
                     end
+                    return
                 end
-                love.handlers[e](a,b,c,d)
+                --love.handlers[e](a,b,c,d)
+                love.emit(e, a, b, c, d)
             end
         end
 

@@ -6,6 +6,8 @@ Screen.static.height = 19
 Screen.static.pixelWidth = 12--6 * 2
 Screen.static.pixelHeight = 18--9 * 2
 Screen.static.textOffset = 3 -- Small correction for font, align the bottom of font with bottom of pixel.
+Screen.font = nil
+Screen.tCharOffset = {}
 
 -- Internal helpers
 local lsetCol = love.graphics.setColor
@@ -21,20 +23,15 @@ local function setColor(c)
 	return self
 end
 
--- Static screen init
-function Screen.static.setup()
-	if not Screen.font then error("Set font first!") end
+function Screen.static.setFont(font)
+	Screen.font = font
+	love.graphics.setFont(Screen.font)
 	Screen.tCharOffset = {}
 	local char
 	for i = 32,127 do -- TODO: Make it 170 possibly? Find a beter, complete font.
 		char = string.char(i)
 		Screen.tCharOffset[char] = math.floor(Screen.pixelWidth / 2 - Screen.font:getWidth(char) / 2) -- Center all chars
 	end
-end
-
-function Screen.static.setFont(font)
-	Screen.font = font
-	love.graphics.setFont(Screen.font)
 end
 
 -- Screen instance init

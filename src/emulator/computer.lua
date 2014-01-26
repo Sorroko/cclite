@@ -2,7 +2,7 @@ Computer = class('Computer')
 
 function Computer:initialize()
 	log("Computer -> initialize()")
-	self.screen = Screen:new(self)
+	self.screen = Screen(self)
 
 	self.id = 1 -- Temporary
 	self.running = false
@@ -44,7 +44,7 @@ function Computer:start()
 		return
 	end
 
-	self.api = NativeAPI:new(self)
+	self.api = NativeAPI(self)
 	setfenv( fn,  self.api.env )
 
 	self.proc = coroutine.create(fn)
