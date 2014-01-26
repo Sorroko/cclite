@@ -1,4 +1,4 @@
-_DEBUG = false
+_DEBUG = true
 _FPS = 30
 function love.conf(t)
     t.title = "ComputerCraft Emulator"

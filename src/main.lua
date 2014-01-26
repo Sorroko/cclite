@@ -37,9 +37,7 @@ local emulator, panel
 function love.load()
     log("Application starting...")
 
-    Window.main = Window( "ComputerCraft Emulator" )
-    emulator = Emulator(0, 0)
-    --panel = Panel(emulator:getWidth(), 0)
+    PeripheralManager.parse()
 
 	-- TODO: Some nice icons? love.window.setIcon
 
@@ -59,6 +57,11 @@ function love.load()
 	end
 
 	love.keyboard.setKeyRepeat( 0.5, 0.05 )
+
+    Window.main = Window( "ComputerCraft Emulator" )
+
+    emulator = Emulator(0, 0)
+    panel = Panel(emulator:getWidth(), 0)
 
     Window.main:create()
 

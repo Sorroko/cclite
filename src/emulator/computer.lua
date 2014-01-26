@@ -3,6 +3,10 @@ Computer = class('Computer')
 function Computer:initialize()
 	log("Computer -> initialize()")
 	self.screen = Screen(self)
+	self.fileSystem = FileSystem()
+	self.peripheralManager = PeripheralManager(self)
+
+	--self.peripheralManager:setSide("top", "test")
 
 	self.id = 1 -- Temporary
 	self.running = false

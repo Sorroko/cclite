@@ -1,4 +1,5 @@
 require 'emulator.computer'
+require 'emulator.peripheral_manager'
 require 'emulator.screen'
 require 'emulator.filesystem'
 require 'emulator.native_api'

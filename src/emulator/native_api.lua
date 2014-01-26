@@ -56,8 +56,7 @@ function NativeAPI:initialize(_computer)
 		},
 		os = {
 			label = nil
-		},
-		fileSystem = FileSystem:new()
+		}
 	}
 	self.env = { -- TODO: Better way of copying? Include metatables too?
 		_VERSION = "Lua 5.1",
@@ -201,27 +200,27 @@ function NativeAPI:initialize(_computer)
 		assert(type(sPath) == "string")
 		assert(type(sMode) == "string")
 		sPath = FileSystem.cleanPath(sPath)
-		return self.data.fileSystem:open(sPath, sMode)
+		return self.computer.fileSystem:open(sPath, sMode)
 	end
 	self.env.fs.list = function(sPath)
 		assert(type(sPath) == "string")
 		sPath = FileSystem.cleanPath(sPath)
-		return self.data.fileSystem:list(sPath)
+		return self.computer.fileSystem:list(sPath)
 	end
 	self.env.fs.exists = function(sPath)
 		assert(type(sPath) == "string")
 		sPath = FileSystem.cleanPath(sPath)
-		return self.data.fileSystem:find(sPath) ~= nil
+		return self.computer.fileSystem:find(sPath) ~= nil
 	end
 	self.env.fs.isDir = function(sPath)
 		assert(type(sPath) == "string")
 		sPath = FileSystem.cleanPath(sPath)
-		return self.data.fileSystem:isDirectory(sPath)
+		return self.computer.fileSystem:isDirectory(sPath)
 	end
 	self.env.fs.isReadOnly = function(sPath)
 		assert(type(sPath) == "string")
 		sPath = FileSystem.cleanPath(sPath)
-		return self.data.fileSystem:isReadOnly(sPath)
+		return self.computer.fileSystem:isReadOnly(sPath)
 	end
 	self.env.fs.getName = function(sPath)
 		assert(type(sPath) == "string")
@@ -231,7 +230,7 @@ function NativeAPI:initialize(_computer)
 	self.env.fs.makeDir = function(sPath)
 		assert(type(sPath) == "string")
 		sPath = FileSystem.cleanPath(sPath)
-		return self.data.fileSystem:makeDirectory(sPath)
+		return self.computer.fileSystem:makeDirectory(sPath)
 	end
 	self.env.fs.move = function(fromPath, toPath)
 		assert(type(fromPath) == "string")
@@ -239,7 +238,7 @@ function NativeAPI:initialize(_computer)
 		fromPath = FileSystem.cleanPath(fromPath)
 		toPath = FileSystem.cleanPath(toPath)
 
-		return self.data.fileSystem:copy(fromPath, toPath) and self.data.fileSystem:delete(fromPath)
+		return self.computer.fileSystem:copy(fromPath, toPath) and self.computer.fileSystem:delete(fromPath)
 	end
 	self.env.fs.copy = function(fromPath, toPath)
 		assert(type(fromPath) == "string")
@@ -247,12 +246,12 @@ function NativeAPI:initialize(_computer)
 		fromPath = FileSystem.cleanPath(fromPath)
 		toPath = FileSystem.cleanPath(toPath)
 
-		return self.data.fileSystem:copy(fromPath, toPath)
+		return self.computer.fileSystem:copy(fromPath, toPath)
 	end
 	self.env.fs.delete = function(sPath)
 		assert(type(sPath) == "string")
 		sPath = FileSystem.cleanPath(sPath)
-		return self.data.fileSystem:delete(sPath)
+		return self.computer.fileSystem:delete(sPath)
 	end
 	self.env.fs.combine = function(basePath, localPath)
 		assert(type(basePath) == "string")
@@ -335,12 +334,18 @@ function NativeAPI:initialize(_computer)
 		testBundledInput = function(side, value) return false end,
 	}
 	self.env.peripheral = {
-		isPresent = function(side) return false end,
-		getNames = function() return {} end,
-		getType = function(side) return nil end,
-		getMethods = function(side) return nil end,
-		call = function(side, method, ...) return nil end,
-		wrap = function (side) return nil end,
+		isPresent = function(side)
+			return self.computer.peripheralManager:isPresent(side)
+		end,
+		getType = function(side)
+			return self.computer.peripheralManager:getType(side)
+		end,
+		getMethods = function(side)
+			return self.computer.peripheralManager:getMethods(side)
+		end,
+		call = function(side, method, ...)
+			return self.computer.peripheralManager:call(side, method, ...)
+		end,
 	}
 	self.env.http = {}
 	self.env.http.request = function( sUrl, sParams )
