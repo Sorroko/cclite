@@ -265,7 +265,7 @@ function NativeAPI:initialize(_computer)
 	self.env.fs.getFreeSpace = function(sPath) return nil end
 	self.env.os = {}
 	self.env.os.clock = function()
-		return math.floor(self.computer.clock * 1000) / 1000 -- Round to 3 d.p.
+		return math.floor(self.computer.clock * 100) / 100 -- Round to 2 d.p.
 	end
 	self.env.os.getComputerID = function() return self.computer.id end
 	self.env.os.setComputerLabel = function( label )
