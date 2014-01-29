@@ -43,7 +43,7 @@ local tShortcuts = {
 
 function Emulator:initialize(x, y)
 	Component.initialize(self, x, y)
-	self.computer = Computer()
+	self.computer = Computer(self)
 
 	-- register callbacks with pub/sub
 	love.on("mousereleased", function ( ... )

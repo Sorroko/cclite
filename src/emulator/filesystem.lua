@@ -1,7 +1,7 @@
 FileSystem = class('FileSystem')
 
-function string.startsWith(_self, testStr)
-	return testStr == string.sub(_self, 1, #testStr)
+function startsWith(str, testStr)
+	return testStr == string.sub(str, 1, #testStr)
 end
 
 function FileSystem.static.deleteTree(sFolder)
@@ -99,7 +99,7 @@ function FileSystem:find(sPath)
 		_sMount = v[1]
 		_sPath = v[2]
 		_tFlags = v[3]
-		if sPath:startsWith(_sMount) then
+		if startsWith(sPath, _sMount) then
 			local bPath = string.sub(sPath, #_sMount + 1, -1)
 			if love.filesystem.exists(_sPath .. "/" .. bPath) then
 				if self.enableCache then
@@ -258,7 +258,7 @@ function FileSystem:list( sPath )
 		_sMount = v[1]
 		_sPath = v[2]
 		_tFlags = v[3]
-		if sPath:startsWith(_sMount) then
+		if startsWith(sPath, _sMount) then
 			local bPath = string.sub(sPath, #_sMount + 1, -1)
 			local fsPath = _sPath .. "/" .. bPath
 			if love.filesystem.exists(fsPath) and love.filesystem.isDirectory(fsPath) then

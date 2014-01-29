@@ -38,12 +38,14 @@ function PeripheralManager:setSide(side, peripheralType)
 	if not sides[side] then return end
 	if peripheralType == nil then
 		self.peripherals[side] = nil
+		table.insert(self.computer.eventQueue, {"peripheral_detach", side})
 	else
 		if PeripheralManager.loaded_peripherals[peripheralType] == nil then return end
 		self.peripherals[side] = {
 			["type"] = peripheralType,
 			["data"] = {}
-		} -- Clone peripheral table and set to side
+		}
+		table.insert(self.computer.eventQueue, {"peripheral", side})
 	end
 end
 

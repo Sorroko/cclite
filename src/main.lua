@@ -3,15 +3,17 @@
  There should be spaces on the borders of the screen, where the cells are slightly larger than they are near the middle.
  Term api draws directly to a love2d canvas, passive screen api.
  Virtual peripherals
- Crash screen
+ Config with custom colours
+ Support standard computers
+ UI for peripherals etc.
+ Crash screen?
  Add bit api
+ Move some emulator logic to computer class
  Image fonts (gamax92)
  Implement:
 	redstone
 	disk
 	disk_eject
-	peripheral
-	peripheral_detatch
 	modem_message
 	monitor_touch
 	monitor_resize
