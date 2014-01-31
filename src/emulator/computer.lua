@@ -1,6 +1,6 @@
 Computer = class('Computer')
 
-function Computer:initialize(emulator)
+function Computer:initialize(emulator, id)
 	log("Computer -> initialize()")
 	self.emulator = emulator
 	self.screen = Screen(self)
@@ -9,7 +9,7 @@ function Computer:initialize(emulator)
 
 	--self.peripheralManager:setSide("top", "test")
 
-	self.id = 1 -- Temporary
+	self.id = id
 	self.running = false
 	self.reboot = false
 	self.timers = {}
@@ -78,5 +78,74 @@ function Computer:resume( ... )
 	end
 	if ok then
 		self.waitForEvent = param
+	end
+end
+
+function Computer:pushEvent(event)
+	table.insert(self.eventQueue, event)
+end
+
+function Computer:update(dt)
+	if self.reboot and not self.running then
+		log("Restarting computer.")
+		self:start()
+	end
+
+	-- Only update below if running
+	if not self.running then return end
+
+    -- TIMERS
+	if #self.timers > 0 then
+		for k, v in pairs(self.timers) do
+			if self.clock >= v.expires then
+				self:pushEvent({"timer", k})
+				self.timers[k] = nil
+			end
+		end
+	end
+
+	-- ALARMS
+	if #self.alarms > 0 then
+		for k, v in pairs(self.alarms) do
+        	if v.day >= self.day and v.time >= self.time then
+            	self:pushEvent({"alarm", k})
+           		self.alarms[k] = nil
+        	end
+    	end
+	end
+
+	-- MINECRAFT TIME
+	-- TODO: Move this into emulator, global for all computers
+	-- Minecraft runs at 20 ticks per seconds
+	local time = (dt * 20) / 1000
+	self.time = self.time + time
+	if self.time >= 24 then
+		self.day = self.day + 1
+		self.time = 24 - self.time
+	end
+
+	-- CLOCK
+	self.clock = self.clock + dt
+
+	-- EVENTS
+	if #self.eventQueue > 0 then
+		for k, v in pairs(self.eventQueue) do
+			self:resume(unpack(v))
+		end
+		self.eventQueue = {}
+	end
+end
+
+function Computer:textinput( text )
+	if string.len(text) > 1 then -- Speedy check
+		for char in string.gmatch(text, ".") do
+			if char == "\n" then
+				self:pushEvent({"key", Util.KEYS["return"]})
+			else
+				self:pushEvent({"char", char})
+			end
+		end
+	else
+		self:pushEvent({"char", text})
 	end
 end

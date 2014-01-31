@@ -22,7 +22,7 @@
 -- Simple logger
 function log(msg, level)
     if not _DEBUG then return end
-    if level ~= "ERROR" or level ~= "WARNING" then level = "INFO" end
+    if level ~= "ERROR" and level ~= "WARNING" then level = "INFO" end
     local str = "[" .. os.date("%X") .. "][" .. level .. "]: " .. tostring(msg)
     print(str)
 end
@@ -67,7 +67,8 @@ function love.load()
 
     Window.main:create()
 
-    emulator.computer:start()
+    local computer = emulator:registerComputer()
+    computer:start()
 end
 
 function love.update(dt)

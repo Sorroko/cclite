@@ -12,38 +12,41 @@ local tShortcuts = {
 		keys = {"ctrl", "s"},
 		delay = 1,
 		nSince = nil,
-		action = function(self)
-			self.computer:stop()
+		action = function(activeComp)
+			activeComp:stop()
 		end
 	},
 	["reboot"] = {
 		keys = {"ctrl", "r"},
 		delay = 1,
 		nSince = nil,
-		action = function(self)
-			self.computer:stop( true )
+		action = function(activeComp)
+			activeComp:stop( true )
 		end
 	},
 	["terminate"] = {
 		keys = {"ctrl", "t"},
 		delay = 1,
 		nSince = nil,
-		action = function(self)
-			table.insert(self.computer.eventQueue, {"terminate"})
+		action = function(activeComp)
+			activeComp:pushEvent({"terminate"})
 		end
 	},
 	["paste_text"] = {
 		keys = {"ctrl", "v"},
-		action = function(self)
+		action = function(activeComp)
 			local clipboard = love.system.getClipboardText():sub(1,128):gsub("\r\n","\n")
-			self.textinput(clipboard)
+			activeComp:textinput(clipboard)
 		end
 	}
 }
 
 function Emulator:initialize(x, y)
 	Component.initialize(self, x, y)
-	self.computer = Computer(self)
+
+	self.UUID = 1
+	self.computers = {}
+	self.activeId = nil
 
 	-- register callbacks with pub/sub
 	love.on("mousereleased", function ( ... )
@@ -60,6 +63,36 @@ function Emulator:initialize(x, y)
 	end)
 end
 
+function Emulator:registerComputer()
+	local computer = Computer(self, self.UUID)
+	self.computers[self.UUID] = computer
+
+	self.UUID = self.UUID + 1
+
+	self:setActiveComputer(computer.id)
+	return self.computers[computer.id]
+end
+
+function Emulator:setActiveComputer(id) -- TODO: Accept a computer object as param
+	if id ~= nil and self.computers[id] ~= nil then
+		self.activeId = id
+		return
+	end
+
+	-- Find a computer to set as active
+	for i = 1, #self.computers do
+		if self.computer[i] ~= nil then
+			self.activeId = i
+			return
+		end
+	end
+	self.activeId = nil
+end
+
+function Emulator:getActiveComputer() -- Active does not mean it must be on, it is the computer which has focus
+	return self.activeId ~= nil and self.computers[self.activeId] or nil
+end
+
 function Emulator:getWidth()
 	return Screen.width * Screen.pixelWidth
 end
@@ -69,7 +102,9 @@ function Emulator:getHeight()
 end
 
 function Emulator:draw()
-	self.computer.screen:draw()
+	if self.activeId ~= nil then
+		self.computers[self.activeId].screen:draw()
+	end
 end
 
 local mouse = {
@@ -79,88 +114,61 @@ local mouse = {
 }
 
 function Emulator:update(dt)
-	local now = love.timer.getTime()
 
-	if self.computer.reboot and not self.computer.running then
-		log("Restarting computer.")
-		self.computer:start()
-	end
+	if self.activeId ~= nil then -- Only send keyboard and mouse events/actions to active computer
+		local now = love.timer.getTime()
+		-- KEYBOARD SHORTCUTS
+		local allDown
+		for _k, shortcut in pairs(tShortcuts) do
+			if shortcut.delay ~= nil then
+				allDown = true
+				for __k, key in pairs(shortcut.keys) do
+					if not Util.isKeyDown(key) then allDown = false end
+				end
 
-	local allDown
-	for _k, shortcut in pairs(tShortcuts) do
-		if shortcut.delay ~= nil then
-			allDown = true
-			for __k, key in pairs(shortcut.keys) do
-				if not Util.isKeyDown(key) then allDown = false end
-			end
-
-			if allDown and shortcut.nSince and now - shortcut.nSince > shortcut.delay then
-				shortcut.nSince = nil
-				shortcut.action(self)
+				if allDown and shortcut.nSince and now - shortcut.nSince > shortcut.delay then
+					shortcut.nSince = nil
+					shortcut.action(self:getActiveComputer())
+				end
 			end
 		end
+
+		--MOUSE
+		-- TODO: Possibly account for this components x and y
+		if mouse.isPressed then
+	    	local mouseX     = love.mouse.getX()
+	    	local mouseY     = love.mouse.getY()
+	    	local termMouseX = math.floor( mouseX / Screen.pixelWidth ) + 1
+	    	local termMouseY = math.floor( mouseY / Screen.pixelHeight ) + 1
+	    	if (termMouseX ~= mouse.lastTermX or termMouseY ~= mouse.lastTermY)
+				and (mouseX > 0 and mouseX < Screen.width * Screen.pixelWidth and
+					mouseY > 0 and mouseY < Screen.height * Screen.pixelHeight) then
+
+	        	mouse.lastTermX = termMouseX
+	       		mouse.lastTermY = termMouseY
+
+	        	self:getActiveComputer():pushEvent({ "mouse_drag", love.mouse.isDown( "r" ) and 2 or 1, termMouseX, termMouseY})
+	    	end
+	    end
 	end
 
-	if not self.computer.running then return end -- Don't update computer specific things
-
-	--MOUSE
-	if mouse.isPressed then
-    	local mouseX     = love.mouse.getX()
-    	local mouseY     = love.mouse.getY()
-    	local termMouseX = math.floor( mouseX / Screen.pixelWidth ) + 1
-    	local termMouseY = math.floor( mouseY / Screen.pixelHeight ) + 1
-    	if (termMouseX ~= mouse.lastTermX or termMouseY ~= mouse.lastTermY)
-			and (mouseX > 0 and mouseX < Screen.width * Screen.pixelWidth and
-				mouseY > 0 and mouseY < Screen.height * Screen.pixelHeight) then
-
-        	mouse.lastTermX = termMouseX
-       		mouse.lastTermY = termMouseY
-        	table.insert (self.computer.eventQueue, { "mouse_drag", love.mouse.isDown( "r" ) and 2 or 1, termMouseX, termMouseY})
+    -- UPDATE
+    for i = 0, #self.computers do -- Update all computers, bot just active
+    	if self.computers[i] ~= nil then
+    		self.computers[i]:update(dt)
     	end
     end
 
-	if #self.computer.timers > 0 then
-		for k, v in pairs(self.computer.timers) do
-			if self.computer.clock >= v.expires then
-				table.insert(self.computer.eventQueue, {"timer", k})
-				self.computer.timers[k] = nil
-			end
-		end
-	end
-
-	if #self.computer.alarms > 0 then
-		for k, v in pairs(self.computer.alarms) do
-        	if v.day >= self.computer.day and v.time >= self.computer.time then
-            	table.insert(self.computer.eventQueue, {"alarm", k})
-           		self.computer.alarms[k] = nil
-        	end
-    	end
-	end
-
-	-- Minecraft runs at 20 ticks per seconds
-	local time = (dt * 20) / 1000
-	self.computer.time = self.computer.time + time
-	if self.computer.time >= 24 then
-		self.computer.day = self.computer.day + 1
-		self.computer.time = 24 - self.computer.time
-	end
-	self.computer.clock = self.computer.clock + dt
-
-	-- if not test then test = 0 end
-	-- if test == 20 then print(self.time) else test = test + 1 end
-
-    if #self.computer.eventQueue > 0 then
-		for k, v in pairs(self.computer.eventQueue) do
-			self.computer:resume(unpack(v))
-		end
-		self.computer.eventQueue = {}
-	end
 end
 
 function Emulator:keypressed( key, isrepeat )
-	if not isrepeat and not self.computer.running then
-		self.computer:start()
-		return
+	if not self.activeId then return end
+
+	if not self:getActiveComputer().running then
+		if not isrepeat then
+			self:getActiveComputer():start()
+		end
+		return -- Don't check shortcuts or key events if emulator isn't running
 	end
 
 	local now, allDown = love.timer.getTime(), nil
@@ -176,7 +184,7 @@ function Emulator:keypressed( key, isrepeat )
 					shortcut.nSince = now
 				else
 					-- Instant action
-					shortcut.action()
+					shortcut.action(self:getActiveComputer())
 				end
 			end
 			return -- No need to check the rest, and don't send event to queue
@@ -184,25 +192,19 @@ function Emulator:keypressed( key, isrepeat )
 	end
 
 	if Util.KEYS[key] then
-   		table.insert(self.computer.eventQueue, {"key", Util.KEYS[key]})
+   		self:getActiveComputer():pushEvent({"key", Util.KEYS[key]})
    	end
 end
 
 function Emulator:textinput( text )
-	if string.len(text) > 1 then -- Speedy check
-		for char in string.gmatch(text, ".") do
-			if char == "\n" then
-				table.insert(self.computer.eventQueue, {"key", Util.KEYS["return"]})
-			else
-				table.insert(self.computer.eventQueue, {"char", char})
-			end
-		end
-	else
-		table.insert(self.computer.eventQueue, {"char", text})
-	end
+	if not self.activeId then return end
+
+	self:getActiveComputer():textinput(text)
 end
 
 function Emulator:mousepressed( x, y, _button )
+	if not self.activeId then return end
+
 	if x > 0 and x < Screen.width * Screen.pixelWidth
 		and y > 0 and y < Screen.height * Screen.pixelHeight then -- Within screen bounds.
 
@@ -213,11 +215,11 @@ function Emulator:mousepressed( x, y, _button )
 			mouse.isPressed = true
 			mouse.lastTermX = termMouseX
 			mouse.lastTermY = termMouseY
-			table.insert(self.computer.eventQueue, {"mouse_click", _button == "r" and 2 or 1, termMouseX, termMouseY})
+			self:getActiveComputer():pushEvent({"mouse_click", _button == "r" and 2 or 1, termMouseX, termMouseY})
 		elseif _button == "wu" then -- Scroll up
-			table.insert(self.computer.eventQueue, {"mouse_scroll", -1, termMouseX, termMouseX})
+			self:getActiveComputer():pushEvent({"mouse_scroll", -1, termMouseX, termMouseX})
 		elseif _button == "wd" then -- Scroll down
-			table.insert(self.computer.eventQueue, {"mouse_scroll", 1, termMouseX, termMouseY})
+			self:getActiveComputer():pushEvent({"mouse_scroll", 1, termMouseX, termMouseY})
 		end
 	end
 end
