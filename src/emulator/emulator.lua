@@ -63,12 +63,11 @@ function Emulator:initialize(x, y)
 	end)
 end
 
-function Emulator:registerComputer()
-	local computer = Computer(self, self.UUID)
+function Emulator:registerComputer(tData)
+	local computer = Computer(self, self.UUID, tData.advanced)
 	self.computers[self.UUID] = computer
 
 	self.UUID = self.UUID + 1
-
 	self:setActiveComputer(computer.id)
 	return self.computers[computer.id]
 end
@@ -135,7 +134,7 @@ function Emulator:update(dt)
 
 		--MOUSE
 		-- TODO: Possibly account for this components x and y
-		if mouse.isPressed then
+		if self:getActiveComputer().isAdvanced and mouse.isPressed then
 	    	local mouseX     = love.mouse.getX()
 	    	local mouseY     = love.mouse.getY()
 	    	local termMouseX = math.floor( mouseX / Screen.pixelWidth ) + 1
@@ -203,7 +202,7 @@ function Emulator:textinput( text )
 end
 
 function Emulator:mousepressed( x, y, _button )
-	if not self.activeId then return end
+	if not self.activeId or self:getActiveComputer().isAdvanced then return end
 
 	if x > 0 and x < Screen.width * Screen.pixelWidth
 		and y > 0 and y < Screen.height * Screen.pixelHeight then -- Within screen bounds.
@@ -225,5 +224,6 @@ function Emulator:mousepressed( x, y, _button )
 end
 
 function Emulator:mousereleased( x, y, _button )
+	if not self.activeId or self:getActiveComputer().isAdvanced then return end
 	mouse.isPressed = false
 end

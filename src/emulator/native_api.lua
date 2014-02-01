@@ -136,26 +136,30 @@ function NativeAPI:initialize(_computer)
 			if self.data.term.cursorX + i - 1 <= Screen.width
 				and self.data.term.cursorX + i - 1 >= 1 then
 				self.computer.textB[self.data.term.cursorY][self.data.term.cursorX + i - 1] = char
-				self.computer.textColourB[self.data.term.cursorY][self.data.term.cursorX + i - 1] = self.data.term.fg
-				self.computer.backgroundColourB[self.data.term.cursorY][self.data.term.cursorX + i - 1] = self.data.term.bg
+				if self.computer.isAdvanced then
+					self.computer.textColourB[self.data.term.cursorY][self.data.term.cursorX + i - 1] = self.data.term.fg
+					self.computer.backgroundColourB[self.data.term.cursorY][self.data.term.cursorX + i - 1] = self.data.term.bg
+				end
 			end
 		end
 		self.data.term.cursorX = self.data.term.cursorX + #text
 	end
 	self.env.term.native.setTextColor = function( num )
+		if not self.computer.isAdvanced then return end
 		assert(type(num) == "number")
 		assert(Util.COLOUR_CODE[num] ~= nil)
 		self.data.term.fg = num
 	end
 	self.env.term.native.setTextColour = self.env.term.native.setTextColor
 	self.env.term.native.setBackgroundColor = function( num )
+		if not self.computer.isAdvanced then return end
 		assert(type(num) == "number")
 		assert(Util.COLOUR_CODE[num] ~= nil)
 		self.data.term.bg = num
 	end
 	self.env.term.native.setBackgroundColour = self.env.term.native.setBackgroundColor
 	self.env.term.native.isColor = function()
-		return true
+		return self.computer.isAdvanced
 	end
 	self.env.term.native.isColour = self.env.term.native.isColor
 	self.env.term.native.setCursorBlink = function( bool )

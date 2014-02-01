@@ -51,10 +51,12 @@ function Screen:draw()
 	end
 
 	-- term api draws directly to buffer
-	for y = 0, Screen.height - 1 do
-		for x = 0, Screen.width - 1 do
-			setColor( Util.COLOUR_CODE[ self.computer.backgroundColourB[y + 1][x + 1] ] )
-			ldrawRect("fill", x * Screen.pixelWidth, y * Screen.pixelHeight, Screen.pixelWidth, Screen.pixelHeight )
+	if self.computer.isAdvanced then
+		for y = 0, Screen.height - 1 do
+			for x = 0, Screen.width - 1 do
+				setColor( Util.COLOUR_CODE[ self.computer.backgroundColourB[y + 1][x + 1] ] )
+				ldrawRect("fill", x * Screen.pixelWidth, y * Screen.pixelHeight, Screen.pixelWidth, Screen.pixelHeight )
+			end
 		end
 	end
 
@@ -69,7 +71,9 @@ function Screen:draw()
 			elseif byte < 32 or byte > 127 then
 				text = "?"
 			end
-			setColor( Util.COLOUR_CODE[ self.computer.textColourB[y + 1][x + 1] ] )
+			if self.computer.isAdvanced then
+				setColor( Util.COLOUR_CODE[ self.computer.textColourB[y + 1][x + 1] ] )
+			end
 			if Screen.tCharOffset[text] then -- Just incase
 				lprint( text, (x * Screen.pixelWidth) + Screen.tCharOffset[text], (y * Screen.pixelHeight) + Screen.textOffset)
 			end
@@ -86,7 +90,9 @@ function Screen:draw()
 		end
 
 		if self.showCursor then
-			setColor(Util.COLOUR_CODE[ self.computer.api.data.term.fg ])
+			if self.computer.isAdvanced then
+				setColor(Util.COLOUR_CODE[ self.computer.api.data.term.fg ])
+			end
 			lprint("_", ((self.computer.api.data.term.cursorX - 1) * Screen.pixelWidth) + Screen.tCharOffset["_"], (self.computer.api.data.term.cursorY - 1) * Screen.pixelHeight + Screen.textOffset)
 		end
 	end

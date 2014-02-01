@@ -1,13 +1,13 @@
 Computer = class('Computer')
 
-function Computer:initialize(emulator, id)
+function Computer:initialize(emulator, id, advanced)
 	log("Computer -> initialize()")
 	self.emulator = emulator
 	self.screen = Screen(self)
 	self.fileSystem = FileSystem()
 	self.peripheralManager = PeripheralManager(self)
 
-	--self.peripheralManager:setSide("top", "test")
+	self.isAdvanced = advanced or false
 
 	self.id = id
 	self.running = false
@@ -38,12 +38,16 @@ function Computer:start()
 	local x,y
 	for y = 1, Screen.height do
 		self.textB[y] = {}
-		self.backgroundColourB[y] = {}
-		self.textColourB[y] = {}
+		if self.isAdvanced then
+			self.backgroundColourB[y] = {}
+			self.textColourB[y] = {}
+		end
 		for x = 1, Screen.width do
 			self.textB[y][x] = " "
-			self.backgroundColourB[y][x] = 32768
-			self.textColourB[y][x] = 1
+			if self.isAdvanced then
+				self.backgroundColourB[y][x] = 32768
+				self.textColourB[y][x] = 1
+			end
 		end
 	end
 
@@ -78,6 +82,8 @@ function Computer:resume( ... )
 	end
 	if ok then
 		self.waitForEvent = param
+	else
+		print(param)
 	end
 end
 

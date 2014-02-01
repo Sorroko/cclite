@@ -4,11 +4,8 @@
  Term api draws directly to a love2d canvas, passive screen api.
  Virtual peripherals
  Config with custom colours
- Support standard computers
  UI for peripherals etc.
- Crash screen?
  Add bit api
- Move some emulator logic to computer class
  Image fonts (gamax92)
  Implement:
 	redstone
@@ -67,7 +64,7 @@ function love.load()
 
     Window.main:create()
 
-    local computer = emulator:registerComputer()
+    local computer = emulator:registerComputer({advanced = true})
     computer:start()
 end
 

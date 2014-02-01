@@ -2,7 +2,7 @@
 	["type"] = "drive",
 	["load_disk"] = function(computer, data, diskId)
 		data.disk_id = diskId
-		computer.fileSystem:mount(find_available_mount, diskManager[data.disk_id].path)
+		computer.fileSystem:mount(find_available_mount, "/disks/disk" .. diskId)
 		data.mount_path = find_available_mount
 	end,
 	["unload_disk"] = function(computer, data)
@@ -15,10 +15,9 @@
 			return data.disk_id ~= nil
 		end,
 		["getDiskLabel"] = function(computer, data)
-			return diskManager[data.disk_id].label
+			return "not_supported"
 		end,
 		["setDiskLabel"] = function(computer, data)
-			diskManager[data.disk_id].label
 			return
 		end,
 		["hasData"] = function(computer, data) -- type is floppy and not music disk
