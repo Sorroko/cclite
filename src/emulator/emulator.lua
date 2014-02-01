@@ -102,7 +102,7 @@ end
 
 function Emulator:draw()
 	if self.activeId ~= nil then
-		self.computers[self.activeId].screen:draw()
+		self.computers[self.activeId]:draw()
 	end
 end
 

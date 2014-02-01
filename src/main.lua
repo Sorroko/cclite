@@ -60,7 +60,7 @@ function love.load()
     Window.main = Window( "ComputerCraft Emulator" )
 
     emulator = Emulator(0, 0)
-    panel = Panel(emulator:getWidth(), 0)
+    panel = Panel(emulator:getWidth(), 0, emulator)
 
     Window.main:create()
 

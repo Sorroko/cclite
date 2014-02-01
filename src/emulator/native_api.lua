@@ -93,111 +93,51 @@ function NativeAPI:initialize(_computer)
 	self.env.term = {}
 	self.env.term.native = {}
 	self.env.term.native.clear = function()
-		for y = 1, Screen.height do
-			for x = 1, Screen.width do
-				self.computer.textB[y][x] = " "
-				self.computer.backgroundColourB[y][x] = self.data.term.bg
-				self.computer.textColourB[y][x] = 1 -- Don't need to bother setting text color
-			end
-		end
+		self.computer.screen:clear()
 	end
 	self.env.term.native.clearLine = function()
-		if self.data.term.cursorY > Screen.height
-			or self.data.term.cursorY < 1 then return end
-		for x = 1, Screen.width do
-			self.computer.textB[self.data.term.cursorY][x] = " "
-			self.computer.backgroundColourB[self.data.term.cursorY][x] = self.data.term.bg
-			self.computer.textColourB[self.data.term.cursorY][x] = 1 -- Don't need to bother setting text color
-		end
+		self.computer.screen:clearLine()
 	end
 	self.env.term.native.getSize = function()
-		return Screen.width, Screen.height
+		return self.computer.screen:getSize()
 	end
 	self.env.term.native.getCursorPos = function()
-		return self.data.term.cursorX, self.data.term.cursorY
+		return self.computer.screen:getCursorPos()
 	end
 	self.env.term.native.setCursorPos = function(x, y)
 		assert(type(x) == "number")
 		assert(type(y) == "number")
-		self.data.term.cursorX = math.floor(x)
-		self.data.term.cursorY = math.floor(y)
+		self.computer.screen:setCursorPos(x, y)
 	end
 	self.env.term.native.write = function( text )
 		text = tostring(text)
-
-		if self.data.term.cursorY > Screen.height
-			or self.data.term.cursorY < 1 then
-			self.data.term.cursorX = self.data.term.cursorX + #text
-			return
-		end
-
-		for i = 1, #text do
-			local char = string.sub( text, i, i )
-			if self.data.term.cursorX + i - 1 <= Screen.width
-				and self.data.term.cursorX + i - 1 >= 1 then
-				self.computer.textB[self.data.term.cursorY][self.data.term.cursorX + i - 1] = char
-				if self.computer.isAdvanced then
-					self.computer.textColourB[self.data.term.cursorY][self.data.term.cursorX + i - 1] = self.data.term.fg
-					self.computer.backgroundColourB[self.data.term.cursorY][self.data.term.cursorX + i - 1] = self.data.term.bg
-				end
-			end
-		end
-		self.data.term.cursorX = self.data.term.cursorX + #text
+		self.computer.screen:write(text)
 	end
 	self.env.term.native.setTextColor = function( num )
 		if not self.computer.isAdvanced then return end
 		assert(type(num) == "number")
 		assert(Util.COLOUR_CODE[num] ~= nil)
-		self.data.term.fg = num
+		self.computer.screen:setTextColor( num )
 	end
 	self.env.term.native.setTextColour = self.env.term.native.setTextColor
 	self.env.term.native.setBackgroundColor = function( num )
 		if not self.computer.isAdvanced then return end
 		assert(type(num) == "number")
 		assert(Util.COLOUR_CODE[num] ~= nil)
-		self.data.term.bg = num
+		self.computer.screen:setBackgroundColor( num )
 	end
 	self.env.term.native.setBackgroundColour = self.env.term.native.setBackgroundColor
 	self.env.term.native.isColor = function()
-		return self.computer.isAdvanced
+		return self.computer.screen.isColor
 	end
 	self.env.term.native.isColour = self.env.term.native.isColor
 	self.env.term.native.setCursorBlink = function( bool )
 		assert(type(bool) == "boolean")
-		self.data.term.blink = bool
+		self.computer.screen:setCursorBlink( bool )
 	end
 	self.env.term.native.scroll = function( n )
 		assert(type(n) == "number")
-		local textBuffer = {}
-		local backgroundColourBuffer = {}
-		local textColourBuffer = {}
-		for y = 1, Screen.height do
-			if y - n > 0 and y - n <= Screen.height then
-				textBuffer[y - n] = {}
-				backgroundColourBuffer[y - n] = {}
-				textColourBuffer[y - n] = {}
-				for x = 1, Screen.width do
-					textBuffer[y - n][x] = self.computer.textB[y][x]
-					backgroundColourBuffer[y - n][x] = self.computer.backgroundColourB[y][x]
-					textColourBuffer[y - n][x] = self.computer.textColourB[y][x]
-				end
-			end
-		end
-		for y = 1, Screen.height do
-			if textBuffer[y] ~= nil then
-				for x = 1, Screen.width do
-					self.computer.textB[y][x] = textBuffer[y][x]
-					self.computer.backgroundColourB[y][x] = backgroundColourBuffer[y][x]
-					self.computer.textColourB[y][x] = textColourBuffer[y][x]
-				end
-			else
-				for x = 1, Screen.width do
-					self.computer.textB[y][x] = " "
-					self.computer.backgroundColourB[y][x] = self.data.term.bg
-					self.computer.textColourB[y][x] = 1 -- Don't need to bother setting text color
-				end
-			end
-		end
+		self.computer.screen:scroll(n)
 	end
 	self.env.fs = {}
 	self.env.fs.open = function(sPath, sMode)
@@ -263,7 +203,8 @@ function NativeAPI:initialize(_computer)
 		local res = FileSystem.cleanPath(basePath .. "/" .. localPath)
 		return string.sub(res, 2, #res)
 	end
-	self.env.fs.getDrive = function(sPath) return nil end -- TODO: A long with peripheral api
+	-- TODO: These three need implementing!
+	self.env.fs.getDrive = function(sPath) return nil end
 	self.env.fs.getSize = function(sPath) return nil end
 	self.env.fs.getFreeSpace = function(sPath) return nil end
 	self.env.os = {}
@@ -276,11 +217,12 @@ function NativeAPI:initialize(_computer)
 		self.data.os.label = label
 	end
 	self.env.os.getComputerLabel = function()
-		return self.data.label
+		return self.data.os.label
 	end
 	self.env.os.computerLabel = self.env.os.getComputerLabel
 	self.env.os.queueEvent = function( sEvent, ... )
-		if sEvent ~= "string" then
+		assert(sEvent == "string" or sEvent == nil)
+		if sEvent == nil then
 			-- TODO: queueEvent() without an sEvent is possible in cc (I think) however it breaks our emulator.
 			sEvent = "none"
 		end

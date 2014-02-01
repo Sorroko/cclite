@@ -11,15 +11,15 @@ function PeripheralManager.static.parse()
 		local data = love.filesystem.read( "/emulator/peripherals/" .. v )
 		local ok, fn = pcall(loadstring, "return " .. data)
 
-		-- TODO: Print error in the peripheral file if found
 		if ok and fn ~= nil then
-			setfenv(fn, {})
+			setfenv(fn, _G) -- TODO: Possible sandbox, however not needed currently
 			local tPeripheral = fn()
 			if type(tPeripheral) == "table" then
 				PeripheralManager.loaded_peripherals[tPeripheral.type] = tPeripheral
 			end
 			log("Loaded peripheral: " .. name)
 		else
+			-- TODO: Print the actual error in peripheral file
 			log("Failed to load peripheral: " .. name, "ERROR")
 		end
 	end
@@ -45,9 +45,13 @@ function PeripheralManager:setSide(side, peripheralType)
 		table.insert(self.computer.eventQueue, {"peripheral_detach", side})
 	else
 		if PeripheralManager.loaded_peripherals[peripheralType] == nil then return end
+		local data = {}
+		if PeripheralManager.loaded_peripherals[peripheralType]["initialize"] then
+			PeripheralManager.loaded_peripherals[peripheralType]["initialize"](self.computer, data)
+		end
 		self.peripherals[side] = {
 			["type"] = peripheralType,
-			["data"] = {}
+			["data"] = data
 		}
 		table.insert(self.computer.eventQueue, {"peripheral", side})
 	end

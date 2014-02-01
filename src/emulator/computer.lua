@@ -1,13 +1,13 @@
 Computer = class('Computer')
 
-function Computer:initialize(emulator, id, advanced)
+function Computer:initialize(emulator, id, isAdvanced)
 	log("Computer -> initialize()")
 	self.emulator = emulator
-	self.screen = Screen(self)
+	self.screen = Screen(isAdvanced)
 	self.fileSystem = FileSystem()
 	self.peripheralManager = PeripheralManager(self)
 
-	self.isAdvanced = advanced or false
+	self.isAdvanced = isAdvanced or false
 
 	self.id = id
 	self.running = false
@@ -30,27 +30,6 @@ function Computer:start()
 	self.running = true
 	self.waitForEvent = nil
 
-	self.textB = {}
-	self.backgroundColourB = {}
-	self.textColourB = {}
-
-	-- Reset buffers
-	local x,y
-	for y = 1, Screen.height do
-		self.textB[y] = {}
-		if self.isAdvanced then
-			self.backgroundColourB[y] = {}
-			self.textColourB[y] = {}
-		end
-		for x = 1, Screen.width do
-			self.textB[y][x] = " "
-			if self.isAdvanced then
-				self.backgroundColourB[y][x] = 32768
-				self.textColourB[y][x] = 1
-			end
-		end
-	end
-
 	local fn, err = love.filesystem.load('lua/bios.lua') -- lua/bios.lua
 	if not fn then print(err) return end
 
@@ -67,6 +46,7 @@ function Computer:stop( _reboot )
 	self.api = nil
 	self.running = false
 	self.reboot = _reboot
+	self.screen:reset()
 end
 
 function Computer:resume( ... )
@@ -89,6 +69,15 @@ end
 
 function Computer:pushEvent(event)
 	table.insert(self.eventQueue, event)
+end
+
+function Computer:draw( ... )
+	if self.running then
+		self.screen:draw()
+	else
+		local text = "Press any key..."
+		lprint(text, ((Screen.width * Screen.pixelWidth) / 2) - (Screen.font:getWidth(text) / 2), (Screen.height * Screen.pixelHeight) / 2)
+	end
 end
 
 function Computer:update(dt)

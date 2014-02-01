@@ -1,5 +1,5 @@
 {
-	["type"] = "computer",
+	["type"] = "turtle",
 	["initialize"] = function ( computer, data )
 
 	end,
