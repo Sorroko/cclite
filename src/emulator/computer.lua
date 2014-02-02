@@ -76,7 +76,7 @@ function Computer:draw( ... )
 		self.screen:draw()
 	else
 		local text = "Press any key..."
-		lprint(text, ((Screen.width * Screen.pixelWidth) / 2) - (Screen.font:getWidth(text) / 2), (Screen.height * Screen.pixelHeight) / 2)
+		love.graphics.print(text, ((Screen.width * Screen.pixelWidth) / 2) - (Screen.font:getWidth(text) / 2), (Screen.height * Screen.pixelHeight) / 2)
 	end
 end
 
