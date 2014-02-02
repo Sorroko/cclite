@@ -10,6 +10,7 @@ set win_build_folder=.\build\cclite-%version%-win\
 if exist love-dist\windows (
 	xcopy love-dist\windows %win_build_folder% /E
 	copy /b %win_build_folder%\love.exe+build\cclite-%version%.love %win_build_folder%\cclite.exe
+	del %win_build_folder%\love.exe
 	7z a -tzip ".\build\cclite-%version%-win.zip" %win_build_folder% -mx5
 )
 
