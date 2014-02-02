@@ -38,7 +38,7 @@ function PeripheralManager:initialize(computer)
 	self.computer = computer
 end
 
-function PeripheralManager:setSide(side, peripheralType)
+function PeripheralManager:setSide(side, peripheralType, initFunc)
 	if not sides[side] then return end
 	if peripheralType == nil then
 		self.peripherals[side] = nil
@@ -46,8 +46,8 @@ function PeripheralManager:setSide(side, peripheralType)
 	else
 		if PeripheralManager.loaded_peripherals[peripheralType] == nil then return end
 		local data = {}
-		if PeripheralManager.loaded_peripherals[peripheralType]["initialize"] then
-			PeripheralManager.loaded_peripherals[peripheralType]["initialize"](self.computer, data)
+		if type(initFunc) == "function" then
+			initFunc(self.computer, data)
 		end
 		self.peripherals[side] = {
 			["type"] = peripheralType,

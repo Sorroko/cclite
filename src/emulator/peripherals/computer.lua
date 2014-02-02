@@ -1,8 +1,5 @@
 {
 	["type"] = "computer",
-	["initialize"] = function ( computer, data )
-
-	end,
 	["methods"] = {
 		-- data.computer should be set when creating peripheral, with the target/related computer
 		["turnOn"] = function(computer, data)

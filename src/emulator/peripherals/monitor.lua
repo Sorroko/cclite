@@ -1,8 +1,5 @@
 {
 	["type"] = "monitor",
-	["initialize"] = function ( computer, data, isColor )
-		data.screen = Screen(isColor)
-	end,
 	["methods"] = {
 		["clear"] = function(computer, data)
 			data.screen:clear()

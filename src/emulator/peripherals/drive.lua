@@ -1,8 +1,5 @@
 {
 	["type"] = "drive",
-	["initialize"] = function ( computer, data )
-
-	end,
 	["load_disk"] = function(computer, data, diskId)
 		data.disk_id = diskId
 		computer.fileSystem:mount(find_available_mount, "/disks/disk" .. diskId)

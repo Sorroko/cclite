@@ -2,7 +2,6 @@
  Run emulator in a thread to avoid stalling main thread (user code protection)
  There should be spaces on the borders of the screen, where the cells are slightly larger than they are near the middle.
  Term api draws directly to a love2d canvas, passive screen api.
- Virtual peripherals
  Config with custom colours
  UI for peripherals etc.
  Add bit api
@@ -60,7 +59,7 @@ function love.load()
     Window.main = Window( "ComputerCraft Emulator" )
 
     emulator = Emulator(0, 0)
-    panel = Panel(emulator:getWidth(), 0, emulator)
+    --panel = Panel(emulator:getWidth(), 0, emulator)
 
     Window.main:create()
 
