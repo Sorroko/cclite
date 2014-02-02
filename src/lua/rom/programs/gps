@@ -32,18 +32,14 @@ elseif sCommand == "host" then
 	end
 
 	if sModemSide == nil then
-		print( "No wireless modem attached" )
+		print( "No wireless modems found. 1 required." )
 		return
 	end
 	
 	-- Open a channel
 	local modem = peripheral.wrap( sModemSide )
-	local bCloseChannel = false
-	if not modem.isOpen( gps.CHANNEL_GPS ) then
-		print( "Opening GPS channel on "..sModemSide.." modem" )
-		modem.open( gps.CHANNEL_GPS )
-		bCloseChannel = true
-	end
+    print( "Opening channel on modem "..sModemSide )
+    modem.open( gps.CHANNEL_GPS )
 
 	-- Determine position
 	local x,y,z
@@ -71,17 +67,15 @@ elseif sCommand == "host" then
 	end
 	
 	-- Serve requests indefinately
-	print( "Serving GPS requests. Press Q to quit" )
-	
 	local nServed = 0
 	while true do
-		local e, p1, p2, p3, p4, p5 = os.pullEvent()
+		local e, p1, p2, p3, p4, p5 = os.pullEvent( "modem_message" )
 		if e == "modem_message" then
 			-- We received a message from a modem
 			local sSide, sChannel, sReplyChannel, sMessage, nDistance = p1, p2, p3, p4, p5
 			if sSide == sModemSide and sChannel == gps.CHANNEL_GPS and sMessage == "PING" then
 				-- We received a ping message on the GPS channel, send a response
-				modem.transmit( sReplyChannel, gps.CHANNEL_GPS, textutils.serialize({x,y,z}) )
+				modem.transmit( sReplyChannel, gps.CHANNEL_GPS, { x, y, z } )
 			
 				-- Print the number of requests handled
 				nServed = nServed + 1
@@ -89,25 +83,14 @@ elseif sCommand == "host" then
 					local x,y = term.getCursorPos()
 					term.setCursorPos(1,y-1)
 				end
-				print( nServed.." GPS Requests served" )
+				print( nServed.." GPS requests served" )
 			end
-			
-		elseif e == "key" then
-			-- We received a key press, quit
-			local key = p1
-			if key == keys.q then
-				os.pullEvent("char")
-				break
-			end
-			
 		end
 	end
 	
-	if bCloseChannel then
-		print( "Closing GPS channel" )
-		modem.close( gps.CHANNEL_GPS )
-	end
-	
+    print( "Closing channel" )
+    modem.close( gps.CHANNEL_GPS )
+
 else
 	-- "gps somethingelse"
 	-- Error

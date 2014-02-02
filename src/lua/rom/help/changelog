@@ -1,3 +1,14 @@
+New Features in ComputerCraft 1.58:
+
+. Fixed a long standing bug where turtles could lose their identify if they travel too far away
+. Fixed use of deprecated code, ensuring mod compatibility with the latest versions of Minecraft Forge, and world compatibility with future versions of Minecraft
+
+New Features in ComputerCraft 1.57:
+
+. Ported to Minecraft 1.6.4
+. Added two new Treasure Disks: Conway’s Game of Life by vilsol and Protector by fredthead
+. Fixed a very nasty item duplication bug
+
 New Features in ComputerCraft 1.56:
 
 . Added Treasure Disks: Floppy Disks in dungeons which contain interesting community made programs. Find them all!
@@ -128,7 +139,7 @@ New Features in ComputerCraft 1.31:
 . New apis: gps, vector
 . New turtle functions: turtle.compare(), turtle.compareUp(), turtle.compareDown(), turtle.drop( quantity )
 . New http functions: http.post().
-. New term functonss: term.redirect(), term.restore()
+. New term functions: term.redirect(), term.restore()
 . New textutils functions: textutils.urlEncode()
 . New rednet functions: rednet.isOpen()
 . New config options: modem_range, modem_rangeDuringStorm

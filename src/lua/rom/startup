@@ -1,27 +1,39 @@
 
+-- Setup paths
 local sPath = ".:/rom/programs"
+if term.isColor() then
+	sPath = sPath..":/rom/programs/advanced"
+end
 if turtle then
 	sPath = sPath..":/rom/programs/turtle"
 else
-	sPath = sPath..":/rom/programs/computer"
+    sPath = sPath..":/rom/programs/computer/rednet"
+	sPath = sPath..":/rom/programs/computer/fun"
+    if term.isColor() then
+    	sPath = sPath..":/rom/programs/computer/advanced"
+    end
 end
 if http then
 	sPath = sPath..":/rom/programs/http"
 end
-if term.isColor() then
-	sPath = sPath..":/rom/programs/color"
-end
-
 shell.setPath( sPath )
 help.setPath( "/rom/help" )
 
+-- Setup aliases
 shell.setAlias( "ls", "list" )
 shell.setAlias( "dir", "list" )
 shell.setAlias( "cp", "copy" )
 shell.setAlias( "mv", "move" )
 shell.setAlias( "rm", "delete" )
-shell.setAlias( "preview", "edit" )
+shell.setAlias( "clr", "clear" )
+shell.setAlias( "rs", "redstone" )
+shell.setAlias( "sh", "shell" )
+if term.isColor() then
+    shell.setAlias( "background", "bg" )
+    shell.setAlias( "foreground", "fg" )
+end
 
+-- Run autorun files
 if fs.exists( "/rom/autorun" ) and fs.isDir( "/rom/autorun" ) then
 	local tFiles = fs.list( "/rom/autorun" )
 	table.sort( tFiles )
@@ -33,4 +45,19 @@ if fs.exists( "/rom/autorun" ) and fs.isDir( "/rom/autorun" ) then
 			end
 		end
 	end
+end
+
+-- Run the user created startup, either from disk drives or the root
+local sUserStartup = shell.resolveProgram( "/startup" )
+for n,sName in pairs( peripheral.getNames() ) do
+    if disk.isPresent( sName ) and disk.hasData( sName ) then
+        local sDiskStartup = shell.resolveProgram( "/" .. fs.combine( disk.getMountPath( sName ), "startup" ) )
+        if sDiskStartup then
+            sUserStartup = sDiskStartup
+            break
+        end
+    end
+end
+if sUserStartup then
+    shell.run( sUserStartup )
 end

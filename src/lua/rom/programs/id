@@ -1,11 +1,11 @@
 
-local sSide = nil
+local sDrive = nil
 local tArgs = { ... }
 if #tArgs > 0 then
-	sSide = tostring( tArgs[1] )
+	sDrive = tostring( tArgs[1] )
 end
 
-if sSide == nil then
+if sDrive == nil then
 	print( "This is computer #"..os.getComputerID() )
 	
 	local label = os.getComputerLabel()
@@ -14,15 +14,15 @@ if sSide == nil then
 	end
 
 else
-	local bData = disk.hasData( sSide )
+	local bData = disk.hasData( sDrive )
 	if not bData then
-		print( "No disk in "..sSide.." disk drive" )
+		print( "No disk in drive "..sDrive )
 		return
 	end
 	
-	print( "The disk is #"..disk.getID( sSide ) )
+	print( "The disk is #"..disk.getID( sDrive ) )
 
-	local label = disk.getLabel( sSide )
+	local label = disk.getLabel( sDrive )
 	if label then
 		print( "The disk is labelled \""..label.."\"" )
 	end

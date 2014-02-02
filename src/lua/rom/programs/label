@@ -23,10 +23,9 @@ if #tArgs == 1 then
 	sDrive = nil
 else
 	sCommand = tArgs[1]
-	local tSides = peripheral.getNames()
-	for n,sSide in ipairs( tSides ) do
-		if sSide == tArgs[2] then
-			sDrive = sSide
+	for n,sName in ipairs( peripheral.getNames() ) do
+		if sName == tArgs[2] then
+			sDrive = sName
 			break
 		end
 	end

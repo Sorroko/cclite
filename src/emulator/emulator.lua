@@ -36,6 +36,7 @@ local tShortcuts = {
 		keys = {"ctrl", "v"},
 		action = function(activeComp)
 			local clipboard = love.system.getClipboardText():sub(1,128):gsub("\r\n","\n")
+			activeComp:pushEvent({"paste", clipboard})
 			activeComp:textinput(clipboard)
 		end
 	}
@@ -202,7 +203,7 @@ function Emulator:textinput( text )
 end
 
 function Emulator:mousepressed( x, y, _button )
-	if not self.activeId or self:getActiveComputer().isAdvanced then return end
+	if not self.activeId or not self:getActiveComputer().isAdvanced then return end
 
 	if x > 0 and x < Screen.width * Screen.pixelWidth
 		and y > 0 and y < Screen.height * Screen.pixelHeight then -- Within screen bounds.

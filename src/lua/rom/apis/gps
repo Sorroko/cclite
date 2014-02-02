@@ -96,12 +96,11 @@ function locate( _nTimeout, _bDebug )
 		local e, p1, p2, p3, p4, p5 = os.pullEvent()
 		if e == "modem_message" then
 			-- We received a message from a modem
-			local sSide, sChannel, sReplyChannel, sMessage, nDistance = p1, p2, p3, p4, p5
+			local sSide, sChannel, sReplyChannel, tMessage, nDistance = p1, p2, p3, p4, p5
 			if sSide == sModemSide and sChannel == os.getComputerID() and sReplyChannel == CHANNEL_GPS then
 				-- Received the correct message from the correct modem: use it to determine position
-				local tResult = textutils.unserialize( sMessage )
-				if type(tResult) == "table" and #tResult == 3 then
-					local tFix = { position = vector.new( tResult[1], tResult[2], tResult[3] ), distance = nDistance }
+				if type(tMessage) == "table" and #tMessage == 3 then
+					local tFix = { position = vector.new( tMessage[1], tMessage[2], tMessage[3] ), distance = nDistance }
 					if _bDebug then
 						print( tFix.distance.." metres from "..tostring( tFix.position ) )
 					end

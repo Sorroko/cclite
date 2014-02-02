@@ -75,6 +75,8 @@ function NativeAPI:initialize(_computer)
 		select = select,
 		assert = assert,
 		error = error,
+		pairs = pairs,
+		ipairs = ipairs,
 
 		math = Util.deep_copy(math),
 		string = Util.deep_copy(string),
@@ -91,53 +93,56 @@ function NativeAPI:initialize(_computer)
 	}
 	-- CC apis (BIOS completes api.)
 	self.env.term = {}
-	self.env.term.native = {}
-	self.env.term.native.clear = function()
-		self.computer.screen:clear()
-	end
-	self.env.term.native.clearLine = function()
-		self.computer.screen:clearLine()
-	end
-	self.env.term.native.getSize = function()
-		return self.computer.screen:getSize()
-	end
-	self.env.term.native.getCursorPos = function()
-		return self.computer.screen:getCursorPos()
-	end
-	self.env.term.native.setCursorPos = function(x, y)
-		assert(type(x) == "number")
-		assert(type(y) == "number")
-		self.computer.screen:setCursorPos(x, y)
-	end
-	self.env.term.native.write = function( text )
-		text = tostring(text)
-		self.computer.screen:write(text)
-	end
-	self.env.term.native.setTextColor = function( num )
-		if not self.computer.isAdvanced then return end
-		assert(type(num) == "number")
-		assert(Util.COLOUR_CODE[num] ~= nil)
-		self.computer.screen:setTextColor( num )
-	end
-	self.env.term.native.setTextColour = self.env.term.native.setTextColor
-	self.env.term.native.setBackgroundColor = function( num )
-		if not self.computer.isAdvanced then return end
-		assert(type(num) == "number")
-		assert(Util.COLOUR_CODE[num] ~= nil)
-		self.computer.screen:setBackgroundColor( num )
-	end
-	self.env.term.native.setBackgroundColour = self.env.term.native.setBackgroundColor
-	self.env.term.native.isColor = function()
-		return self.computer.screen.isColor
-	end
-	self.env.term.native.isColour = self.env.term.native.isColor
-	self.env.term.native.setCursorBlink = function( bool )
-		assert(type(bool) == "boolean")
-		self.computer.screen:setCursorBlink( bool )
-	end
-	self.env.term.native.scroll = function( n )
-		assert(type(n) == "number")
-		self.computer.screen:scroll(n)
+	self.env.term.native = function()
+		local temp = {}
+		temp.clear = function()
+			self.computer.screen:clear()
+		end
+		temp.clearLine = function()
+			self.computer.screen:clearLine()
+		end
+		temp.getSize = function()
+			return self.computer.screen:getSize()
+		end
+		temp.getCursorPos = function()
+			return self.computer.screen:getCursorPos()
+		end
+		temp.setCursorPos = function(x, y)
+			assert(type(x) == "number")
+			assert(type(y) == "number")
+			self.computer.screen:setCursorPos(x, y)
+		end
+		temp.write = function( text )
+			text = tostring(text)
+			self.computer.screen:write(text)
+		end
+		temp.setTextColor = function( num )
+			if not self.computer.isAdvanced then return end
+			assert(type(num) == "number")
+			assert(Util.COLOUR_CODE[num] ~= nil)
+			self.computer.screen:setTextColor( num )
+		end
+		temp.setTextColour = temp.setTextColor
+		temp.setBackgroundColor = function( num )
+			if not self.computer.isAdvanced then return end
+			assert(type(num) == "number")
+			assert(Util.COLOUR_CODE[num] ~= nil)
+			self.computer.screen:setBackgroundColor( num )
+		end
+		temp.setBackgroundColour = temp.setBackgroundColor
+		temp.isColor = function()
+			return self.computer.screen.isColor
+		end
+		temp.isColour = temp.isColor
+		temp.setCursorBlink = function( bool )
+			assert(type(bool) == "boolean")
+			self.computer.screen:setCursorBlink( bool )
+		end
+		temp.scroll = function( n )
+			assert(type(n) == "number")
+			self.computer.screen:scroll(n)
+		end
+		return temp -- Return a new table to avoid overwriting permanently
 	end
 	self.env.fs = {}
 	self.env.fs.open = function(sPath, sMode)
@@ -203,6 +208,9 @@ function NativeAPI:initialize(_computer)
 		local res = FileSystem.cleanPath(basePath .. "/" .. localPath)
 		return string.sub(res, 2, #res)
 	end
+	self.env.fs.find = function()
+
+	end
 	-- TODO: These three need implementing!
 	self.env.fs.getDrive = function(sPath) return nil end
 	self.env.fs.getSize = function(sPath) return nil end
@@ -239,6 +247,10 @@ function NativeAPI:initialize(_computer)
 		end
 		log("Could not find timer!", "ERROR")
 	end
+	self.env.os.cancelTimer = function(id)
+		assert(type(id) == "number")
+		self.computer.timers[id] = nil
+	end
 	self.env.os.setAlarm = function(nTime)
 		assert(type(nTime) == "number")
 		if nTime < 0 or nTime > 24 then
@@ -253,6 +265,10 @@ function NativeAPI:initialize(_computer)
 			if v == alarm then return k end
 		end
 		log("Could not find alarm!", "ERROR")
+	end
+	self.env.os.cancelAlarm = function(id)
+		assert(type(id) == "number")
+		self.computer.alarms[id] = nil
 	end
 	self.env.os.time = function()
 		return math.floor(self.computer.time * 1000) / 1000 -- Round to 3d.p.

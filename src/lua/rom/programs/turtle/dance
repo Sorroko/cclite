@@ -74,15 +74,15 @@ local tMoves = {
 	end,
 }
 
-textutils.slowWrite( "Preparing to get down" )
-textutils.slowPrint( "...", 1 )
+textutils.slowWrite( "Preparing to get down." )
+textutils.slowPrint( "..", 0.75 )
 
-local sAudioSide = nil
-for n,sSide in pairs( peripheral.getNames() ) do
-	if disk.hasAudio( sSide ) then
-		disk.playAudio( sSide )
-		print( "Jamming to "..disk.getAudioTitle( sSide ) )
-		sAudioSide = sSide
+local sAudio = nil
+for n,sName in pairs( peripheral.getNames() ) do
+	if disk.hasAudio( sName ) then
+		disk.playAudio( sName )
+		print( "Jamming to "..disk.getAudioTitle( sName ) )
+		sAudio = sName
 		break
 	end
 end
@@ -107,6 +107,6 @@ parallel.waitForAll(
 	end
 )
 
-if sAudioSide then
-	disk.stopAudio( sAudioSide )
+if sAudio then
+	disk.stopAudio( sAudio )
 end

@@ -3,13 +3,10 @@ local tBiomes = {
 	"in a forest",
 	"in a pine forest",
 	"knee deep in a swamp",
-	
 	"in a mountain range",
 	"in a desert",
 	"in a grassy plain",
 	"in frozen tundra",
-	
-	--"in the ocean",
 }
 
 local function hasTrees( _nBiome )
@@ -69,7 +66,7 @@ local items = {
 		monster = true,
 		aliases = { "skeleton" },
 		nocturnal = true,
-		desc = "The head bone's connected to the neck bone, the neck bones connected to the chest bone, the chest bones connected to the arm bone, the arm bones connected to the bow, and the bow is pointed at you.",
+		desc = "The head bone's connected to the neck bone, the neck bone's connected to the chest bone, the chest bone's connected to the arm bone, the arm bone's connected to the bow, and the bow is pointed at you.",
 	},
 	["a zombie"] = {
 		heavy = true,
@@ -99,7 +96,7 @@ local items = {
 	["a river"] = {
 		heavy = true,
 		aliases = { "river" },
-		desc = "The river flows majestically towards the horizon.",
+		desc = "The river flows majestically towards the horizon. It doesn't do anything else.",
 	},
 	["some wood"] = {
 		aliases = { "wood" },
@@ -216,7 +213,7 @@ local items = {
 	["some dirt"] = {
 		aliases = { "dirt" },
 		material = true,
-		desc = "Why not build a mudhut?",
+		desc = "Why not build a mud hut?",
 	},
 	["some stone"] = {
 		aliases = { "stone", "cobblestone" },
@@ -385,7 +382,7 @@ local function getRoom( x, y, z, dontCreate )
 			if math.random(1,8) == 1 and hasRivers( room.nBiome ) then
 				room.items[ "a river" ] = items[ "a river" ]
 			end
-		
+
 			-- Add exits
 			room.exits = {
 				["north"] = true,

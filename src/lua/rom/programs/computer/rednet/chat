@@ -1,0 +1,318 @@
+
+local tArgs = { ... }
+
+local function printUsage()
+	print( "Usages:" )
+	print( "chat host <hostname>" )
+	print( "chat join <hostname> <username>" )
+end
+
+-- Colours
+local highlightColour, textColour, bgColour
+if term.isColour() then
+	bgColour = colours.black
+	textColour = colours.white
+	highlightColour = colours.yellow
+else
+	bgColour = colours.black
+	textColour = colours.white
+	highlightColour = colours.white
+end
+
+local sCommand = tArgs[1]
+if sCommand == "host" then
+    -- "chat host"
+    -- Get hostname
+    local sHostname = tArgs[2]
+    if sHostname == nil then
+        printUsage()
+        return
+    end
+
+    -- Host server
+    rednet.host( "chat", sHostname )
+
+    local tUsers = {}
+    function send( sText )
+        for nUserID, tUser in pairs( tUsers ) do
+            rednet.send( tUser.nID, {
+                sType = "text",
+                nUserID = nUserID,
+                sText = sText,
+            }, "chat" )
+        end
+    end
+
+    -- Setup ping pong
+    local tPingPongTimer = {}
+    function ping( nUserID )
+        local tUser = tUsers[ nUserID ]
+        rednet.send( tUser.nID, {
+            sType = "ping to client",
+            nUserID = nUserID,
+        }, "chat" )
+
+        local timer = os.startTimer( 15 )
+        tUser.bPingPonged = false
+        tPingPongTimer[ timer ] = nUserID
+    end
+
+    -- Handle messages
+    local ok, error = pcall( function()
+        parallel.waitForAny( function()
+            while true do
+                local sEvent, timer = os.pullEvent( "timer" )
+                local nUserID = tPingPongTimer[ timer ]
+                if nUserID and tUsers[ nUserID ] then
+                    local tUser = tUsers[ nUser ]
+                    if tUser then
+                        if not tUser.bPingPonged then
+                            send( "* "..tUser.sUsername.." has timed out" )
+                            tUsers[ nUserID ] = nil
+                        else
+                            ping( nUserID )
+                        end
+                    end
+                end
+            end
+        end,
+        function()
+            while true do
+                local nSenderID, tMessage = rednet.receive( "chat" )
+                if type( tMessage ) == "table" then
+                    if tMessage.sType == "login" then
+                        -- Login from new client
+                        local nUserID = tMessage.nUserID
+                        local sUsername = tMessage.sUsername
+                        if nUserID and sUsername then
+                            tUsers[ nUserID ] = {
+                                nID = nSenderID,
+                                sUsername = sUsername,
+                            }
+                            send( "* "..sUsername.." has joined the chat" )
+                            ping( nUserID )
+                        end
+
+                    else
+                        -- Something else from existing client
+                        local nUserID = tMessage.nUserID
+                        local tUser = tUsers[ nUserID ]
+                        if tUser and tUser.nID == nSenderID then
+                            if tMessage.sType == "logout" then
+                                send( "* "..tUser.sUsername.." has left the chat" )
+                                tUsers[ nUserID ] = nil
+
+                            elseif tMessage.sType == "chat" then
+                                local sMessage = tMessage.sText
+                                if sMessage then
+                                    send( "<"..tUser.sUsername.."> "..tMessage.sText )
+                                end
+
+                            elseif tMessage.sType == "ping to server" then
+                                rednet.send( tUser.nID, {
+                                    sType = "pong to client",
+                                    nUserID = nUserID,
+                                }, "chat" )
+
+                            elseif tMessage.sType == "pong to server" then
+                                tUser.bPingPonged = true
+
+                            end
+                        end
+                    end
+                 end
+            end
+        end )
+    end )
+    if not ok then
+        printError( error )
+    end
+
+    -- Unhost server
+    for nUserID, tUser in pairs( tUsers ) do
+        rednet.send( tUser.nID, {
+            sType = "kick",
+            nUserID = nUserID,
+        }, "chat" )
+    end
+    rednet.unhost( "chat" )
+
+elseif sCommand == "join" then
+    -- "chat join"
+    -- Get hostname and username
+    local sHostname = tArgs[2]
+    local sUsername = tArgs[3]
+    if sHostname == nil or sUsername == nil then
+        printUsage()
+        return
+    end
+
+    -- Connect
+    write( "Looking up " .. sHostname .. "... " )
+    local nHostID = rednet.lookup( "chat", sHostname )
+    if nHostID == nil then
+        print( "Failed." )
+        return
+    else
+        print( "Success." )
+    end
+
+    -- Login
+    local nUserID = math.random( 1, 2147483647 )
+    rednet.send( nHostID, {
+        sType = "login",
+        nUserID = nUserID,
+        sUsername = sUsername,
+    }, "chat" )
+
+    -- Setup ping pong
+    local bPingPonged = true
+    local pingPongTimer = os.startTimer( 0 )
+
+    function ping()
+        rednet.send( nHostID, {
+            sType = "ping to server",
+            nUserID = nUserID,
+        }, "chat" )
+        bPingPonged = false
+        pingPongTimer = os.startTimer( 15 )
+    end
+
+    -- Handle messages
+    local tMessageHistory = {}
+    function redrawHistory()
+        local x,y = term.getCursorPos()
+        local w,h = term.getSize()
+        for n = 2, h-1 do
+            term.setCursorPos( 1, n )
+            term.clearLine()
+            local nMessage = #tMessageHistory - ((h-1) - n)
+            if nMessage >= 1 then
+                local sMessage = tMessageHistory[ nMessage ]
+                if string.match( sMessage, "^\*" ) then
+                    -- Information
+                    term.setTextColour( highlightColour )
+                    term.write( sMessage )
+                    term.setTextColour( textColour )
+                else
+                    -- Chat
+                    local sUsernameBit = string.match( sMessage, "^\<[^\>]*\>" )
+                    if sUsernameBit then
+                        term.setTextColour( highlightColour )
+                        term.write( sUsernameBit )
+                        term.setTextColour( textColour )
+                        term.write( string.sub( sMessage, string.len( sUsernameBit ) + 1 ) )
+                    else
+                        term.write( sMessage )
+                    end
+                end
+            end
+        end
+        term.setCursorPos( x, y )
+    end
+
+    function redrawTitle()
+        local w,h = term.getSize()
+        local sTitle = sUsername.." on "..sHostname
+        term.setCursorPos( math.floor( w/2 - string.len(sTitle)/2 ), 1 )
+        term.clearLine()
+        term.setTextColour( highlightColour )
+        term.write( sTitle )
+        term.setTextColour( textColour )
+    end
+
+    term.clear()
+    term.setBackgroundColour( bgColour )
+    term.setTextColour( textColour )
+    redrawTitle()
+    redrawHistory()
+
+    local ok, error = pcall( function()
+        parallel.waitForAny( function()
+            while true do
+                local sEvent, timer = os.pullEvent( "timer" )
+                if timer == pingPongTimer then
+                    if not bPingPonged then
+                        table.insert( tMessageHistory, "Server timeout." )
+                        redrawHistory()
+                        return
+                    else
+                        ping()
+                    end
+                end
+            end
+        end,
+        function()
+            while true do
+                local nSenderID, tMessage = rednet.receive( "chat" )
+                if nSenderID == nHostID and type( tMessage ) == "table" and tMessage.nUserID == nUserID then
+                    if tMessage.sType == "text" then
+                        local sText = tMessage.sText
+                        if sText then
+                            table.insert( tMessageHistory, sText )
+                            redrawHistory()
+                        end
+
+                    elseif tMessage.sType == "ping to client" then
+                        rednet.send( nSenderID, {
+                            sType = "pong to server",
+                            nUserID = nUserID,
+                        }, "chat" )
+
+                    elseif tMessage.sType == "pong to client" then
+                        bPingPonged = true
+
+                    elseif tMessage.sType == "kick" then
+                        return
+
+                    end
+                end
+            end
+        end,
+        function()
+            local tSendHistory = {}
+            while true do
+                local w,h = term.getSize()
+                term.setCursorPos( 1, h )
+                term.clearLine()
+                term.setTextColour( highlightColour )
+                write( ": " )
+                term.setTextColour( textColour )
+
+                local sChat = read( nil, tSendHistory )
+                rednet.send( nHostID, {
+                    sType = "chat",
+                    nUserID = nUserID,
+                    sText = sChat,
+                }, "chat" )
+                table.insert( tSendHistory, sChat )
+
+                redrawTitle()
+                redrawHistory()
+            end
+        end )
+    end )
+
+    -- Print error notice
+    local w,h = term.getSize()
+    term.setCursorPos( 1, h )
+    term.clearLine()
+    term.setCursorBlink( false )
+    if not ok then
+        printError( error )
+    end
+
+    -- Logout
+    rednet.send( nHostID, {
+        sType = "logout",
+        nUserID = nUserID,
+    }, "chat" )
+
+    -- Print disconnection notice
+    print( "Disconnected." )
+
+else
+    -- "chat somethingelse"
+    printUsage()
+
+end

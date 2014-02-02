@@ -1,0 +1,7 @@
+
+local tArgs = { ... }
+if #tArgs > 0 then
+    shell.launch( unpack( tArgs ) )
+else
+    shell.launch( "shell" )
+end

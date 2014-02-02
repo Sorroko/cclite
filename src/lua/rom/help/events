@@ -3,6 +3,7 @@ The function os.pullEvent() will yield the program until a system event occurs. 
 Some events which can occur are:
 "char" when text is typed on the keyboard. Argument is the letter typed.
 "key" when a key is pressed on the keyboard. Argument is the numerical keycode. Compare to the values in keys API to see which key was pressed.
+"paste" when text is pasted from the users keyboard. Argument is the line of text pasted.
 
 Events only on advanced computers:
 "mouse_click" when a user clicks the mouse. Arguments are button, xPos, yPos.

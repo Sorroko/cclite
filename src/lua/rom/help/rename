@@ -1,5 +1,4 @@
-mv moves a file or directory from one location to another.
+rename renames a file or directory.
 
 ex:
-"mv foo bar" renames the file "foo" to "bar".
-"mv foo bar/foo" moves the file "foo" to a folder called "bar".
+"rename foo bar" renames the file "foo" to "bar".

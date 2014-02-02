@@ -1,0 +1,13 @@
+
+local tArgs = { ... }
+if #tArgs > 0 then
+    local nTask = shell.launch( unpack( tArgs ) )
+    if nTask then
+        shell.switch( nTask )
+    end
+else
+    local nTask = shell.switch( shell.launch( "shell" ) )
+    if nTask then
+        shell.switch( nTask )
+    end
+end

@@ -421,7 +421,7 @@ termObj.__index = term.native
 setmetatable(termObj, termObj)
 
 -- redirect the terminal to the new object
-term.redirect(termObj)
+local oldTermObj = term.redirect(termObj)
 
 -- run the program
 local ok, err = pcall(main, #{...}, {...})
@@ -440,4 +440,4 @@ cwriteWithFormat('&4Thank you for playing CCTicTacToe v1.0', 1)
 cwriteWithFormat('&4By &8TheOriginal&3BIT\n', 2)
 
 -- restore the default terminal object
-term.restore()
+term.redirect( oldTermObj )

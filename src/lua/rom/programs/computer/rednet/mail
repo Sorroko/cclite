@@ -1,0 +1,331 @@
+
+local tArgs = { ... }
+
+local function printUsage()
+	print( "Usages:" )
+	print( "mail host <hostname>" )
+	print( "mail send <from> <to> <subject> <file> <password>" )
+end
+
+local function parseAddress( sAddress )
+    if sAddress then
+        local at = string.find( sAddress, "@" )
+        if at then
+            local sUsername = string.sub( sAddress, 1, at - 1)
+            local sHostname = string.sub( sAddress, at + 1 )
+            if string.len( sUsername ) > 0 and string.len( sHostname ) > 0 then
+                return sUsername, sHostname
+            end
+        end
+    end
+    return nil
+end
+
+local sCommand = tArgs[1]
+if sCommand == "host" then
+    -- "mail host"
+    -- Options
+    local sHostname = tArgs[2]
+    if sHostname == nil then
+        printUsage()
+        return
+    end
+
+    -- Settings
+    local tSettings = nil
+    function loadSettings()
+        local file = fs.open( "settings/mail", "r" )
+        if file then
+            tSettings = textutils.unserialise( file.readAll() )
+            file.close()
+        end
+        if not tSettings then
+            tSettings = {
+                tUsers = {
+                    [ "example" ] = {
+                        sPassword = "password"
+                    }
+                }
+            }
+            saveSettings()
+            print( "New settings file saved to settings/mail" )
+        end
+    end
+
+    function saveSettings()
+        local file = fs.open( "settings/mail", "w" )
+        if file then
+            file.write( textutils.serialise( tSettings ) )
+            file.close()
+        end
+    end
+
+    function checkLogin( nSenderID, tMessage )
+      -- Check sender exists
+        if not tMessage.sUsername or not tMessage.sPassword then
+            rednet.send( nSenderID, {
+                sType = "login failed",
+                nMailID = tMessage.nMailID,
+                sReason = "Missing username or password",
+            }, "mail" )
+            return false
+        end
+        -- Check sender credentials
+        local tUser = tSettings.tUsers[ tMessage.sUsername ]
+        if not tUser then
+            rednet.send( nSenderID, {
+                sType = "login failed",
+                nMailID = tMessage.nMailID,
+                sReason = "Unknown user",
+            }, "mail" )
+            return false
+        end
+        if tUser.sPassword ~= tMessage.sPassword then
+            rednet.send( nSenderID, {
+                sType = "login failed",
+                nMailID = tMessage.nMailID,
+                sReason = "Incorrect password",
+            }, "mail" )
+            return false
+        end
+        return true
+    end
+
+    function handleSend( nSenderID, tMessage )
+        -- User is trying to send a message
+        if not checkLogin( nSenderID, tMessage ) then
+            return
+        end
+
+        -- Check recipient address
+        local sToUsername, sToHostname = parseAddress( tMessage.sTo )
+        if sToUsername == nil or sToHostname == nil then
+            rednet.send( nSenderID, {
+                sType = "send failed",
+                nMailID = tMessage.nMailID,
+                sReason = "Bad recipient address format",
+            }, "mail" )
+            return
+        end
+
+        -- Forward message to destination server
+        local tStoreMessage = {
+            sType = "store",
+            nMailID = tMessage.nMailID,
+            nSenderID = nSenderID,
+            sTo = sToUsername,
+            sFrom = tMessage.sUsername .. "@".. sHostname,
+            sSubject = tMessage.sSubject,
+            sMessage = tMessage.sMessage,
+        }
+        if sToHostname == sHostname then
+            -- Store on this server
+            handleStore( nSenderID, tStoreMessage )
+        else
+            -- Lookup recipient server
+            local nToHostID = rednet.lookup( "mail", sToHostname )
+            if not nToHostID then
+                rednet.send( nSenderID, {
+                    sType = "send failed",
+                    nMailID = tMessage.nMailID,
+                    sReason = "Could not connect to destination mail server",
+                }, "mail" )
+                return
+            end
+
+            -- Store on recipient server
+            rednet.send( nToHostID, tStoreMessage, "mail" )
+        end
+    end
+
+    function handleStore( nSenderID, tMessage )
+        -- Check recipient exists
+        local tUser = tSettings.tUsers[ tMessage.sTo ]
+        if not tUser then
+            rednet.send( nSenderID, {
+                sType = "send failed",
+                nMailID = tMessage.nMailID,
+                sReason = "Unknown recipient",
+            }, "mail" )
+            return
+        end
+
+        -- Load mail
+        local sMailFile = "mail/" .. tMessage.sTo .. "@" .. sHostname
+        local mailFileIn = fs.open( sMailFile, "r" )
+        local tMail
+        if mailFileIn then
+            tMail = textutils.unserialize( mailFileIn.readAll() ) or {}
+            mailFileIn.close()
+        else
+            tMail = {}
+        end
+
+        -- Store mail
+        table.insert( tMail, {
+            nID = tMessage.nMailID,
+            sFrom = tMessage.sFrom,
+            sSubject = tMessage.sSubject,
+            sMessage = tMessage.sMessage,
+            bRead = false,
+        } )
+
+        -- Save mail
+        local mailFileOut = fs.open( sMailFile, "w" )
+        if mailFileOut then
+            mailFileOut.write( textutils.serialize( tMail ) )
+            mailFileOut.close()
+        end
+
+        -- Confirm receipt of message
+        rednet.send( tMessage.nSenderID, {
+            sType = "send confirmed",
+            nMailID = tMessage.nMailID,
+        }, "mail" )
+    end
+
+    function handleGetMail( nSenderID, tMessage )
+        -- User wants to get the list of messages
+        if not checkLogin( nSenderID, tMessage ) then
+            return
+        end
+
+        -- Load mail
+        local sMailFile = "mail/" .. tMessage.sUsername .. "@" .. sHostname
+        local mailFileIn = fs.open( sMailFile, "r" )
+        local tMail
+        if mailFileIn then
+            tMail = textutils.unserialize( mailFileIn.readAll() ) or {}
+            mailFileIn.close()
+        else
+            tMail = {}
+        end
+
+        -- Send mail
+        rednet.send( nSenderID, {
+            sType = "mail",
+            tMail = tMail,
+        }, "mail" )
+
+        return
+    end
+
+    -- Get settings
+    loadSettings()
+
+    -- Host server
+    rednet.host( "mail", sHostname )
+
+    -- Handle messages
+    local ok, error = pcall( function()
+        while true do
+            local nSenderID, tMessage = rednet.receive( "mail" )
+            if type( tMessage ) == "table" then
+                if tMessage.sType == "send" then
+                    handleSend( nSenderID, tMessage )
+
+                elseif tMessage.sType == "store" then
+                    handleStore( nSenderID, tMessage )
+
+                elseif tMessage.sType == "get" then
+                    handleGetMail( nSenderID, tMessage )
+
+                end
+            end
+        end
+    end )
+    if not ok then
+        printError( error )
+    end
+
+    -- Unhost server
+    rednet.unhost( "mail" )
+
+elseif sCommand == "send" then
+    -- "mail send"
+    -- Get params
+    local sFromAddress = tArgs[2]
+    local sToAddress = tArgs[3]
+    local sSubject = tArgs[4]
+    local sFile = tArgs[5]
+    local sPassword = tArgs[6]
+    if sFromAddress == nil or sPassword == nil or
+       sToAddress == nil or sSubject == nil or sFile == nil then
+        printUsage()
+        return
+    end
+
+    -- Parse address
+    local sUsername, sHostname = parseAddress( sFromAddress )
+    if sUsername == nil or sHostname == nil then
+        print( "Bad address format" )
+        return
+    end
+
+    -- Read file
+    local file = fs.open( shell.resolve( sFile ), "r" )
+    if not file then
+        print( "File not found" )
+        return
+    end
+    local sMessage = file.readAll()
+    file.close()
+
+    -- Connect
+    write( "Looking up " .. sHostname .. "... " )
+    local nHostID = rednet.lookup( "mail", sHostname )
+    if nHostID == nil then
+        print( "Failed." )
+        return
+    else
+        print( "Success." )
+    end
+
+    -- Send
+    write( "Sending message... " )
+    local nMailID = math.random( 1, 2147483647 )
+    rednet.send( nHostID, {
+        sType = "send",
+        sUsername = sUsername,
+        sPassword = sPassword,
+        nMailID = nMailID,
+        sTo = sToAddress,
+        sSubject = sSubject,
+        sMessage = sMessage,
+    }, "mail" )
+
+    -- Wait for confirmation
+    local timer = os.startTimer( 3 )
+    while true do
+        local sEvent, p1, p2, p3 = os.pullEvent()
+        if sEvent == "rednet_message" then
+            -- Check for response
+            local nSenderID, tMessage, sProtocol = p1, p2, p3
+            if sProtocol == "mail" then
+                if type( tMessage ) == "table" then
+                    if tMessage.sType == "send confirmed" and tMessage.nMailID == nMailID then
+                        print( "Success." )
+                        break
+                    elseif (tMessage.sType == "send failed" or tMessage.sType == "login failed") and tMessage.nMailID == nMailID then
+                        print( "Failed." )
+                        if tMessage.sReason then
+                            print( tMessage.sReason .. "." )
+                        end
+                        break
+                    end
+                end
+            end
+        elseif sEvent == "timer" then
+            -- Check for timeout
+            if p1 == timer then
+                print( "Timed out." )
+                break
+            end
+        end
+    end
+
+else
+    -- "mail somethingelse"
+    printUsage()
+
+end

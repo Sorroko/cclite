@@ -8,7 +8,7 @@ rs.setBundledOutput( "left", c )
 c = colors.subtract( c, colors.blue )
 rs.setBundledOutput( "left", c )
 
-To read bundled inputs:
+To get bundled inputs:
 c = rs.getBundledInput( "right" )
 red = colors.test( c, colors.red )
 

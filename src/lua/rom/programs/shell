@@ -1,5 +1,11 @@
 
+local multishell = multishell
 local parentShell = shell
+local parentTerm = term.current()
+
+if multishell then
+    multishell.setTitle( multishell.getCurrent(), "shell" )
+end
 
 local bExit = false
 local sDir = (parentShell and parentShell.dir()) or ""
@@ -9,7 +15,8 @@ local tProgramStack = {}
 
 local shell = {}
 local tEnv = {
-	["shell"] = shell,
+	[ "shell" ] = shell,
+	[ "multishell" ] = multishell,
 }
 
 -- Colours
@@ -24,13 +31,22 @@ else
 	bgColour = colours.black
 end
 
-
 local function run( _sCommand, ... )
 	local sPath = shell.resolveProgram( _sCommand )
 	if sPath ~= nil then
 		tProgramStack[#tProgramStack + 1] = sPath
+		if multishell then
+		    multishell.setTitle( multishell.getCurrent(), fs.getName( sPath ) )
+		end
    		local result = os.run( tEnv, sPath, ... )
 		tProgramStack[#tProgramStack] = nil
+		if multishell then
+		    if #tProgramStack > 0 then
+    		    multishell.setTitle( multishell.getCurrent(), fs.getName( tProgramStack[#tProgramStack] ) )
+    		else
+    		    multishell.setTitle( multishell.getCurrent(), "shell" )
+    		end
+		end
 		return result
    	else
     	printError( "No such program" )
@@ -38,22 +54,31 @@ local function run( _sCommand, ... )
     end
 end
 
-local function runLine( _sLine )
+local function tokenise( ... )
+    local sLine = table.concat( { ... }, " " )
 	local tWords = {}
-	for match in string.gmatch( _sLine, "[^ \t]+" ) do
-		table.insert( tWords, match )
-	end
+    local bQuoted = false
+    for match in string.gmatch( sLine .. "\"", "(.-)\"" ) do
+        if bQuoted then
+            table.insert( tWords, match )
+        else
+            for m in string.gmatch( match, "[^ \t]+" ) do
+                table.insert( tWords, m )
+            end
+        end
+        bQuoted = not bQuoted
+    end
+    return tWords
+end
 
+-- Install shell API
+function shell.run( ... )
+	local tWords = tokenise( ... )
 	local sCommand = tWords[1]
 	if sCommand then
 		return run( sCommand, unpack( tWords, 2 ) )
 	end
 	return false
-end
-
--- Install shell API
-function shell.run( ... )
-	return runLine( table.concat( { ... }, " " ) )
 end
 
 function shell.exit()
@@ -162,60 +187,62 @@ function shell.aliases()
 	end
 	return tCopy
 end
-	
-term.setBackgroundColor( bgColour )
-term.setTextColour( promptColour )
-print( os.version() )
-term.setTextColour( textColour )
 
--- If this is the toplevel shell, run the startup programs
-if parentShell == nil then
-	-- Run the startup from the ROM first
-	local sRomStartup = shell.resolveProgram( "/rom/startup" )
-	if sRomStartup then
-		shell.run( sRomStartup )
-	end
+function shell.launch( ... )
+    if multishell then
+        local tWords = tokenise( ... )
+        local sCommand = tWords[1]
+        if sCommand then
+        	local sPath = shell.resolveProgram( sCommand )
+        	if sPath == "rom/programs/shell" then
+                return multishell.launch( tEnv, sPath, unpack( tWords, 2 ) )
+            elseif sPath ~= nil then
+                return multishell.launch( tEnv, "rom/programs/shell", sPath, unpack( tWords, 2 ) )
+            else
+                printError( "No such program" )
+            end
+        end
+    end
+    return nil
+end
 	
-	-- Then run the user created startup, from the disks or the root
-	local sUserStartup = shell.resolveProgram( "/startup" )
-	for n,sSide in pairs( peripheral.getNames() ) do
-		if disk.isPresent( sSide ) and disk.hasData( sSide ) then
-			local sDiskStartup = shell.resolveProgram( fs.combine(disk.getMountPath( sSide ), "startup") )
-			if sDiskStartup then
-				sUserStartup = sDiskStartup
-				break
-			end
-		end
-	end
-	
-	if sUserStartup then
-		shell.run( sUserStartup )
-	end
+function shell.switch( nID )
+    if multishell then
+        multishell.setFocus( nID )
+    end
 end
 
--- Run any programs passed in as arguments
+
 local tArgs = { ... }
 if #tArgs > 0 then
-	shell.run( ... )
-end
+    -- "shell x y z"
+    -- Run the program specified on the commandline
+    shell.run( ... )
 
--- Read commands and execute them
-local tCommandHistory = {}
-while not bExit do
-	term.setBackgroundColor( bgColour )
-	term.setTextColour( promptColour )
-	write( shell.dir() .. "> " )
-	term.setTextColour( textColour )
+else
+    -- "shell"
+    -- Print the header
+    term.setBackgroundColor( bgColour )
+    term.setTextColour( promptColour )
+    print( os.version() )
+    term.setTextColour( textColour )
 
-	local sLine = read( nil, tCommandHistory )
-	table.insert( tCommandHistory, sLine )
-	runLine( sLine )
-end
+    -- Run the startup program
+    if parentShell == nil then
+        shell.run( "/rom/startup" )
+    end
 
--- If this is the toplevel shell, run the shutdown program
-if parentShell == nil then
-	if shell.resolveProgram( "shutdown" ) then
-		shell.run( "shutdown" )
-	end
-	os.shutdown() -- just in case
+    -- Read commands and execute them
+    local tCommandHistory = {}
+    while not bExit do
+        term.redirect( parentTerm )
+        term.setBackgroundColor( bgColour )
+        term.setTextColour( promptColour )
+        write( shell.dir() .. "> " )
+        term.setTextColour( textColour )
+
+        local sLine = read( nil, tCommandHistory )
+        table.insert( tCommandHistory, sLine )
+        shell.run( sLine )
+    end
 end

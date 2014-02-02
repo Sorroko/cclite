@@ -1,7 +1,6 @@
-New Features in ComputerCraft 1.56:
+New Features in ComputerCraft 1.58:
 
-. Added Treasure Disks: Floppy Disks in dungeons which contain interesting community made programs. Find them all!
-. All turtle functions now return additional error messages when they fail.
-. Resource Packs with Lua Programs can now be edited when extracted to a folder, for easier editing.
+. Fixed a long standing bug where turtles could lose their identify if they travel too far away
+. Fixed use of deprecated code, ensuring mod compatibility with the latest versions of Minecraft Forge, and world compatibility with future versions of Minecraft
 
 Type "help changelog" to see the full version history.

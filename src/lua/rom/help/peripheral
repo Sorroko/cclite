@@ -7,8 +7,9 @@ peripheral.getType( name )
 peripheral.getMethods( name )
 peripheral.call( name, methodName, param1, param2, etc )
 peripheral.wrap( name )
+peripheral.find( type )
 
 Events fired by the peripheral API:
-"peripheral" when a new peripheral is attached. Argument is the side.
-"peripheral_detach" when a peripheral is removed. Argument is the side.
+"peripheral" when a new peripheral is attached. Argument is the name.
+"peripheral_detach" when a peripheral is removed. Argument is the name.
 Type "help events" to learn about the event system.

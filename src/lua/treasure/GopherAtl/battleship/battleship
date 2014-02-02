@@ -61,7 +61,7 @@ local function quit()
   if openedSide then
     rednet.close(openedSide)
   end
-  term.restore()
+  term.redirect( originalTerm )
   term.setCursorPos(term.getSize())
   print()
   error()
@@ -759,7 +759,7 @@ for k,v in pairs(term.native) do
     redir[k]=function() end
   end
 end
-term.redirect(redir)
+local originalTerm = term.redirect(redir)
 
 --run the game routine once
 coroutine.resume(gameRoutine)

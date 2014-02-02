@@ -12,7 +12,7 @@ rs.getBundledInput( side )
 rs.testBundledInput( side, color )
 rs.setBundledOutput( side, colors )
 rs.getBundledOutput( side )
-Type "help redpower" for usage examples.
+Type "help bundled" for usage examples.
 
 Events emitted by the redstone API:
 "redstone", when the state of any redstone input changes. Use getInput() or getBundledInput() to inspect the changes

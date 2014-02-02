@@ -1,0 +1,285 @@
+
+local tArgs = { ... }
+
+local function printUsage()
+	print( "Usages:" )
+	print( "mail browse <address> <password>" )
+end
+
+local function parseAddress( sAddress )
+    if sAddress then
+        local at = string.find( sAddress, "@" )
+        if at then
+            local sUsername = string.sub( sAddress, 1, at - 1)
+            local sHostname = string.sub( sAddress, at + 1 )
+            if string.len( sUsername ) > 0 and string.len( sHostname ) > 0 then
+                return sUsername, sHostname
+            end
+        end
+    end
+    return nil
+end
+
+-- Get params
+local sAddress = tArgs[1]
+local sPassword = tArgs[2]
+if sAddress == nil or sPassword == nil then
+    printUsage()
+    return
+end
+
+-- Download the mail
+-- Parse address
+local sUsername, sHostname = parseAddress( sAddress )
+if sUsername == nil or sHostname == nil then
+    print( "Bad address format" )
+    return
+end
+
+-- Connect
+write( "Looking up " .. sHostname .. "... " )
+local nHostID = rednet.lookup( "mail", sHostname )
+if nHostID == nil then
+    print( "Failed." )
+    return
+else
+    print( "Success." )
+end
+
+-- Retrieve
+write( "Retrieving mail... " )
+local nMailID = math.random( 1, 2147483647 )
+rednet.send( nHostID, {
+    sType = "get",
+    sUsername = sUsername,
+    sPassword = sPassword,
+}, "mail" )
+
+-- Wait for confirmation
+local timer = os.startTimer( 3 )
+local tMail = nil
+while true do
+    local sEvent, p1, p2, p3 = os.pullEvent()
+    if sEvent == "rednet_message" then
+        -- Check for response
+        local nSenderID, tMessage, sProtocol = p1, p2, p3
+        if sProtocol == "mail" then
+            if type( tMessage ) == "table" then
+                if tMessage.sType == "mail"  then
+                    print( "Success." )
+                    tMail = tMessage.tMail
+                    break
+                elseif tMessage.sType == "login failed" then
+                    print( "Failed." )
+                    if tMessage.sReason then
+                        print( tMessage.sReason .. "." )
+                    end
+                    return
+                end
+            end
+        end
+    elseif sEvent == "timer" then
+        -- Check for timeout
+        if p1 == timer then
+            print( "Timed out." )
+            return
+        end
+    end
+end
+
+-- Setup GUI
+local bRunning = true
+local nCurrentMail = 1
+local sStatus = "Press Ctrl to access menu"
+local bMenu = false
+local nMenuItem = 1
+local nScroll = 0
+
+local tMenuItems = {
+    "Delete", "Reply", "Forward", "Save", "Exit"
+}
+local tMenuFunctions = {
+    [ "Delete" ] = function()
+        sStatus = "TODO: Delete message"
+    end,
+    [ "Reply" ] = function()
+        sStatus = "TODO: Reply to message"
+    end,
+    [ "Forward" ] = function()
+        sStatus = "TODO: Forward message"
+    end,
+    [ "Save" ] = function()
+        sStatus = "TODO: Save message"
+    end,
+    [ "Exit" ] = function()
+        bRunning = false
+    end,
+}
+
+local textColour, highlightColour
+if term.isColour() then
+    textColour = colors.white
+    highlightColour = colors.yellow
+else
+    textColour = colors.white
+    highlightColour = colors.white
+end
+
+function redrawHeader()
+    term.setTextColor(highlightColour)
+
+    term.setCursorPos(1,1)
+    term.clearLine()
+    term.write("To:")
+    term.setCursorPos(1,2)
+    term.clearLine()
+    term.write("From:")
+    term.setCursorPos(1,3)
+    term.clearLine()
+    term.write("Subject:")
+    term.setCursorPos(1,4)
+    term.clearLine()
+
+    local tCurrentMail = tMail[ nCurrentMail ]
+    term.setTextColor(textColour)
+    term.setCursorPos(10,1)
+    term.write( (tCurrentMail and tCurrentMail.sTo) or "-" )
+    term.setCursorPos(10,2)
+    term.write( (tCurrentMail and tCurrentMail.sFrom) or "-" )
+    term.setCursorPos(10,3)
+    term.write( (tCurrentMail and tCurrentMail.sSubject) or "-" )
+end
+
+function redrawMessage()
+    term.clear()
+
+    term.setTextColor(textColour)
+    term.setCursorPos( 1, 5 - nScroll )
+    write( (tCurrentMail and tCurrentMail.sMessage) or "-" )
+
+    redrawHeader()
+    redrawMenu()
+end
+
+function redrawMenu()
+    -- Clear line
+    local w,h = term.getSize()
+    term.setCursorPos( 1, h )
+	term.clearLine()
+
+    -- Draw messages numbers
+    term.setCursorPos( w - string.len( "< "..nCurrentMail.."/"..#tMail.." >" ) + 1, h )
+    term.setTextColour( highlightColour )
+    term.write( "< " )
+    term.setTextColour( textColour )
+    term.write( nCurrentMail.."/"..#tMail )
+    term.setTextColour( highlightColour )
+    term.write( " >" )
+
+    term.setCursorPos( 1, h )
+	if bMenu then
+        -- Draw menu
+		term.setTextColour( textColour )
+		for nItem,sItem in pairs( tMenuItems ) do
+			if nItem == nMenuItem then
+				term.setTextColour( highlightColour )
+				term.write( "[" )
+				term.setTextColour( textColour )
+				term.write( sItem )
+				term.setTextColour( highlightColour )
+				term.write( "]" )
+                term.setTextColour( textColour )
+			else
+				term.write( " "..sItem.." " )
+			end
+		end
+    else
+        -- Draw status
+        term.setTextColour( highlightColour )
+        term.write( sStatus )
+        term.setTextColour( textColour )
+    end
+end
+
+redrawHeader()
+redrawMessage()
+redrawMenu()
+
+-- Main loop
+while bRunning do
+    local sEvent, p1, p2, p3 = os.pullEvent( "key" )
+    if sEvent == "key" then
+        local key = p1
+        if key == keys.down then
+            if not bMenu then
+                -- Scroll Down
+                nScroll = nScroll + 1
+                redrawMessage()
+            end
+
+        elseif key == keys.up then
+            if not bMenu then
+                -- Scroll Up
+                if nScroll > 0 then
+                    nScroll = nScroll - 1
+                    redrawMessage()
+                end
+            end
+
+        elseif key == keys.left then
+            if not bMenu then
+                -- Previous message
+                nCurrentMail = nCurrentMail - 1
+                if nCurrentMail <= 0 then
+                    nCurrentMail = #tMail
+                end
+                nScroll = 0
+                redrawHeader()
+                redrawMessage()
+            else
+                -- Previous menu option
+				nMenuItem = nMenuItem - 1
+				if nMenuItem < 1 then
+					nMenuItem = #tMenuItems
+				end
+				redrawMenu()
+            end
+
+        elseif key == keys.right then
+            if not bMenu then
+                -- Next message
+                nCurrentMail = nCurrentMail + 1
+                if nCurrentMail > #tMail then
+                    nCurrentMail = 1
+                end
+                nScroll = 0
+                redrawHeader()
+                redrawMessage()
+            else
+                -- Next menu option
+				nMenuItem = nMenuItem + 1
+				if nMenuItem > #tMenuItems then
+					nMenuItem = 1
+				end
+				redrawMenu()
+            end
+
+        elseif key == keys.enter then
+            if bMenu then
+                -- Menu option selection
+                tMenuFunctions[ tMenuItems[nMenuItem] ]()
+                bMenu = false
+                redrawMenu()
+            end
+
+		elseif key == keys.leftCtrl or key == keys.rightCtrl then
+			-- Menu toggle
+			bMenu = not bMenu
+			redrawMenu()
+
+        end
+    end
+end
+
+term.clear()
+term.setCursorPos(1,1)

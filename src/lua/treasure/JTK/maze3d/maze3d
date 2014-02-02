@@ -372,8 +372,9 @@ for x=1,w do
 end
   
 local function redraw()
+  local oldTerm
   if buffer.isBuffer then
-    term.redirect(buffer)
+    oldTerm = term.redirect(buffer)
   end
   for x=1,w do
     local wall,dist=cast(px,py,math.rad(dir)+scan[x].angle)
@@ -398,7 +399,7 @@ local function redraw()
     end
   end
   if buffer.isBuffer then
-    term.restore()
+    term.redirect(oldTerm)
     buffer.blit()
   end
 end

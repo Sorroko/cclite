@@ -1,83 +1,83 @@
 
-local function isDrive( side )
-	return peripheral.getType( side ) == "drive"
+local function isDrive( name )
+	return peripheral.getType( name ) == "drive"
 end
 
-function isPresent( side )
-	if isDrive( side ) then
-		return peripheral.call( side, "isDiskPresent" )
+function isPresent( name )
+	if isDrive( name ) then
+		return peripheral.call( name, "isDiskPresent" )
 	end
 	return false
 end
 
-function getLabel( side )
-	if isDrive( side ) then
-		return peripheral.call( side, "getDiskLabel" )
+function getLabel( name )
+	if isDrive( name ) then
+		return peripheral.call( name, "getDiskLabel" )
 	end
 	return nil
 end
 
-function setLabel( side, label )
-	if isDrive( side ) then
-		peripheral.call( side, "setDiskLabel", label )
+function setLabel( name, label )
+	if isDrive( name ) then
+		peripheral.call( name, "setDiskLabel", label )
 	end
 end
 
-function hasData( side )
-	if isDrive( side ) then
-		return peripheral.call( side, "hasData" )
+function hasData( name )
+	if isDrive( name ) then
+		return peripheral.call( name, "hasData" )
 	end
 	return false
 end
 
-function getMountPath( side )
-	if isDrive( side ) then
-		return peripheral.call( side, "getMountPath" )
+function getMountPath( name )
+	if isDrive( name ) then
+		return peripheral.call( name, "getMountPath" )
 	end
 	return nil
 end
 
-function hasAudio( side )
-	if isDrive( side ) then
-		return peripheral.call( side, "hasAudio" )
+function hasAudio( name )
+	if isDrive( name ) then
+		return peripheral.call( name, "hasAudio" )
 	end
 	return false
 end
 
-function getAudioTitle( side )
-	if isDrive( side ) then
-		return peripheral.call( side, "getAudioTitle" )
+function getAudioTitle( name )
+	if isDrive( name ) then
+		return peripheral.call( name, "getAudioTitle" )
 	end
 	return nil
 end
 
-function playAudio( side )
-	if isDrive( side ) then
-		peripheral.call( side, "playAudio" )
+function playAudio( name )
+	if isDrive( name ) then
+		peripheral.call( name, "playAudio" )
 	end
 end
 
-function stopAudio( side )
-	if not side then
-		for n,sSide in ipairs( peripheral.getNames() ) do
-			stopAudio( sSide )
+function stopAudio( name )
+	if not name then
+		for n,sName in ipairs( peripheral.getNames() ) do
+			stopAudio( sName )
 		end
 	else
-		if isDrive( side ) then
-			peripheral.call( side, "stopAudio" )
+		if isDrive( name ) then
+			peripheral.call( name, "stopAudio" )
 		end
 	end
 end
 
-function eject( side )
-	if isDrive( side ) then
-		peripheral.call( side, "ejectDisk" )
+function eject( name )
+	if isDrive( name ) then
+		peripheral.call( name, "ejectDisk" )
 	end
 end
 
-function getID( side )
-	if isDrive( side ) then
-		return peripheral.call( side, "getDiskID" )
+function getID( name )
+	if isDrive( name ) then
+		return peripheral.call( name, "getDiskID" )
 	end
 	return nil
 end

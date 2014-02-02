@@ -85,3 +85,16 @@ function wrap( _sSide )
 	end
 	return nil
 end
+
+function find( sType, fnFilter )
+	local tResults = {}
+	for n,sName in ipairs( peripheral.getNames() ) do
+		if peripheral.getType( sName ) == sType then
+			local wrapped = peripheral.wrap( sName )
+			if fnFilter == nil or fnFilter( sName, wrapped ) then
+				table.insert( tResults, wrapped )
+			end
+		end
+	end
+	return unpack( tResults )
+end

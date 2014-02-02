@@ -81,7 +81,7 @@ local function refuel()
 	if not tryRefuel() then
 		print( "Add more fuel to continue." )
 		while not tryRefuel() do
-			sleep(1)
+			os.pullEvent( "turtle_inventory" )
 		end
 		print( "Resuming Tunnel." )
 	end

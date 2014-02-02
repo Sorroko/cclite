@@ -53,7 +53,7 @@ local function returnSupplies()
 		unload( true )
 		print( "Waiting for fuel" )
 		while not refuel( fuelNeeded ) do
-			sleep(1)
+			os.pullEvent( "turtle_inventory" )
 		end
 	else
 		unload( true )	
