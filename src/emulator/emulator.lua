@@ -225,6 +225,6 @@ function Emulator:mousepressed( x, y, _button )
 end
 
 function Emulator:mousereleased( x, y, _button )
-	if not self.activeId or self:getActiveComputer().isAdvanced then return end
+	if not self.activeId or not self:getActiveComputer().isAdvanced then return end
 	mouse.isPressed = false
 end

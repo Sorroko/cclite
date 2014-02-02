@@ -1,3 +1,4 @@
+--[[
 -- Install safe versions of various library functions
 -- These will not put cfunctions on the stack, so don't break serialisation
 xpcall = function( _fn, _fnErrorHandler )
@@ -103,7 +104,7 @@ function setmetatable( _o, _t )
 	end
 	return nativesetmetatable( _o, _t )
 end
-
+]]
 
 -- Install fix for luaj's broken string.sub/string.find
 local nativestringfind = string.find

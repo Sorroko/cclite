@@ -68,29 +68,126 @@ function NativeAPI:initialize(_computer)
 		rawset = rawset,
 		rawget = rawget,
 		rawequal = rawequal,
-		setmetatable = setmetatable,
 		getmetatable = getmetatable,
 		next = next,
 		type = type,
 		select = select,
 		assert = assert,
 		error = error,
-		pairs = pairs,
-		ipairs = ipairs,
-
 		math = Util.deep_copy(math),
 		string = Util.deep_copy(string),
 		table = Util.deep_copy(table),
-		coroutine = Util.deep_copy(coroutine),
-
-		loadstring = function(str, source)
-			local f, err = loadstring(str, source)
-			if f then
-				setfenv(f, self.env)
-			end
-			return f, err
-		end,
+		coroutine = Util.deep_copy(coroutine)
 	}
+
+	-- safe native function replacements
+	self.env.pairs = function( _t )
+		local typeT = type( _t )
+		if typeT ~= "table" then
+			error( "bad argument #1 to pairs (table expected, got "..typeT..")", 2 )
+		end
+		return next, _t, nil
+	end
+	self.env.ipairs = function( _t )
+		local typeT = type( _t )
+		if typeT ~= "table" then
+			error( "bad argument #1 to ipairs (table expected, got "..typeT..")", 2 )
+		end
+		return function( t, var )
+			var = var + 1
+			local value = t[var]
+			if value == nil then
+				return
+			end
+			return var, value
+		end, _t, 0
+	end
+	self.env.coroutine.wrap = function( _fn )
+		local typeT = type( _fn )
+		if typeT ~= "function" then
+			error( "bad argument #1 to coroutine.wrap (function expected, got "..typeT..")", 2 )
+		end
+		local co = coroutine.create( _fn )
+		return function( ... )
+			local tResults = { coroutine.resume( co, ... ) }
+			if tResults[1] then
+				return unpack( tResults, 2 )
+			else
+				error( tResults[2], 2 )
+			end
+		end
+	end
+	self.env.string.gmatch = function( _s, _pattern )
+		local type1 = type( _s )
+		if type1 ~= "string" then
+			error( "bad argument #1 to string.gmatch (string expected, got "..type1..")", 2 )
+		end
+		local type2 = type( _pattern )
+		if type2 ~= "string" then
+			error( "bad argument #2 to string.gmatch (string expected, got "..type2..")", 2 )
+		end
+
+		local nPos = 1
+		return function()
+			local nFirst, nLast = string.find( _s, _pattern, nPos )
+			if nFirst == nil then
+				return
+			end
+			nPos = nLast + 1
+			return string.match( _s, _pattern, nFirst )
+		end
+	end
+	self.env.setmetatable = function( _o, _t )
+		if _t and type(_t) == "table" then
+			local idx = rawget( _t, "__index" )
+			if idx and type( idx ) == "table" then
+				rawset( _t, "__index", function( t, k ) return idx[k] end )
+			end
+			local newidx = rawget( _t, "__newindex" )
+			if newidx and type( newidx ) == "table" then
+				rawset( _t, "__newindex", function( t, k, v ) newidx[k] = v end )
+			end
+		end
+		return setmetatable( _o, _t )
+	end
+	self.env.xpcall = function( _fn, _fnErrorHandler )
+		local typeT = type( _fn )
+		assert( typeT == "function", "bad argument #1 to xpcall (function expected, got "..typeT..")" )
+		local co = coroutine.create( _fn )
+		local tResults = { coroutine.resume( co ) }
+		while coroutine.status( co ) ~= "dead" do
+			tResults = { coroutine.resume( co, coroutine.yield() ) }
+
+			--Don't think patch is necessary.
+			--tResults = { coroutine.resume( co, coroutine.yield(unpack(tResults, 2)) ) }
+		end
+		if tResults[1] == true then
+			return true, unpack( tResults, 2 )
+		else
+			return false, _fnErrorHandler( tResults[2] )
+		end
+	end
+	self.env.pcall = function( _fn, ... )
+		local typeT = type( _fn )
+		assert( typeT == "function", "bad argument #1 to pcall (function expected, got "..typeT..")" )
+		local tArgs = { ... }
+		return self.env.xpcall(
+			function()
+				return _fn( unpack( tArgs ) )
+			end,
+			function( _error )
+				return _error
+			end
+		)
+	end
+	self.env.loadstring = function(str, source)
+		local f, err = loadstring(str, source)
+		if f then
+			setfenv(f, self.env)
+		end
+		return f, err
+	end
+
 	-- CC apis (BIOS completes api.)
 	self.env.term = {}
 	self.env.term.native = function()
