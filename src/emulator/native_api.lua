@@ -216,6 +216,7 @@ function NativeAPI:initialize(_computer)
 		temp.setTextColor = function( num )
 			if not self.computer.isAdvanced then return end
 			assert(type(num) == "number")
+			num = math.floor(math.log(num) / math.log(2)) + 1
 			assert(Util.COLOUR_CODE[num] ~= nil)
 			self.computer.screen:setTextColor( num )
 		end
@@ -223,6 +224,7 @@ function NativeAPI:initialize(_computer)
 		temp.setBackgroundColor = function( num )
 			if not self.computer.isAdvanced then return end
 			assert(type(num) == "number")
+			num = math.floor(math.log(num) / math.log(2)) + 1
 			assert(Util.COLOUR_CODE[num] ~= nil)
 			self.computer.screen:setBackgroundColor( num )
 		end
