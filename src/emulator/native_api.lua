@@ -12,6 +12,12 @@ function assert(test, msg, level, ...)
   error(msg, (level or 1) + 1) -- +1 is for this wrapper
 end
 
+local function classert(test, msg, level, ...)
+  if test then return test, msg, level, ... end
+  --error(msg, (level or 1) + 1) -- +1 is for this wrapper
+  return false
+end
+
 local function HTTPHandle(contents, status)
 	local lineIndex = 1
 	local handle = {}
@@ -214,17 +220,31 @@ function NativeAPI:initialize(_computer)
 			self.computer.screen:write(text)
 		end
 		temp.setTextColor = function( num )
-			if not self.computer.isAdvanced then return end
-			assert(type(num) == "number")
-			assert(Util.COLOUR_CODE[num] ~= nil)
-			self.computer.screen:setTextColor( num )
+			c1 = classert(type(num) == "number")
+		if c1 then
+			c2 = classert(Util.COLOUR_CODE[num] ~= nil)
+			if c2 then
+				self.computer.screen:setTextColor( num )
+			else
+				return error("Colour out of range")
+			end
+		else
+			return error("Expected number")
+		end
 		end
 		temp.setTextColour = temp.setTextColor
 		temp.setBackgroundColor = function( num )
-			if not self.computer.isAdvanced then return end
-			assert(type(num) == "number")
-			assert(Util.COLOUR_CODE[num] ~= nil)
-			self.computer.screen:setBackgroundColor( num )
+			c1 = classert(type(num) == "number")
+			if c1 then
+				c2 = classert(Util.COLOUR_CODE[num] ~= nil)
+				if c2 then
+					self.computer.screen:setBackgroundColor( num )
+				else
+					return error("Colour out of range")
+				end
+			else
+				return error("Expected number")
+			end
 		end
 		temp.setBackgroundColour = temp.setBackgroundColor
 		temp.isColor = function()
