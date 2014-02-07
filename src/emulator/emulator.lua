@@ -37,7 +37,6 @@ local tShortcuts = {
 		action = function(activeComp)
 			local clipboard = love.system.getClipboardText():sub(1,128):gsub("\r\n","\n")
 			activeComp:pushEvent({"paste", clipboard})
-			activeComp:textinput(clipboard)
 		end
 	}
 }

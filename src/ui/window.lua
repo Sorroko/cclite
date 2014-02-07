@@ -3,7 +3,7 @@ Window = class('Window')
 Window.main = nil
 
 function Window:initialize(title) --(title, w, h)
-	love.window.setTitle( title )
+	self.title = title
 	self.w = 0 --w or 720
 	self.h = 0 --h or 480
 	self.components = {}
@@ -39,11 +39,15 @@ end
 
 function Window:create()
 	self.isCreated = true
-	return love.window.setMode( self.w, self.h, {
+	local ok = love.window.setMode( self.w, self.h, {
 		fullscreen = false,
 		vsync = true,
 		fsaa = 0,
 		resizable = false,
 		borderless = false
 	} )
+	if not ok then return false end
+
+	love.window.setTitle( self.title )
+	return true
 end

@@ -1,0 +1,128 @@
+<project default="help">
+
+  <property file="build.properties"/>
+  <property name="tstamp.pattern" value="yyyyMMddHHmmss"/>
+
+  <tstamp>
+    <format property="tstamp" pattern="${tstamp.pattern}"/>
+  </tstamp>
+
+  <property name="game.id"       value="${game.name}"/>
+  <property name="game.package"  value="${game.name}"/>
+  <property name="game.version"  value="${tstamp}"/>
+  <property name="game.dir"      value="${game.name}"/>
+  <property name="game.src"      value="src"/>
+  <property name="game.app"      value="${game.name}.app"/>
+  <property name="game.love"     value="${game.name}.love"/>
+  <property name="game.exe"      value="${game.name}.exe"/>
+  <property name="game.title"    value="${game.name}-${game.version}"/>
+  <property name="dist.dir"      value="dist"/>
+  <property name="dist.files"    value=""/>
+  <property name="dist.love"     value="${game.title}.love"/>
+  <property name="dist.zip"      value="${game.title}.zip"/>
+  <property name="love.url"      value="http://cdn.bitbucket.org/rude/love/downloads"/>
+  <property name="love.name"     value="love"/>
+  <property name="love.version"  value="0.9.0"/>
+  <property name="love.app"      value="${love.name}.app"/>
+  <property name="love.exe"      value="${love.name}.exe"/>
+
+  <target name="help" description="Prints all targets and their description.">
+    <java classname="org.apache.tools.ant.Main">
+      <arg value="-projecthelp"/>
+      <arg value="-buildfile" />
+      <arg value="${ant.file}" />
+    </java>
+  </target>
+
+  <target name="all" depends="love, dist, dist-win-32, dist-win-64, dist-osx" description="Creates everything."/>
+
+  <target name="init" description="Initializes build.">
+    <!-- <antcall target="clean"/> -->
+    <mkdir dir="${dist.dir}"/>
+  </target>
+
+  <target name="love" depends="init" description="Creates LOVE file.">
+    <zip destfile="${dist.dir}/${dist.love}" basedir=".">
+      <zipfileset dir="${game.src}" includes="**/*" />
+    </zip>
+  </target>
+
+  <target name="dist" depends="init, love" description="Creates generic distribution zip.">
+    <zip destfile="${dist.dir}/${dist.zip}">
+      <zipfileset dir="${dist.dir}" includes="${dist.love}" fullpath="${game.dir}/${game.love}"/>
+      <zipfileset dir="." includes="${dist.files}" prefix="${game.dir}"/>
+    </zip>
+  </target>
+
+  <target name="dist-win-32" description="Creates distribution zip for Windows (32-bit).">
+    <antcall target="dist-win">
+      <param name="suffix" value="win32"/>
+    </antcall>
+  </target>
+
+  <target name="dist-win-64" description="Creates distribution zip for Windows (64-bit).">
+    <antcall target="dist-win">
+      <param name="suffix" value="win64"/>
+    </antcall>
+  </target>
+
+  <target name="dist-win" depends="init, love" if="suffix">
+    <property name="love.title"   value="${love.name}-${love.version}-${suffix}"/>
+    <property name="love.dir"     value="${love.title}"/>
+    <property name="love.zip"     value="${love.title}.zip"/>
+    <property name="dist.win.zip" value="${game.title}-${suffix}.zip"/>
+    <get src="${love.url}/${love.zip}" dest="${dist.dir}/${love.zip}" skipexisting="true"/>
+    <unzip src="${dist.dir}/${love.zip}" dest="${dist.dir}"/>
+    <concat destfile="${dist.dir}/${game.exe}" binary="true">
+      <fileset file="${dist.dir}/${love.dir}/${love.exe}"/>
+      <fileset file="${dist.dir}/${dist.love}"/>
+    </concat>
+    <zip destfile="${dist.dir}/${dist.win.zip}">
+      <zipfileset dir="${dist.dir}" includes="${game.exe}" prefix="${game.dir}"/>
+      <zipfileset dir="${dist.dir}/${love.dir}" includes="*.dll" prefix="${game.dir}"/>
+      <!-- <zipfileset dir="." includes="${dist.files}" prefix="${game.dir}"/> -->
+    </zip>
+    <delete dir="${dist.dir}/${love.dir}"/>
+    <delete file="${dist.dir}/${game.exe}"/>
+  </target>
+
+  <target name="dist-osx" depends="init, love" description="Creates distribution zip for OS X.">
+    <property name="love.zip"     value="${love.name}-${love.version}-macosx-x64.zip"/>
+    <property name="dist.osx.zip" value="${game.title}-osx.zip"/>
+    <get src="${love.url}/${love.zip}" dest="${dist.dir}/${love.zip}" skipexisting="true"/>
+    <unzip src="${dist.dir}/${love.zip}" dest="${dist.dir}"/>
+    <move todir="${dist.dir}/${game.app}">
+      <fileset dir="${dist.dir}/${love.app}"/>
+    </move>
+    <copy file="${dist.dir}/${dist.love}" tofile="${dist.dir}/${game.app}/Contents/Resources/${game.love}"/>
+    <replace file="${dist.dir}/${game.app}/Contents/Info.plist" token="&lt;string&gt;org.love2d.love&lt;/string&gt;" value="&lt;string&gt;${game.package}&lt;/string&gt;"/>
+    <replace file="${dist.dir}/${game.app}/Contents/Info.plist" token="&lt;string&gt;LÖVE&lt;/string&gt;" value="&lt;string&gt;${game.name}&lt;/string&gt;"/>
+    <replaceregexp file="${dist.dir}/${game.app}/Contents/Info.plist" match="&lt;key&gt;UTExportedTypeDeclarations&lt;/key&gt;.*&lt;/array&gt;.*&lt;/array&gt;.*&lt;/array&gt;" replace="" flags="s"/>
+    <zip destfile="${dist.dir}/${dist.osx.zip}">
+      <zipfileset dir="${dist.dir}/${game.app}" prefix="${game.name}/${game.app}"/>
+      <!-- <zipfileset dir="." includes="${dist.files}" prefix="${game.name}"/> -->
+    </zip>
+    <delete dir="${dist.dir}/${game.app}"/>
+  </target>
+
+  <target name="run" description="Runs game.">
+    <property name="args" value=""/>
+    <exec executable="love" osfamily="windows">
+      <arg line="${game.src} ${args}"/>
+    </exec>
+    <exec executable="love" osfamily="unix">
+      <arg line="${game.src} ${args}"/>
+    </exec>
+  </target>
+
+  <target name="debug" description="Runs game with additional parameters.">
+    <antcall target="run">
+      <param name="args" value="${debug.args}"/>
+    </antcall>
+  </target>
+
+  <target name="clean" description="Deletes all generated files.">
+    <delete dir="${dist.dir}"/>
+  </target>
+
+</project>

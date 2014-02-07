@@ -1,7 +1,7 @@
 --[[ TODO
- Run emulator in a thread to avoid stalling main thread (user code protection)
+ Run emulator in a thread to avoid stalling main thread, "too long without yielding"
  There should be spaces on the borders of the screen, where the cells are slightly larger than they are near the middle.
- Term api draws directly to a love2d canvas, passive screen api.
+ Term api draws directly to a love2d canvas
  Config with custom colours
  UI for peripherals etc.
  Add bit api
@@ -32,21 +32,17 @@ require 'ui.window'
 require 'ui.panel'
 
 local emulator, panel
-function love.load()
+function love.load(args)
+    if type(args) == "table" then
+        for k, v in pairs(args) do
+            if v == "--console" then
+                _DEBUG = true
+            end
+        end
+    end
     log("Application starting...")
 
     PeripheralManager.parse()
-
-	-- TODO: Some nice icons? love.window.setIcon
-
-	local font = love.graphics.newFont( 'res/minecraft.ttf', 16 )
-    -- local glyphs = ""
-    -- for i = 32,126 do
-    --     glyphs = glyphs .. string.char(i)
-    -- end
-    -- local font = love.graphics.newImageFont("res/minecraft.png", glyphs)
-    -- font:setFilter("nearest","nearest")
-    Screen.setFont(font)
 
 	love.filesystem.setIdentity( "cclite" )
 	if not love.filesystem.exists( "data/" ) then
@@ -62,6 +58,17 @@ function love.load()
     --panel = Panel(emulator:getWidth(), 0, emulator)
 
     Window.main:create()
+
+    -- TODO: Some nice icons? love.window.setIcon
+
+    local font = love.graphics.newFont( 'res/minecraft.ttf', 16 )
+    -- local glyphs = ""
+    -- for i = 32,126 do
+    --     glyphs = glyphs .. string.char(i)
+    -- end
+    -- local font = love.graphics.newImageFont("res/minecraft.png", glyphs)
+    -- font:setFilter("nearest","nearest")
+    Screen.setFont(font)
 
     local computer = emulator:registerComputer({advanced = true})
     computer:start()
@@ -137,9 +144,9 @@ function love.run()
             love.graphics.clear()
             love.graphics.origin()
             if love.draw then love.draw() end
-            if _DEBUG then
-				love.graphics.print("FPS: " .. tostring(love.timer.getFPS()), 10, 10)
-			end
+            --if _DEBUG then
+			--	love.graphics.print("FPS: " .. tostring(love.timer.getFPS()), 10, 10)
+			--end
             love.graphics.present()
         end
 
