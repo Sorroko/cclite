@@ -25,7 +25,7 @@ ToDo
 
 Installation
 ------------
-- Download [Love for Android][link-to-android-love], Tested on [V alpha][link-to-android-love-download] , and install it
+- Download [Love for Android][link-to-android-love], Tested on [Alpha 8][link-to-android-love-download] , and install it
 - Download the [SRC Zip][link-to-src]
 - Extract the SRC Zip
 - Copy everything in CCLite-android-master/src/ to sdcard/love game/ "You should create this folder"
