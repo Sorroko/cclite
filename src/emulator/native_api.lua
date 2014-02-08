@@ -6,10 +6,19 @@ NativeAPI = class('NativeAPI')
 	Make errors returned accurate
 ]]
 
--- Wrapper that adds error level to assert.
-function assert(test, msg, level, ...)
-  if test then return test, msg, level, ... end
-  error(msg, (level or 1) + 1) -- +1 is for this wrapper
+function api_error(msg, level)
+	level = level or 1
+	local info = debug.getinfo(level + 2, "S")
+	if info then
+		msg = info.source .. ":" .. info.linedefined .. ": " .. msg
+	end
+	--error(msg, level + 2)
+	error(msg, math.huge) -- Make sure error is always without a level
+end
+
+function api_assert(test, msg, ...)
+	if test then return test, msg, ... end
+	api_error(msg, 2)
 end
 
 local function HTTPHandle(contents, status)
@@ -152,7 +161,7 @@ function NativeAPI:initialize(_computer)
 	end
 	self.env.xpcall = function( _fn, _fnErrorHandler )
 		local typeT = type( _fn )
-		assert( typeT == "function", "bad argument #1 to xpcall (function expected, got "..typeT..")" )
+		api_assert( typeT == "function", "bad argument #1 to xpcall (function expected, got "..typeT..")" )
 		local co = coroutine.create( _fn )
 		local tResults = { coroutine.resume( co ) }
 		while coroutine.status( co ) ~= "dead" do
@@ -169,7 +178,7 @@ function NativeAPI:initialize(_computer)
 	end
 	self.env.pcall = function( _fn, ... )
 		local typeT = type( _fn )
-		assert( typeT == "function", "bad argument #1 to pcall (function expected, got "..typeT..")" )
+		api_assert( typeT == "function", "bad argument #1 to pcall (function expected, got "..typeT..")" )
 		local tArgs = { ... }
 		return self.env.xpcall(
 			function()
@@ -205,27 +214,40 @@ function NativeAPI:initialize(_computer)
 			return self.computer.screen:getCursorPos()
 		end
 		temp.setCursorPos = function(x, y)
-			assert(type(x) == "number")
-			assert(type(y) == "number")
+			api_assert(type(x) == "number", "Expected number, number")
+			api_assert(type(y) == "number", "Expected number, number")
 			self.computer.screen:setCursorPos(x, y)
 		end
-		temp.write = function( text )
-			text = tostring(text)
+		temp.write = function( obj )
+			local objType = type(obj)
+			if objType ~= "string" and objType ~= "number" then return end
+			-- TODO: serialize tables and write
+			local text = tostring(obj)
+
+			-- some dodgy code
+			if objType == "number" then
+				if text == "inf" or text == "-inf" then
+					text = text == "inf" and "Infinity" or "-Infinity"
+				elseif math.floor(obj) == obj then
+					text = text .. ".0"
+				end
+			end
+
 			self.computer.screen:write(text)
 		end
 		temp.setTextColor = function( num )
 			if not self.computer.isAdvanced then return end
-			assert(type(num) == "number")
+			api_assert(type(num) == "number", "Expected number")
 			num = math.floor(math.log(num) / math.log(2)) + 1
-			assert(Util.COLOUR_CODE[num] ~= nil)
+			api_assert(Util.COLOUR_CODE[num] ~= nil, "Colour out of range")
 			self.computer.screen:setTextColor( num )
 		end
 		temp.setTextColour = temp.setTextColor
 		temp.setBackgroundColor = function( num )
 			if not self.computer.isAdvanced then return end
-			assert(type(num) == "number")
+			api_assert(type(num) == "number", "Expected number")
 			num = math.floor(math.log(num) / math.log(2)) + 1
-			assert(Util.COLOUR_CODE[num] ~= nil)
+			api_assert(Util.COLOUR_CODE[num] ~= nil, "Colour out of range")
 			self.computer.screen:setBackgroundColor( num )
 		end
 		temp.setBackgroundColour = temp.setBackgroundColor
@@ -234,76 +256,76 @@ function NativeAPI:initialize(_computer)
 		end
 		temp.isColour = temp.isColor
 		temp.setCursorBlink = function( bool )
-			assert(type(bool) == "boolean")
+			api_assert(type(bool) == "boolean", "Expected boolean")
 			self.computer.screen:setCursorBlink( bool )
 		end
 		temp.scroll = function( n )
-			assert(type(n) == "number")
+			api_assert(type(n) == "number", "Expected number")
 			self.computer.screen:scroll(n)
 		end
 		return temp -- Return a new table to avoid overwriting permanently
 	end
 	self.env.fs = {}
 	self.env.fs.open = function(sPath, sMode)
-		assert(type(sPath) == "string")
-		assert(type(sMode) == "string")
+		api_assert(type(sPath) == "string", "Expected string, string")
+		api_assert(type(sMode) == "string", "Expected string, string")
 		sPath = FileSystem.cleanPath(sPath)
 		return self.computer.fileSystem:open(sPath, sMode)
 	end
 	self.env.fs.list = function(sPath)
-		assert(type(sPath) == "string")
+		api_assert(type(sPath) == "string", "Expected string")
 		sPath = FileSystem.cleanPath(sPath)
 		return self.computer.fileSystem:list(sPath)
 	end
 	self.env.fs.exists = function(sPath)
-		assert(type(sPath) == "string")
+		api_assert(type(sPath) == "string", "Expected string")
 		sPath = FileSystem.cleanPath(sPath)
 		return self.computer.fileSystem:find(sPath) ~= nil
 	end
 	self.env.fs.isDir = function(sPath)
-		assert(type(sPath) == "string")
+		api_assert(type(sPath) == "string", "Expected string")
 		sPath = FileSystem.cleanPath(sPath)
 		return self.computer.fileSystem:isDirectory(sPath)
 	end
 	self.env.fs.isReadOnly = function(sPath)
-		assert(type(sPath) == "string")
+		api_assert(type(sPath) == "string", "Expected string")
 		sPath = FileSystem.cleanPath(sPath)
 		return self.computer.fileSystem:isReadOnly(sPath)
 	end
 	self.env.fs.getName = function(sPath)
-		assert(type(sPath) == "string")
+		api_assert(type(sPath) == "string", "Expected string")
 		local fpath, name, ext = string.match(sPath, "(.-)([^\\/]-%.?([^%.\\/]*))$")
 		return name
 	end
 	self.env.fs.makeDir = function(sPath)
-		assert(type(sPath) == "string")
+		api_assert(type(sPath) == "string", "Expected string")
 		sPath = FileSystem.cleanPath(sPath)
 		return self.computer.fileSystem:makeDirectory(sPath)
 	end
 	self.env.fs.move = function(fromPath, toPath)
-		assert(type(fromPath) == "string")
-		assert(type(toPath) == "string")
+		api_assert(type(fromPath) == "string", "Expected string, string")
+		api_assert(type(toPath) == "string", "Expected string, string")
 		fromPath = FileSystem.cleanPath(fromPath)
 		toPath = FileSystem.cleanPath(toPath)
 
 		return self.computer.fileSystem:copy(fromPath, toPath) and self.computer.fileSystem:delete(fromPath)
 	end
 	self.env.fs.copy = function(fromPath, toPath)
-		assert(type(fromPath) == "string")
-		assert(type(toPath) == "string")
+		api_assert(type(fromPath) == "string", "Expected string, string")
+		api_assert(type(toPath) == "string", "Expected string, string")
 		fromPath = FileSystem.cleanPath(fromPath)
 		toPath = FileSystem.cleanPath(toPath)
 
 		return self.computer.fileSystem:copy(fromPath, toPath)
 	end
 	self.env.fs.delete = function(sPath)
-		assert(type(sPath) == "string")
+		api_assert(type(sPath) == "string", "Expected string")
 		sPath = FileSystem.cleanPath(sPath)
 		return self.computer.fileSystem:delete(sPath)
 	end
 	self.env.fs.combine = function(basePath, localPath)
-		assert(type(basePath) == "string")
-		assert(type(localPath) == "string")
+		api_assert(type(basePath) == "string", "Expected string, string")
+		api_assert(type(localPath) == "string", "Expected string, string")
 		local res = FileSystem.cleanPath(basePath .. "/" .. localPath)
 		return string.sub(res, 2, #res)
 	end
@@ -320,7 +342,7 @@ function NativeAPI:initialize(_computer)
 	end
 	self.env.os.getComputerID = function() return self.computer.id end
 	self.env.os.setComputerLabel = function( label )
-		assert(type(label) == "string")
+		api_assert(type(label) == "string" or type(label) == "nil", "Expected string or nil")
 		self.data.os.label = label
 	end
 	self.env.os.getComputerLabel = function()
@@ -328,15 +350,11 @@ function NativeAPI:initialize(_computer)
 	end
 	self.env.os.computerLabel = self.env.os.getComputerLabel
 	self.env.os.queueEvent = function( sEvent, ... )
-		assert(sEvent == "string" or sEvent == nil)
-		if sEvent == nil then
-			-- TODO: queueEvent() without an sEvent is possible in cc (I think) however it breaks our emulator.
-			sEvent = "none"
-		end
+		api_assert(sEvent == "string", "Expected string")
 		table.insert(self.computer.eventQueue, { sEvent, ... })
 	end
 	self.env.os.startTimer = function(nTimeout)
-		assert(type(nTimeout) == "number")
+		api_assert(type(nTimeout) == "number", "Expected number")
 		local timer = {
 			expires = self.computer.clock + nTimeout,
 		}
@@ -347,13 +365,13 @@ function NativeAPI:initialize(_computer)
 		log("Could not find timer!", "ERROR")
 	end
 	self.env.os.cancelTimer = function(id)
-		assert(type(id) == "number")
+		api_assert(type(id) == "number", "Expected number")
 		self.computer.timers[id] = nil
 	end
 	self.env.os.setAlarm = function(nTime)
-		assert(type(nTime) == "number")
+		api_assert(type(nTime) == "number", "Expected number")
 		if nTime < 0 or nTime > 24 then
-			error( "Number out of range: " .. tostring( nTime ) )
+			api_error( "Number out of range")
 		end
 		local alarm = {
 			time = nTime,
@@ -366,7 +384,7 @@ function NativeAPI:initialize(_computer)
 		log("Could not find alarm!", "ERROR")
 	end
 	self.env.os.cancelAlarm = function(id)
-		assert(type(id) == "number")
+		api_assert(type(id) == "number", "Expected number")
 		self.computer.alarms[id] = nil
 	end
 	self.env.os.time = function()
@@ -396,22 +414,28 @@ function NativeAPI:initialize(_computer)
 	}
 	self.env.peripheral = {
 		isPresent = function(side)
+			api_assert(type(side) == "string", "Expected string")
 			return self.computer.peripheralManager:isPresent(side)
 		end,
 		getType = function(side)
+			api_assert(type(side) == "string", "Expected string")
 			return self.computer.peripheralManager:getType(side)
 		end,
 		getMethods = function(side)
+			api_assert(type(side) == "string", "Expected string")
 			return self.computer.peripheralManager:getMethods(side)
 		end,
 		call = function(side, method, ...)
+			api_assert(type(side) == "string", "Expected string")
 			return self.computer.peripheralManager:call(side, method, ...)
 		end,
 	}
 	self.env.http = {}
 	self.env.http.request = function( sUrl, sParams )
-		assert(type(sUrl) == "string")
-		-- TODO: Is sParams a requirement?
+		api_assert(type(sUrl) == "string", "String expected, got nil")
+		api_assert(string.sub(sUrl, 1, 5) ~= "ftp:", "Not an HTTP URL") -- Any others that report this error?
+		api_assert(string.sub(sUrl, 1, 5) == "http:" or string.sub(sUrl, 1, 5) == "https:", "Invalid URL")
+
 		local http = HttpRequest.new()
 		local method = sParams and "POST" or "GET"
 
