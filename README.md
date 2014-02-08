@@ -19,25 +19,22 @@ Issues and ToDo
 
 Installation
 ------------
-Executables are available for Windows and OSX
+Downloads are available for Windows and OSX
+[https://github.com/Sorroko/cclite/releases][link-to-releases]
 
-For manual installation (Linux):
+For manual installation or Linux:
 
 1. Download the latest version of [Love2D][link-to-love]
 
-2. Run the .love file available
+2. Run the .love file, `love example.love`
 
-Building from source
+Working with the source
 ------------
-Windows:
+You will need [Apache Ant][apache-ant] in order to build from source.
 
-1. Create a directory called `love-dist/` and another called `build/`
+Once installed execute `ant` in the root directory to see all available commands
 
-2. Place the latest version of love for Windows, (love.exe and dlls) into the `love-dist/windows/` folder
-
-3. Place the latest version of love for OSX, (love.app) into the `love-dist/macosx/` folder
-
-4. Run the `build_src.bat` script.
+`ant run` and `ant debug` will run the source assuming you have `love` in your path.
 
 FAQ
 ------------
@@ -52,10 +49,26 @@ They are saved in the following places depending on your OS:
 
 License
 -------
-- [Apache License, Version 2][apache-license]
+Copyright 2014 Sorroko
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+- Full license: [Apache License, Version 2][apache-license]
 
 
 [image-screenshot-1]:https://dl.dropboxusercontent.com/u/53730212/cclove_demo.png
 [link-to-love]:http://love2d.org/
+[apache-ant]:http://ant.apache.org/
+[link-to-releases]:https://github.com/Sorroko/cclite/releases
 [link-to-issues]:https://github.com/Sorroko/cclite/issues
 [apache-license]:http://www.apache.org/licenses/LICENSE-2.0.html
