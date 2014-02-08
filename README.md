@@ -14,7 +14,8 @@ Features
 
 Issues
 ------
-- See issues: [https://github.com/RamiLego4Game/CCLite-Android/issues][link-to-issues]
+- See issues: [https://github.com/Sorroko/cclite/issues][link-to-issues]
+- See Android issues: [https://github.com/RamiLego4Game/CCLite-Android/issues][link-to-android-issues]
 
 ToDo
 ----
@@ -33,5 +34,6 @@ License
 
 [image-screenshot-1]:https://dl.dropboxusercontent.com/u/53730212/cclove_demo.png
 [link-to-love]:http://love2d.org/
-[link-to-issues]:https://github.com/RamiLego4Game/CCLite-Android/issues
+[link-to-issues]:https://github.com/Sorroko/cclite/issues
+[link-to-android-issues]:https://github.com/RamiLego4Game/CCLite-Android/issues
 [apache-license]:http://www.apache.org/licenses/LICENSE-2.0.html
