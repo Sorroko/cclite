@@ -1,7 +1,7 @@
-cclite
-======
+CCLite-Android
+==============
 
-A ComputerCraft emulator written in Lua using the [LÖVE][link-to-love] game engine
+A ComputerCraft emulator written in Lua using the [LÖVE for Android][link-to-android-love] game engine for Android
 
 ![Screenshot Demo][image-screenshot-1]
 
@@ -9,7 +9,6 @@ Features
 --------
 - Lightweight, a simplistic emulator that doesn't get in your way
 - Support for _most_ apis
-- Cross-platform support, works flawlessly on OSX, Windows and Linux
 - Open Source!
 
 Issues
