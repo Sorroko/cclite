@@ -25,7 +25,12 @@ ToDo
 
 Installation
 ------------
-
+1- Download [Love for Android][link-to-android-love], Tested on [V alpha][link-to-android-love-download] , and install it
+2- Download the [SRC Zip][link-to-src]
+3- Extract the SRC Zip
+4- Copy everything in CCLite-android-master/src/ to sdcard/love game/ "You should create this folder"
+5- Launch Love for Android
+6- Use Back/return key to Open/Close Keyboard
 
 License
 -------
@@ -33,7 +38,10 @@ License
 
 
 [image-screenshot-1]:https://dl.dropboxusercontent.com/u/53730212/cclove_demo.png
+[link-to-src]:https://codeload.github.com/RamiLego4Game/CCLite-Android/zip/master
 [link-to-love]:http://love2d.org/
+[link-to-android-love]:https://bitbucket.org/MartinFelis/love-android-sdl2/downloads
+[link-to-android-love-download]:https://bitbucket.org/MartinFelis/love-android-sdl2/downloads/love_android_sdl2_alpha8.apk
 [link-to-issues]:https://github.com/Sorroko/cclite/issues
 [link-to-android-issues]:https://github.com/RamiLego4Game/CCLite-Android/issues
 [apache-license]:http://www.apache.org/licenses/LICENSE-2.0.html
