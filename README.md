@@ -25,12 +25,12 @@ ToDo
 
 Installation
 ------------
-1- Download [Love for Android][link-to-android-love], Tested on [V alpha][link-to-android-love-download] , and install it
-2- Download the [SRC Zip][link-to-src]
-3- Extract the SRC Zip
-4- Copy everything in CCLite-android-master/src/ to sdcard/love game/ "You should create this folder"
-5- Launch Love for Android
-6- Use Back/return key to Open/Close Keyboard
+- Download [Love for Android][link-to-android-love], Tested on [V alpha][link-to-android-love-download] , and install it
+- Download the [SRC Zip][link-to-src]
+- Extract the SRC Zip
+- Copy everything in CCLite-android-master/src/ to sdcard/love game/ "You should create this folder"
+- Launch Love for Android
+- Use Back/return key to Open/Close Keyboard
 
 License
 -------
