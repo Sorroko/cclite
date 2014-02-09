@@ -109,7 +109,7 @@ end
 local mouse = {
 	isPressed = false,
 	lastTermX = nil,
-	lastTermY = nil,
+	lastTermY = nil
 }
 
 function Emulator:update(dt)
