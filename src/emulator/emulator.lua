@@ -161,7 +161,9 @@ function Emulator:update(dt)
 end
 
 function Emulator:keypressed( key, isrepeat )
-        love.keyboard.setTextInput(true)
+        if key=="menu" then
+                love.keyboard.setTextInput(true)
+        end
 	if not self.activeId then return end
 
 	if not self:getActiveComputer().running then
