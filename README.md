@@ -29,7 +29,7 @@ Installation
 - Extract the SRC Zip
 - Copy everything in CCLite-android-master/src/ to sdcard/love game/ "You should create this folder"
 - Launch Love for Android
-- Use Back/return key to Open/Close Keyboard
+- Use Menu key to Open Keyboard
 
 License
 -------
