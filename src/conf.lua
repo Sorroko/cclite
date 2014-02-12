@@ -8,6 +8,7 @@ function love.conf(t)
     t.modules.audio = false
     t.modules.sound = false
     t.modules.joystick = false
+    t.window.resizable = true
     --t.modules.window = false
     -- TODO: This needs to be fixed, cannot currently disable due to love.graphics.* calls in love.load
 
