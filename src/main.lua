@@ -32,6 +32,14 @@ require 'ui.window'
 require 'ui.panel'
 
 local emulator, panel
+
+function love.resize(w, h)
+    Screen.static.pixelWidth = w / Screen.static.width
+    Screen.static.pixelHeight = w / Screen.static.height
+    local rfont = love.graphics.newFont("res/minecraft.ttf",(Screen.static.height - 6))
+    Screen.setFont(rfont)
+end
+
 function love.load(args)
     if type(args) == "table" then
         for k, v in pairs(args) do
@@ -61,14 +69,15 @@ function love.load(args)
 
     -- TODO: Some nice icons? love.window.setIcon
 
-    local font = love.graphics.newFont( 'res/minecraft.ttf', 16 )
+    --local font = love.graphics.newFont( 'res/minecraft.ttf', 16 )
     -- local glyphs = ""
     -- for i = 32,126 do
     --     glyphs = glyphs .. string.char(i)
     -- end
     -- local font = love.graphics.newImageFont("res/minecraft.png", glyphs)
     -- font:setFilter("nearest","nearest")
-    Screen.setFont(font)
+    --Screen.setFont(font)
+    love.resize(love.window.getWidth(), love.window.getHeight())
 
     local computer = emulator:registerComputer({advanced = true})
     computer:start()
