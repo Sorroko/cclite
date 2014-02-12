@@ -161,17 +161,25 @@ function Emulator:update(dt)
 end
 
 function Emulator:keypressed( key, isrepeat )
-        if key=="menu" then
-                love.keyboard.setTextInput(true)
-        end
 	if not self.activeId then return end
 
 	if not self:getActiveComputer().running then
+                if key=="escape" then
+                        love.event.quit()
+                end
 		if not isrepeat then
 			self:getActiveComputer():start()
 		end
 		return -- Don't check shortcuts or key events if emulator isn't running
 	end
+
+        if key=="escape" then
+                self:getActiveComputer():pushEvent({"terminate"})
+        end
+
+        if key=="menu" then
+                love.keyboard.setTextInput(true)
+        end
 
 	local now, allDown = love.timer.getTime(), nil
 	for _k, shortcut in pairs(tShortcuts) do
