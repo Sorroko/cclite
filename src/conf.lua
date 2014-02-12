@@ -2,7 +2,7 @@
 _FPS = 30
 function love.conf(t)
     t.title = "ComputerCraft Emulator"
-    t.author = "Sorroko"
+    t.author = "Sorroko - Android: RamiLego4Game"
     t.version = "0.9.0"
     t.modules.physics = false
     t.modules.audio = false
