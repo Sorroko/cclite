@@ -19,7 +19,7 @@ local canvas = {}
 local mChoices = { "Save","Exit" }
 
 -- The message displayed in the footer bar
-local fMessage = "Press Ctrl to access menu"
+local fMessage = "Press Ctrl or Click to access menu"
 
 -------------------------
 -- Initialisation --
@@ -272,7 +272,19 @@ local function accessMenu()
 		end
 		
 		-- Handle input in the menu
-		local id,key = os.pullEvent("key")
+		local id,key,p2,p3 = os.pullEvent("key")
+	    if id=="mouse_click" then
+	        if p2 < 7 and p3 == h then
+	            selection = 1
+	            key = keys.enter
+	        elseif p2 > 6 and p2 < 13 and p3 == h then
+	            selection = 2
+	            key = keys.enter
+	        else
+	            key = keys.leftCtrl
+	        end
+	        id = "key"
+	    end
 		if id == "key" then
 			-- S and E are shortcuts
 			if key == keys.s then
@@ -318,7 +330,7 @@ local function accessMenu()
 				-- Cancel the menu
 				return false 
 			end
-		end
+	    end
 	end
 end
 
@@ -332,7 +344,10 @@ local function handleEvents()
 	while programActive do
 		local id,p1,p2,p3 = os.pullEvent()
 		if id=="mouse_click" or id=="mouse_drag" then
-			if p2 >= w-1 and p3 >= 1 and p3 <= 17 then
+		    if p3==h then
+		        programActive = not accessMenu()
+				drawInterface()
+			elseif p2 >= w-1 and p3 >= 1 and p3 <= 17 then
 				if id ~= "mouse_drag" then
 					-- Selecting an items in the colour picker
 					if p3 <= 16 then
@@ -369,6 +384,21 @@ local function handleEvents()
 				drawInterface()
 			end
 		end
+	end
+	if not programActive then
+	    local id,p1,p2,p3 = os.pullEvent()
+	    if p3==h then
+	        if p2 < 7 then
+	        
+	        elseif p2 > 6 and p2 < 13 then
+	        
+	        else
+	            
+	        end
+	    else
+	        programActive = not accessMenu()
+		    drawInterface()
+	    end
 	end
 end
 
