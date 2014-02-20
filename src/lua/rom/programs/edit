@@ -48,7 +48,7 @@ else
 	tMenuItems = { "Save", "Exit", "Print" }
 end
 	
-local sStatus = "Press Ctrl to access menu"
+local sStatus = "Press Ctrl or Click to access menu"
 
 local function load( _sPath )
 	tLines = {}
@@ -560,6 +560,37 @@ while bRunning do
 				end
 			end
 		end
+		
+	elseif sEvent == "mouse_click" then
+	    if not bMenu then
+	        if param3 == h then
+	            bMenu = not bMenu
+	            if bMenu then
+	                term.setCursorBlink( false )
+	            else
+	                term.setCursorBlink( true )
+	            end
+	            nMenuItem = nil
+	            redrawMenu()
+	        end
+	    else
+	        if param2 < 7 then
+	            doMenuItem( 1 )
+		    elseif param2 > 6 and param2 < 13 then
+		        doMenuItem( 2 )
+		    elseif param2 > 12 and param2 < 20 then
+		        doMenuItem( 3 )
+		    else
+		        bMenu = not bMenu
+	            if bMenu then
+	                term.setCursorBlink( false )
+	            else
+	                term.setCursorBlink( true )
+	            end
+	            nMenuItem = nil
+	            redrawMenu()
+	        end
+	    end
 
 	elseif sEvent == "paste" then
 		if not bMenu and not bReadOnly then
@@ -582,6 +613,8 @@ while bRunning do
 					x = math.min( math.max( scrollX + cx, 1 ), string.len( tLines[y] ) + 1 )
 					setCursor( x, y )
 				end
+            else
+                
 			end
 		end
 		
