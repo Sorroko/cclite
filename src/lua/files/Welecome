@@ -1,0 +1,7 @@
+if term.isColor then
+  term.setTextColor(colors.lightBlue)
+end
+
+print("Welecome to CCLite-Android")
+
+term.setTextColor(colors.white)
