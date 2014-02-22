@@ -443,7 +443,7 @@ function NativeAPI:initialize(_computer)
 		--[[api_assert(string.sub(sUrl, 1, 4) ~= "ftp:", "Not an HTTP URL") -- Any others that report this error?
 		api_assert(string.sub(sUrl, 1, 5) == "http:" or string.sub(sUrl, 1, 6) == "https:", "Invalid URL")]]--
 		
-		api_assert(not (sUrl:sub(1, 7) == "http://" or sUrl:sub(1, 8) == "https://"), "Invalid URL")
+		api_assert(not (sUrl:sub(1, 5) == "http:" or sUrl:sub(1, 6) == "https:"), "Invalid URL")
 		
 		local http = HttpRequest.new()
 		local method = sParams and "POST" or "GET"
