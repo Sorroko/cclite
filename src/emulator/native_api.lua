@@ -433,14 +433,15 @@ function NativeAPI:initialize(_computer)
 	self.env.http = {}
 	self.env.http.request = function( sUrl, sParams )
 		api_assert(type(sUrl) == "string", "String expected, got nil")
-		api_assert(string.sub(sUrl, 1, 5) ~= "ftp:", "Not an HTTP URL") -- Any others that report this error?
-		api_assert(string.sub(sUrl, 1, 5) == "http:" or string.sub(sUrl, 1, 5) == "https:", "Invalid URL")
 		
-		// Trim URL
+		--# Trim URL
+		local backupUrl = sUrl
 		sUrl = sUrl:match'^%s*(.*%S)' or ''
 		
-		// Assert that sUrl is now not ""
+		--# Assert that sUrl is now not ""
 		api_assert(#sUrl > 0, "Invalid URL")
+		api_assert(string.sub(sUrl, 1, 5) ~= "ftp:", "Not an HTTP URL") -- Any others that report this error?
+		api_assert(string.sub(sUrl, 1, 5) == "http:" or string.sub(sUrl, 1, 6) == "https:", "Invalid URL")
 		
 		local http = HttpRequest.new()
 		local method = sParams and "POST" or "GET"
@@ -455,9 +456,9 @@ function NativeAPI:initialize(_computer)
 		http.onReadyStateChange = function()
 			if http.responseText then
 		        local handle = HTTPHandle(Util.lines(http.responseText), http.status)
-		        table.insert(self.computer.eventQueue, { "http_success", sUrl, handle })
+		        table.insert(self.computer.eventQueue, { "http_success", backupUrl, handle })
 		    else
-		    	table.insert(self.computer.eventQueue, { "http_failure", sUrl })
+		    	table.insert(self.computer.eventQueue, { "http_failure", backupUrl })
 		    end
 		end
 
