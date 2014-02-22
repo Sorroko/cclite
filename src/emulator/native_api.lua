@@ -435,7 +435,10 @@ function NativeAPI:initialize(_computer)
 		api_assert(type(sUrl) == "string", "String expected, got nil")
 		api_assert(string.sub(sUrl, 1, 5) ~= "ftp:", "Not an HTTP URL") -- Any others that report this error?
 		api_assert(string.sub(sUrl, 1, 5) == "http:" or string.sub(sUrl, 1, 5) == "https:", "Invalid URL")
-
+		
+		// Trim URL
+		sUrl:gsub("^%s*(.-)%s*$", "%1")
+		
 		local http = HttpRequest.new()
 		local method = sParams and "POST" or "GET"
 
