@@ -439,9 +439,9 @@ function NativeAPI:initialize(_computer)
 		sUrl = sUrl:match'^%s*(.*%S)' or ''
 		
 		--# Assert that sUrl is now not ""
-		api_assert(#sUrl < 0, "Invalid URL")
+		api_assert(#sUrl <= 0, "Invalid URL")
 		
-		api_assert(sUrl:sub(1, 4) =~ "ftp:", "Not an HTTP URL") -- Any others that report this error?
+		api_assert(sUrl:sub(1, 4) =~ "ftp:" and sUrl:sub(1, 7) =~ "mailto:", sUrl:sub(1, 5) ~= "file:", "Not an HTTP URL") -- Any others that report this error?
 		api_assert(sUrl:sub(1, 5) == "http:" or sUrl:sub(1, 6) == "https:", "Invalid URL")
 		
 		local http = HttpRequest.new()
