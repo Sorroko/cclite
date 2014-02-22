@@ -437,7 +437,10 @@ function NativeAPI:initialize(_computer)
 		api_assert(string.sub(sUrl, 1, 5) == "http:" or string.sub(sUrl, 1, 5) == "https:", "Invalid URL")
 		
 		// Trim URL
-		sUrl:gsub("^%s*(.-)%s*$", "%1")
+		sUrl = sUrl:match'^%s*(.*%S)' or ''
+		
+		// Assert that sUrl is now not ""
+		api_assert(#sUrl > 0, "Invalid URL")
 		
 		local http = HttpRequest.new()
 		local method = sParams and "POST" or "GET"
