@@ -33,6 +33,10 @@ require 'ui.panel'
 
 local emulator, panel
 function love.load(args)
+    -- Initialize vars
+    _DEBUG = false
+
+    -- Check if in debug mode
     if type(args) == "table" then
         for k, v in pairs(args) do
             if v == "--console" then
@@ -40,6 +44,7 @@ function love.load(args)
             end
         end
     end
+
     log("Application starting...")
 
     PeripheralManager.parse()
