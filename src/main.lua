@@ -1,18 +1,5 @@
---[[ TODO
- Run emulator in a thread to avoid stalling main thread, "too long without yielding"
- There should be spaces on the borders of the screen, where the cells are slightly larger than they are near the middle.
- Term api draws directly to a love2d canvas
- Config with custom colours
- UI for peripherals etc.
- Add bit api
- Image fonts (gamax92)
- Implement:
-	redstone
-	disk
-	disk_eject
-	modem_message
-	monitor_touch
-	monitor_resize
+--[[
+    TODO LIST MOVED TO https://docs.google.com/spreadsheet/ccc?key=0AsWKyU5tfdZ7dFJqQ2xwTkpNQmFMYnVPNnFCTURjMVE&usp=sharing
 ]]
 
 -- Simple logger
@@ -25,6 +12,7 @@ end
 
 require 'lib.middleclass'
 require 'lib.http.HttpRequest'
+require 'lib.bit'
 
 require 'util'
 require 'emulator.emulator'
@@ -33,13 +21,23 @@ require 'ui.panel'
 
 local emulator, panel
 function love.load(args)
+    -- Initialize vars
+    _DEBUG = false
+	_OLD_COLORS = false
+	
+    -- Check if in debug mode
     if type(args) == "table" then
         for k, v in pairs(args) do
-            if v == "--console" then
+            if v == "--console" or v == "--debug" then
                 _DEBUG = true
-            end
+            elseif v == "--old-colors" then
+				_OLD_COLORS = true
+			end
         end
     end
+	
+	Util.registerColors(_OLD_COLORS)
+	
     log("Application starting...")
 
     PeripheralManager.parse()
