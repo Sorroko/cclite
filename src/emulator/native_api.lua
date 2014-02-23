@@ -86,7 +86,8 @@ function NativeAPI:initialize(_computer)
 		math = Util.deep_copy(math),
 		string = Util.deep_copy(string),
 		table = Util.deep_copy(table),
-		coroutine = Util.deep_copy(coroutine)
+		coroutine = Util.deep_copy(coroutine),
+		bit = Util.deep_copy(bit),
 	}
 
 	-- safe native function replacements

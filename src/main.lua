@@ -12,6 +12,7 @@ end
 
 require 'lib.middleclass'
 require 'lib.http.HttpRequest'
+require 'lib.bit'
 
 require 'util'
 require 'emulator.emulator'
