@@ -42,15 +42,15 @@
   </target>
 
   <target name="love" depends="init" description="Creates LOVE file.">
-    <zip destfile="${dist.dir}/${dist.love}" basedir=".">
+    <zip destfile="${dist.dir}/${dist.love}">
       <zipfileset dir="${game.src}" includes="**/*" />
     </zip>
   </target>
 
   <target name="dist" depends="init, love" description="Creates generic distribution zip.">
     <zip destfile="${dist.dir}/${dist.zip}">
-      <zipfileset dir="${dist.dir}" includes="${dist.love}" fullpath="${game.dir}/${game.love}"/>
-      <zipfileset dir="." includes="${dist.files}" prefix="${game.dir}"/>
+      <zipfileset dir="${dist.dir}" includes="${dist.love}"/>
+     <!--  <zipfileset dir="." includes="${dist.files}" prefix="${game.dir}"/> -->
     </zip>
   </target>
 

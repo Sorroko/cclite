@@ -127,7 +127,7 @@ function FileSystem:isDirectory(sPath)
 	return love.filesystem.isDirectory(file)
 end
 
-function FileSystem:open( sPath, sMode ) -- TODO: Compact this code
+function FileSystem:open( sPath, sMode )
 	log("FileSystem -> open(): Path '" .. tostring(sPath) .. "' with mode " .. tostring(sMode))
 	if sMode == "r" then
 		local file, mount = self:find(sPath)

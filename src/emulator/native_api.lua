@@ -330,13 +330,26 @@ function NativeAPI:initialize(_computer)
 		local res = FileSystem.cleanPath(basePath .. "/" .. localPath)
 		return string.sub(res, 2, #res)
 	end
-	self.env.fs.find = function()
-
+	self.env.fs.find = function(sCondition)
+		api_assert(type(sCondition) == "string", "Expected string")
+		return self.computer.fileSystem:findMatch(sCondition)
 	end
-	-- TODO: These three need implementing!
-	self.env.fs.getDrive = function(sPath) return nil end
-	self.env.fs.getSize = function(sPath) return nil end
-	self.env.fs.getFreeSpace = function(sPath) return nil end
+	self.env.fs.getDrive = function(sPath)
+		api_assert(type(sPath) == "string", "Expected string")
+		sPath = FileSystem.cleanPath(sPath)
+		local f, mount = self.computer.fileSystem:find(sPath)
+		if f == nil or mount == nil then return nil end
+		if mount == "/" then return "hdd" end
+		if mount == "/rom" then return "rom" end
+	end
+	self.env.fs.getSize = function(sPath) -- TODO: getSize
+		api_assert(type(sPath) == "string", "Expected string")
+		--sPath = FileSystem.cleanPath(sPath)
+		return 512
+	end
+	self.env.fs.getFreeSpace = function(sPath)
+		return 104856 -- Just because it's a nice number
+	end
 	self.env.os = {}
 	self.env.os.clock = function()
 		return math.floor(self.computer.clock * 100) / 100 -- Round to 2 d.p.
