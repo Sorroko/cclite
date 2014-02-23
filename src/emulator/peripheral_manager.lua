@@ -2,12 +2,8 @@ PeripheralManager = class('PeripheralManager')
 
 PeripheralManager.loaded_peripherals = {}
 
---[[
-	LUADOC:
-		Detects peripherals to load 
-]]
+-- Detects peripherals to load
 function PeripheralManager.static.parse()
-	-- Detect peripherals to load
 	local items = love.filesystem.getDirectoryItems("/emulator/peripherals") -- Scan dir
 
 	for k, v in pairs(items) do

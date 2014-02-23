@@ -41,8 +41,8 @@ local tShortcuts = {
 	}
 }
 
-function Emulator:initialize(x, y)
-	Component.initialize(self, x, y)
+function Emulator:initialize(window, x, y)
+	Component.initialize(self, window, x, y)
 
 	self.UUID = 1
 	self.computers = {}

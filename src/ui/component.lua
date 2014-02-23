@@ -1,9 +1,9 @@
 Component = class('Component')
 
-function Component:initialize( x, y )
+function Component:initialize( window, x, y )
 	self.x = x
 	self.y = y
-	Window.main:addComponent(self)
+	window:addComponent(self)
 end
 
 function Component:getWidth()

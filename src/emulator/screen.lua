@@ -37,6 +37,7 @@ end
 -- Screen instance init
 function Screen:initialize(isColor)
 	self.isColor = isColor or false
+	self.col_rgb = config:get("strict-colors") and Util.COLOUR_RGB_CC or Util.COLOUR_RGB
 	self:reset()
 end
 
@@ -164,6 +165,7 @@ function Screen:scroll(n)
 	end
 end
 
+local colour_code = Util.COLOUR_CODE
 function Screen:draw()
 	local now = love.timer.getTime()
 
@@ -171,7 +173,7 @@ function Screen:draw()
 	if self.isColor then
 		for y = 0, Screen.height - 1 do
 			for x = 0, Screen.width - 1 do
-				setColor( Util.COLOUR_CODE[ self.backgroundColourB[y + 1][x + 1] ] )
+				setColor( self.col_rgb[colour_code[ self.backgroundColourB[y + 1][x + 1] ]] )
 				ldrawRect("fill", x * Screen.pixelWidth, y * Screen.pixelHeight, Screen.pixelWidth, Screen.pixelHeight )
 			end
 		end
@@ -189,7 +191,7 @@ function Screen:draw()
 				text = "?"
 			end
 			if self.isColor then
-				setColor( Util.COLOUR_CODE[ self.textColourB[y + 1][x + 1] ] )
+				setColor( self.col_rgb[colour_code[ self.textColourB[y + 1][x + 1] ]] )
 			end
 			if Screen.tCharOffset[text] then -- Just incase
 				lprint( text, (x * Screen.pixelWidth) + Screen.tCharOffset[text], (y * Screen.pixelHeight) + Screen.textOffset)
@@ -208,7 +210,7 @@ function Screen:draw()
 
 		if self._showCursor then
 			if self.isColor then
-				setColor(Util.COLOUR_CODE[ self.fg ])
+				setColor(self.col_rgb[colour_code[ self.fg ]])
 			end
 			lprint("_", ((self.cursorX - 1) * Screen.pixelWidth) + Screen.tCharOffset["_"], (self.cursorY - 1) * Screen.pixelHeight + Screen.textOffset)
 		end

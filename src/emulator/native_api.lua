@@ -330,9 +330,31 @@ function NativeAPI:initialize(_computer)
 		local res = FileSystem.cleanPath(basePath .. "/" .. localPath)
 		return string.sub(res, 2, #res)
 	end
-	self.env.fs.find = function(sCondition)
-		api_assert(type(sCondition) == "string", "Expected string")
-		return self.computer.fileSystem:findMatch(sCondition)
+	local function recurse_spec(results, path, spec)
+		print(spec)
+		local segment = spec:match('([^/]*)'):gsub('/', '')
+		local pattern = '^' .. segment:gsub('[*]', '.+'):gsub('?', '.') .. '$'
+
+		if self.env.fs.isDir(path) then
+			for _, file in ipairs(self.env.fs.list(path)) do
+				if file:match(pattern) then
+					local f = self.env.fs.combine(path, file)
+
+					if self.env.fs.isDir(f) then
+						recurse_spec(results, f, spec:sub(#segment + 2))
+					end
+					if spec == segment then
+						table.insert(results, f)
+					end
+				end
+			end
+		end
+	end
+	self.env.fs.find = function(sPattern)
+		api_assert(type(sPattern) == "string", "Expected string")
+		local results = {}
+		recurse_spec(results, '', sPattern)
+		return results
 	end
 	self.env.fs.getDrive = function(sPath)
 		api_assert(type(sPath) == "string", "Expected string")
@@ -448,11 +470,11 @@ function NativeAPI:initialize(_computer)
 	self.env.http.request = function( sUrl, sParams )
 		api_assert(type(sUrl) == "string", "String expected, got nil")
 		
-		--# Trim URL
+		-- Trim URL
 		local backupUrl = sUrl
 		sUrl = sUrl:match'^%s*(.*%S)' or ''
 		
-		--# Assert that sUrl is now not ""
+		-- Assert that sUrl is now not ""
 		api_assert(#sUrl <= 0, "Invalid URL")
 		
 		api_assert(sUrl:sub(1, 4) ~= "ftp:" and sUrl:sub(1, 7) ~= "mailto:", sUrl:sub(1, 5) ~= "file:", "Not an HTTP URL") -- Any others that report this error?
