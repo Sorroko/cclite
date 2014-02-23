@@ -92,19 +92,22 @@ Util.static.lines = function(str)
 	return t
 end
 
--- TODO: Maybe replace with non-recursive
-Util.static.deep_copy = function(orig) -- Simple table deep copy.
-    local orig_type = type(orig)
-    local copy
-    if orig_type == 'table' then
-        copy = {}
-        for orig_key, orig_value in next, orig, nil do
-            copy[Util.deep_copy(orig_key)] = Util.deep_copy(orig_value)
-        end
-        setmetatable(copy, Util.deep_copy( getmetatable(orig) ) )
-    else -- number, string, boolean, etc
-        copy = orig
-    end
-    return copy
-end
+Util.static.deep_copy = function(o, seen)
+  seen = seen or {}
+  if o == nil then return nil end
+  if seen[o] then return seen[o] end
 
+  local no
+  if type(o) == 'table' then
+    no = {}
+    seen[o] = no
+
+    for k, v in next, o, nil do
+      no[deep_copy(k, seen)] = deep_copy(v, seen)
+    end
+    setmetatable(no, deep_copy(getmetatable(o), seen))
+  else -- number, string, boolean, etc
+    no = o
+  end
+  return no
+end

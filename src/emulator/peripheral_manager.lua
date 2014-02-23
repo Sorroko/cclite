@@ -1,20 +1,27 @@
 PeripheralManager = class('PeripheralManager')
 
 PeripheralManager.loaded_peripherals = {}
+
+--[[
+	LUADOC:
+		Detects peripherals to load 
+]]
 function PeripheralManager.static.parse()
 	-- Detect peripherals to load
-	local items = love.filesystem.getDirectoryItems("/emulator/peripherals")
+	local items = love.filesystem.getDirectoryItems("/emulator/peripherals") -- Scan dir
+
 	for k, v in pairs(items) do
-		local name = string.gsub(v, ".lua", "")
+		local name = string.gsub(v, ".lua", "") -- Remove .lua after filename
+		
 		log("Found peripheral: " .. name)
 
-		local data = love.filesystem.read( "/emulator/peripherals/" .. v )
-		local ok, fn = pcall(loadstring, "return " .. data)
+		local data = love.filesystem.read("/emulator/peripherals/" .. v) -- Read file
+		local ok, fTab = pcall(loadstring, "return " .. data) -- Get table
 
-		if ok and fn ~= nil then
-			setfenv(fn, _G) -- TODO: Possible sandbox, however not needed currently
-			local tPeripheral = fn()
-			if type(tPeripheral) == "table" then
+		if ok and fTab ~= nil then
+			setfenv(fTab, _G) -- TODO: Possible sandbox, however not needed currently
+			local tPeripheral = fTab()
+			if type(tPeripheral) == "table" then 
 				PeripheralManager.loaded_peripherals[tPeripheral.type] = tPeripheral
 			end
 			log("Loaded peripheral: " .. name)

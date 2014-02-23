@@ -86,7 +86,8 @@ function NativeAPI:initialize(_computer)
 		math = Util.deep_copy(math),
 		string = Util.deep_copy(string),
 		table = Util.deep_copy(table),
-		coroutine = Util.deep_copy(coroutine)
+		coroutine = Util.deep_copy(coroutine),
+		bit = Util.deep_copy(bit),
 	}
 
 	-- safe native function replacements
@@ -439,11 +440,10 @@ function NativeAPI:initialize(_computer)
 		sUrl = sUrl:match'^%s*(.*%S)' or ''
 		
 		--# Assert that sUrl is now not ""
-		api_assert(#sUrl > 0, "Invalid URL")
-		--[[api_assert(string.sub(sUrl, 1, 4) ~= "ftp:", "Not an HTTP URL") -- Any others that report this error?
-		api_assert(string.sub(sUrl, 1, 5) == "http:" or string.sub(sUrl, 1, 6) == "https:", "Invalid URL")]]--
+		api_assert(#sUrl <= 0, "Invalid URL")
 		
-		api_assert(not (sUrl:sub(1, 5) == "http:" or sUrl:sub(1, 6) == "https:"), "Invalid URL")
+		api_assert(sUrl:sub(1, 4) ~= "ftp:" and sUrl:sub(1, 7) ~= "mailto:", sUrl:sub(1, 5) ~= "file:", "Not an HTTP URL") -- Any others that report this error?
+		api_assert(sUrl:sub(1, 5) == "http:" or sUrl:sub(1, 6) == "https:", "Invalid URL")
 		
 		local http = HttpRequest.new()
 		local method = sParams and "POST" or "GET"
