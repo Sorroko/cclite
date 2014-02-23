@@ -103,9 +103,9 @@ Util.static.deep_copy = function(o, seen)
     seen[o] = no
 
     for k, v in next, o, nil do
-      no[deepcopy(k, seen)] = deepcopy(v, seen)
+      no[deep_copy(k, seen)] = deep_copy(v, seen)
     end
-    setmetatable(no, deepcopy(getmetatable(o), seen))
+    setmetatable(no, deep_copy(getmetatable(o), seen))
   else -- number, string, boolean, etc
     no = o
   end
