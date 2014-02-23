@@ -23,16 +23,21 @@ local emulator, panel
 function love.load(args)
     -- Initialize vars
     _DEBUG = false
-
+	_OLD_COLORS = false
+	
     -- Check if in debug mode
     if type(args) == "table" then
         for k, v in pairs(args) do
-            if v == "--console" then
+            if v == "--console" or v == "--debug" then
                 _DEBUG = true
-            end
+            elseif v == "--old-colors" then
+				_OLD_COLORS = true
+			end
         end
     end
-
+	
+	Util.registerColors(_OLD_COLORS)
+	
     log("Application starting...")
 
     PeripheralManager.parse()

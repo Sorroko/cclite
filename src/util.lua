@@ -38,43 +38,66 @@ Util.static.KEYS = {
 	["lalt"] = 56,
 }
 
-Util.static.COLOUR_RGB = {
-	WHITE = {255, 255, 255}, --Colors from GravityScore. Updated by awsmazinggenius.
-	ORANGE = {235, 136, 68},
-	MAGENTA = {195, 84, 205},
-	LIGHT_BLUE = {102, 137, 211},
-	YELLOW = {222, 222, 108},
-	LIME = {65, 205, 52},
-	PINK = {216, 129, 152},
-	GRAY = {67, 67, 67},
-	LIGHT_GRAY = {153, 153, 153},
-	CYAN = {40, 118, 151},
-	PURPLE = {123, 47, 190},
-	BLUE = {37, 49, 146},
-	BROWN = {81, 48, 26},
-	GREEN = {59, 81, 26},
-	RED = {179, 49, 44},
-	BLACK = {0, 0, 0},
-}
-
-Util.static.COLOUR_CODE = {
-	[1] = Util.COLOUR_RGB.WHITE,
-	[2] = Util.COLOUR_RGB.ORANGE,
-	[3] =  Util.COLOUR_RGB.MAGENTA,
-	[4] = Util.COLOUR_RGB.LIGHT_BLUE,
-	[5] = Util.COLOUR_RGB.YELLOW,
-	[6] = Util.COLOUR_RGB.LIME,
-	[7] = Util.COLOUR_RGB.PINK,
-	[8] = Util.COLOUR_RGB.GRAY,
-	[9] = Util.COLOUR_RGB.LIGHT_GRAY,
-	[10] = Util.COLOUR_RGB.CYAN,
-	[11] = Util.COLOUR_RGB.PURPLE,
-	[12] = Util.COLOUR_RGB.BLUE,
-	[13] = Util.COLOUR_RGB.BROWN,
-	[14] = Util.COLOUR_RGB.GREEN,
-	[15] = Util.COLOUR_RGB.RED,
-	[16] = Util.COLOUR_RGB.BLACK,
-}
+Util.static.registerColors = function( bOldScheme )
+	if bOldScheme then
+		Util.static.COLOUR_RGB = {
+			WHITE = {240, 240, 240},
+			ORANGE = {242, 178, 51},
+			MAGENTA = {229, 127, 216},
+			LIGHT_BLUE = {153, 178, 242},
+			YELLOW = {222, 222, 108},
+			LIME = {127, 204, 25},
+			PINK = {242, 178, 204},
+			GRAY = {76, 76, 76},
+			LIGHT_GRAY = {153, 153, 153},
+			CYAN = {76, 153, 178},
+			PURPLE = {178, 102, 229},
+			BLUE = {37, 49, 146},
+			BROWN = {127, 102, 76},
+			GREEN = {87, 166, 78},
+			RED = {204, 76, 76},
+			BLACK = {0, 0, 0},
+		}
+	else
+		Util.static.COLOUR_RGB = {
+			WHITE = {255, 255, 255}, --Colors from GravityScore. Updated by awsmazinggenius.
+			ORANGE = {235, 136, 68},
+			MAGENTA = {195, 84, 205},
+			LIGHT_BLUE = {102, 137, 211},
+			YELLOW = {222, 222, 108},
+			LIME = {65, 205, 52},
+			PINK = {216, 129, 152},
+			GRAY = {67, 67, 67},
+			LIGHT_GRAY = {153, 153, 153},
+			CYAN = {40, 118, 151},
+			PURPLE = {123, 47, 190},
+			BLUE = {37, 49, 146},
+			BROWN = {81, 48, 26},
+			GREEN = {59, 81, 26},
+			RED = {179, 49, 44},
+			BLACK = {0, 0, 0},
+		}
+	end
+	
+	Util.static.COLOUR_CODE = {
+		[1] = Util.COLOUR_RGB.WHITE,
+		[2] = Util.COLOUR_RGB.ORANGE,
+		[3] =  Util.COLOUR_RGB.MAGENTA,
+		[4] = Util.COLOUR_RGB.LIGHT_BLUE,
+		[5] = Util.COLOUR_RGB.YELLOW,
+		[6] = Util.COLOUR_RGB.LIME,
+		[7] = Util.COLOUR_RGB.PINK,
+		[8] = Util.COLOUR_RGB.GRAY,
+		[9] = Util.COLOUR_RGB.LIGHT_GRAY,
+		[10] = Util.COLOUR_RGB.CYAN,
+		[11] = Util.COLOUR_RGB.PURPLE,
+		[12] = Util.COLOUR_RGB.BLUE,
+		[13] = Util.COLOUR_RGB.BROWN,
+		[14] = Util.COLOUR_RGB.GREEN,
+		[15] = Util.COLOUR_RGB.RED,
+		[16] = Util.COLOUR_RGB.BLACK,
+	}
+end
 
 -- Better key down check
 Util.static.isKeyDown = function(key)
@@ -93,21 +116,21 @@ Util.static.lines = function(str)
 end
 
 Util.static.deep_copy = function(o, seen)
-  seen = seen or {}
-  if o == nil then return nil end
-  if seen[o] then return seen[o] end
+	seen = seen or {}
+	if o == nil then return nil end
+	if seen[o] then return seen[o] end
 
-  local no
-  if type(o) == 'table' then
-    no = {}
-    seen[o] = no
+	local no
+	if type(o) == 'table' then
+		no = {}
+		seen[o] = no
 
-    for k, v in next, o, nil do
-      no[deep_copy(k, seen)] = deep_copy(v, seen)
-    end
-    setmetatable(no, deep_copy(getmetatable(o), seen))
-  else -- number, string, boolean, etc
-    no = o
-  end
-  return no
+		for k, v in next, o, nil do
+			no[Util.deep_copy(k, seen)] = Util.deep_copy(v, seen)
+		end
+		setmetatable(no, Util.deep_copy(getmetatable(o), seen))
+	else -- number, string, boolean, etc
+		no = o
+	end
+	return no
 end
