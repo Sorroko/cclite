@@ -36,6 +36,10 @@ Util.static.KEYS = {
 	["lctrl"] = 29,
 	["ralt"] = 184,
 	["lalt"] = 56,
+
+	["f1"] = 59, ["f2"] = 60, ["f3"] = 61, ["f4"] = 62, ["f5"] = 63, ["f6"] = 64,
+	["f7"] = 65, ["f8"] = 66, ["f9"] = 67, ["f10"] = 68, ["f12"] = 88, ["f13"] = 100,
+	["f14"] = 101, ["f15"] = 102, ["f16"] = 103, ["f17"] = 104, ["f18"] = 105
 }
 Util.static.COLOUR_RGB = { -- Improved colors
 	WHITE = {240, 240, 240},
@@ -117,7 +121,7 @@ Util.static.lines = function(str)
 	while true do
 		local st , sp = str:find ( "\n" , pos , true )
 		if not st then break end -- No more seperators found
-		 
+
 		if pos ~= st then
 			t [ nexti ] = str:sub ( pos , st - 1 ) -- Attach chars left of current divider
 			nexti = nexti + 1
