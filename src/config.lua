@@ -18,16 +18,16 @@ function Config:resetToDefault()
 end
 
 function Config:load()
-	if not love.filesystem.exists(self.path) then
-		self:save() -- Will save the defaults
-	end
-
-	for line in love.filesystem.lines(self.path) do
-		key, value = string.match(line,"(.-)=(.-)$")
-		if key and value then
-			self.data[key] = value -- Will overide default
+	if love.filesystem.exists(self.path) then
+		for line in love.filesystem.lines(self.path) do
+			key, value = string.match(line,"(.-)=(.-)$")
+			if key and value then
+				self.data[key] = value -- Will overide defaults
+			end
 		end
 	end
+
+	self:save() -- Save defaults that weren't loaded
 end
 
 function Config:save()
@@ -61,4 +61,24 @@ end
 
 function Config:get(key)
 	return self.data[key]
+end
+
+local function toboolean(v)
+    return (type(v) == "string" and v == "true") or (type(v) == "number" and v ~= 0) or (type(v) == "boolean" and v)
+end
+
+-- There is another default setting in case the key is set to false. Useful when the function must return something
+function Config:getBoolean(key, default)
+	local val = toboolean(self.data[key])
+	return val ~= nil and val or default
+end
+
+function Config:getString(key, default)
+	local val = tostring(self.data[key])
+	return val ~= nil and val or default
+end
+
+function Config:getNumber(key, default)
+	local val = tonumber(self.data[key])
+	return val ~= nil and val or default
 end

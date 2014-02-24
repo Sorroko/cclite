@@ -27,7 +27,7 @@ _FPS = 30
  _DEBUG = false
 
 function love.load(args)
-	
+
 	-- Check for command line arguments
 	if type(args) == "table" then
 		for k, v in pairs(args) do
@@ -51,6 +51,11 @@ function love.load(args)
 	-- Load config
 	config = Config("config.conf")
 	config:setDefault("strict-colors", false)
+	config:setDefault("advanced-computer", true)
+	config:setDefault("http-enabled", true)
+	config:setDefault("terminal-width", 51)
+	config:setDefault("terminal-height", 19)
+	config:setDefault("terminal-scale", 2)
 	config:load()
 
 	love.keyboard.setKeyRepeat( 0.5, 0.05 )
@@ -72,7 +77,7 @@ function love.load(args)
 	-- font:setFilter("nearest","nearest")
 	Screen.setFont(font)
 
-	local computer = emulator:registerComputer({advanced = true})
+	local computer = emulator:registerComputer({advanced = config:getBoolean("advanced-computer", true)})
 	computer:start()
 end
 

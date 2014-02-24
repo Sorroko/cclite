@@ -3,8 +3,8 @@ Screen = class('Screen')
 -- Constants
 Screen.static.width = 51
 Screen.static.height = 19
-Screen.static.pixelWidth = 12--6 * 2
-Screen.static.pixelHeight = 18--9 * 2
+Screen.static.pixelWidth = 6 * 2
+Screen.static.pixelHeight = 9 * 2
 Screen.static.textOffset = 3 -- Small correction for font, align the bottom of font with bottom of pixel.
 Screen.font = nil
 Screen.tCharOffset = {}
@@ -55,12 +55,12 @@ function Screen:reset()
 		self.textColourB[y] = {}
 		for x = 1, Screen.width do
 			self.textB[y][x] = " "
-			self.backgroundColourB[y][x] = 32768
+			self.backgroundColourB[y][x] = 16
 			self.textColourB[y][x] = 1
 		end
 	end
 
-	self.bg = 32768
+	self.bg = 16
 	self.fg = 1
 	self.cursorY = 1
 	self.cursorX = 1

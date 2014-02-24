@@ -103,10 +103,28 @@ Util.static.isKeyDown = function(key)
 	end
 end
 
+-- Util.static.lines = function(str)
+-- 	local t = {}
+-- 	local function helper(line) table.insert(t, line) return "" end
+-- 	helper((str:gsub("(.-)\r?\n", helper)))
+-- 	return t
+-- end
+
 Util.static.lines = function(str)
-	local t = {}
-	local function helper(line) table.insert(t, line) return "" end
-	helper((str:gsub("(.-)\r?\n", helper)))
+	str:gmatch( "\r\n", "\n" )
+	local t , nexti = { } , 1
+	local pos = 1
+	while true do
+		local st , sp = str:find ( "\n" , pos , true )
+		if not st then break end -- No more seperators found
+		 
+		if pos ~= st then
+			t [ nexti ] = str:sub ( pos , st - 1 ) -- Attach chars left of current divider
+			nexti = nexti + 1
+		end
+		pos = sp + 1 -- Jump past current divider
+	end
+	t [ nexti ] = str:sub ( pos ) -- Attach chars right of last divider
 	return t
 end
 

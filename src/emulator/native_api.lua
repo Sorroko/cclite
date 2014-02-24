@@ -3,7 +3,6 @@ NativeAPI = class('NativeAPI')
 --[[
 	TODO
 	term.write with correct formatting of lua types. https://github.com/Sorroko/cclite/issues/12
-	Make errors returned accurate
 ]]
 
 function api_error(msg, level)
@@ -67,7 +66,7 @@ function NativeAPI:initialize(_computer)
 			label = nil
 		}
 	}
-	self.env = { -- TODO: Better way of copying? Include metatables too?
+	self.env = {
 		_VERSION = "Lua 5.1",
 		tostring = tostring,
 		tonumber = tonumber,
@@ -222,7 +221,7 @@ function NativeAPI:initialize(_computer)
 		temp.write = function( obj )
 			local objType = type(obj)
 			if objType ~= "string" and objType ~= "number" then return end
-			-- TODO: serialize tables and write
+			-- TODO: serialize tables and write, format types correctly
 			local text = tostring(obj)
 
 			-- some dodgy code
@@ -466,40 +465,39 @@ function NativeAPI:initialize(_computer)
 			return self.computer.peripheralManager:call(side, method, ...)
 		end,
 	}
-	self.env.http = {}
-	self.env.http.request = function( sUrl, sParams )
-		api_assert(type(sUrl) == "string", "String expected, got nil")
-		
-		-- Trim URL
-		local backupUrl = sUrl
-		sUrl = sUrl:match'^%s*(.*%S)' or ''
-		
-		-- Assert that sUrl is now not ""
-		api_assert(#sUrl <= 0, "Invalid URL")
-		
-		api_assert(sUrl:sub(1, 4) ~= "ftp:" and sUrl:sub(1, 7) ~= "mailto:", sUrl:sub(1, 5) ~= "file:", "Not an HTTP URL") -- Any others that report this error?
-		api_assert(sUrl:sub(1, 5) == "http:" or sUrl:sub(1, 6) == "https:", "Invalid URL")
-		
-		local http = HttpRequest.new()
-		local method = sParams and "POST" or "GET"
+	if config:getBoolean("http-enabled", true) then
+		self.env.http = {}
+		self.env.http.request = function( sUrl, sParams )
+			api_assert(type(sUrl) == "string", "String expected, got nil")
+			
+			-- Trim URL
+			local backupUrl = sUrl
+			sUrl = sUrl:match'^%s*(.*%S)' or ''
+			
+			api_assert(sUrl:sub(1, 4) ~= "ftp:" and sUrl:sub(1, 7) ~= "mailto:" and sUrl:sub(1, 5) ~= "file:", "Not an HTTP URL") -- Any others that report this error?
+			api_assert(sUrl:sub(1, 5) == "http:" or sUrl:sub(1, 6) == "https:", "Invalid URL")
+			
+			local http = HttpRequest.new()
+			local method = sParams and "POST" or "GET"
 
-		http.open(method, sUrl, true)
+			http.open(method, sUrl, true)
 
-		if method == "POST" then
-			http.setRequestHeader("Content-Type", "application/x-www-form-urlencoded")
-			http.setRequestHeader("Content-Length", string.len(sParams))
+			if method == "POST" then
+				http.setRequestHeader("Content-Type", "application/x-www-form-urlencoded")
+				http.setRequestHeader("Content-Length", string.len(sParams))
+			end
+
+			http.onReadyStateChange = function()
+				if http.responseText then
+			        local handle = HTTPHandle(Util.lines(http.responseText), http.status)
+			        table.insert(self.computer.eventQueue, { "http_success", backupUrl, handle })
+			    else
+			    	table.insert(self.computer.eventQueue, { "http_failure", backupUrl })
+			    end
+			end
+
+			http.send(sParams)
 		end
-
-		http.onReadyStateChange = function()
-			if http.responseText then
-		        local handle = HTTPHandle(Util.lines(http.responseText), http.status)
-		        table.insert(self.computer.eventQueue, { "http_success", backupUrl, handle })
-		    else
-		    	table.insert(self.computer.eventQueue, { "http_failure", backupUrl })
-		    end
-		end
-
-		http.send(sParams)
 	end
 	self.env.rs = self.env.redstone
 	self.env._G = self.env
