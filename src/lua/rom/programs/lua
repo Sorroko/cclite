@@ -12,6 +12,9 @@ local tEnv = {
 	["exit"] = function()
 		bRunning = false
 	end,
+	["_echo"] = function( ... )
+	    return ...
+	end,
 }
 setmetatable( tEnv, { __index = getfenv() } )
 
@@ -34,7 +37,7 @@ while bRunning do
 	
 	local nForcePrint = 0
 	local func, e = loadstring( s, "lua" )
-	local func2, e2 = loadstring( "return "..s, "lua" )
+	local func2, e2 = loadstring( "return _echo("..s..");", "lua" )
 	if not func then
 		if func2 then
 			func = func2
@@ -49,7 +52,7 @@ while bRunning do
 	
 	if func then
         setfenv( func, tEnv )
-        local tResults = { pcall( function() return func() end ) }
+        local tResults = { pcall( func ) }
         if tResults[1] then
         	local n = 1
         	while (tResults[n + 1] ~= nil) or (n <= nForcePrint) do

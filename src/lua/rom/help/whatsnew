@@ -1,6 +1,31 @@
-New Features in ComputerCraft 1.58:
+New Features in ComputerCraft 1.6:
 
-. Fixed a long standing bug where turtles could lose their identify if they travel too far away
-. Fixed use of deprecated code, ensuring mod compatibility with the latest versions of Minecraft Forge, and world compatibility with future versions of Minecraft
+* Added Pocket Computers
+* Added a multi-tasking system for Advanced Computers and Turtles
+* Turtles can now swap out their tools and peripherals at runtime
+* Turtles can now carry two tools or peripherals at once in any combination
+* Added a configurable fuel limit for Turtles
+* Added hostnames, protocols and long distance routing to the rednet API
+* Added a peer-to-peer chat program to demonstrate new rednet capabilities
+* File system commands in the shell now accept wildcard arguments
+* The shell now accepts long arguments in quotes
+* Terminal redirection now no longer uses a stack-based system. Instead: term.current() gets the current terminal object and term.redirect() replaces it. term.restore() has been removed.
+* Added a new Windowing API for addressing sub-areas of the terminal
+* New programs: fg, bg, multishell, chat, repeat, redstone
+* Improved programs: copy, move, delete, rename, paint, shell
+* Removed programs: redset, redprobe, redpulse
+* New APIs: window, multishell
+* New turtle functions: turtle.equipLeft() and turtle.equipRight()
+* New peripheral functions: peripheral.find( [type] )
+* New rednet functions: rednet.host( protocol, hostname ), rednet.unhost( protocol ), rednet.locate( protocol, [hostname] )
+* New fs function: fs.find( wildcard )
+* Improved rednet functions: rednet.send(), rednet.broadcast() and rednet.receive() now take optional protocol parameters
+* turtle.craft(0) and turtle.refuel(0) now return true if there is a valid recipe or fuel item, but do not craft of refuel anything
+* turtle.suck( [limit] ) can now be used to limit the number of items picked up
+* textutils.serialise( text ) now produces human-readable output
+* Refactored most of the codebase and fixed many old bugs and instabilities, turtles should never ever lose their content now
+* Fixed the "turtle_inventory" event firing when it shouldn't have
+* Added error messages to many more turtle functions after they return false
+* Documented all new programs and API changes in the "help" system
 
 Type "help changelog" to see the full version history.

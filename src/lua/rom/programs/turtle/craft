@@ -13,19 +13,21 @@ else
 	nLimit = tonumber( tArgs[1] )
 end
 
-local nEmptySlot = nil
-for n=1,16 do
-    if turtle.getItemCount(n) == 0 then
-        nEmptySlot = n
-		turtle.select(nEmptySlot)
-        break
-	end
+local nCrafted = 0
+local nOldCount = turtle.getItemCount( turtle.getSelectedSlot() )
+if turtle.craft( nLimit ) then
+    local nNewCount = turtle.getItemCount( turtle.getSelectedSlot() )
+    if nOldCount <= nLimit then
+        nCrafted = nNewCount
+    else
+        nCrafted = nOldCount - nNewCount
+    end
 end
 
-if nEmptySlot and turtle.craft( nLimit ) then
-	local nCount = turtle.getItemCount(nEmptySlot)
-	print( nCount.." items crafted" )
+if nCrafted > 1 then
+    print( nCrafted.." items crafted" )
+elseif nCrafted == 1 then
+    print( "1 item crafted" )
 else
     print( "No items crafted" )
 end
-turtle.select(1)

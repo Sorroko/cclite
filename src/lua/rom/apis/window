@@ -1,5 +1,19 @@
 
 function create( parent, nX, nY, nWidth, nHeight, bStartVisible )
+
+    if type( parent ) ~= "table" or
+       type( nX ) ~= "number" or
+       type( nY ) ~= "number" or
+       type( nWidth ) ~= "number" or
+       type( nHeight ) ~= "number" or
+       (bStartVisible ~= nil and type( bStartVisible ) ~= "boolean") then
+        error( "Expected object, number, number, number, number, [boolean]", 2 )
+    end
+
+    if parent == term then
+        error( "term is not a recommended window parent, try term.current() instead", 2 )
+    end
+
     -- Setup
     local bVisible = (bStartVisible ~= false)
     local nCursorX = 1
@@ -138,10 +152,11 @@ function create( parent, nX, nY, nWidth, nHeight, bStartVisible )
 
     -- Terminal implementation
     function window.write( sText )
+        local nLen = string.len( sText )
+        local nStart = nCursorX
+        local nEnd = nStart + nLen - 1
         if nCursorY >= 1 and nCursorY <= nHeight then
-            local nLen = string.len( sText )
-            local nStart = nCursorX
-            local nEnd = nStart + nLen - 1
+            -- Work out where to put new line
             --assert( math.floor(nStart) == nStart )
             --assert( math.floor(nEnd) == nEnd )
             if nStart <= nWidth and nEnd >= 1 then
@@ -185,17 +200,19 @@ function create( parent, nX, nY, nWidth, nHeight, bStartVisible )
                     --assert( lineLen( tLine ) == nWidth )
                 end
 
-                -- Store new line
+                -- Store and redraw new line
                 tLines[ nCursorY ] = tLine
-                nCursorX = nEnd + 1
-
-                -- Redraw new line
                 if bVisible then
                     redrawLine( nCursorY )
-                    updateCursorPos()
-                    updateCursorColor()
                 end
             end
+        end
+
+        -- Move and redraw cursor
+        nCursorX = nEnd + 1
+        if bVisible then
+            updateCursorColor()
+            updateCursorPos()
         end
     end
 
@@ -206,8 +223,8 @@ function create( parent, nX, nY, nWidth, nHeight, bStartVisible )
         end
         if bVisible then
             redraw()
-            updateCursorPos()
             updateCursorColor()
+            updateCursorPos()
         end
     end
 
@@ -216,8 +233,8 @@ function create( parent, nX, nY, nWidth, nHeight, bStartVisible )
             tLines[ nCursorY ] = { { sEmpty, nTextColor, nBackgroundColor } }
             if bVisible then
                 redrawLine( nCursorY )
-                updateCursorPos()
                 updateCursorColor()
+                updateCursorPos()
             end
         end
     end
@@ -249,10 +266,10 @@ function create( parent, nX, nY, nWidth, nHeight, bStartVisible )
         return term.isColor()
     end
 
-    function window.setTextColor( color )
+    local function setTextColor( color )
         if not term.isColor() then
             if color ~= colors.white and color ~= colors.black then
-                error( "Colour not supported" )
+                error( "Colour not supported", 3 )
             end
         end
         nTextColor = color
@@ -261,21 +278,29 @@ function create( parent, nX, nY, nWidth, nHeight, bStartVisible )
         end
     end
 
-    function window.setTextColour( color )
-        term.setTextColor( color )
+    function window.setTextColor( color )
+        setTextColor( color )
     end
 
-    function window.setBackgroundColor( color )
+    function window.setTextColour( color )
+        setTextColor( color )
+    end
+
+    local function setBackgroundColor( color )
         if not term.isColor() then
             if color ~= colors.white and color ~= colors.black then
-                error( "Colour not supported" )
+                error( "Colour not supported", 3 )
             end
         end
         nBackgroundColor = color
     end
 
+    function window.setBackgroundColor( color )
+        setBackgroundColor( color )
+    end
+
     function window.setBackgroundColour( color )
-        term.setBackgroundColor( color )
+        setBackgroundColor( color )
     end
 
     function window.getSize()
@@ -297,8 +322,8 @@ function create( parent, nX, nY, nWidth, nHeight, bStartVisible )
             tLines = tNewLines
             if bVisible then
                 redraw()
-                updateCursorPos()
                 updateCursorColor()
+                updateCursorPos()
             end
         end
     end

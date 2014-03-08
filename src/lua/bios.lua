@@ -1,3 +1,4 @@
+
 --[[
 -- Install safe versions of various library functions
 -- These will not put cfunctions on the stack, so don't break serialisation
@@ -20,7 +21,7 @@ pcall = function( _fn, ... )
 	local typeT = type( _fn )
 	assert( typeT == "function", "bad argument #1 to pcall (function expected, got "..typeT..")" )
 	local tArgs = { ... }
-	return xpcall(
+	return xpcall( 
 		function()
 			return _fn( unpack( tArgs ) )
 		end,
@@ -45,7 +46,7 @@ function ipairs( _t )
 	end
 	return function( t, var )
 		var = var + 1
-		local value = t[var]
+		local value = t[var] 
 		if value == nil then
 			return
 		end
@@ -78,13 +79,13 @@ function string.gmatch( _s, _pattern )
 	if type2 ~= "string" then
 		error( "bad argument #2 to string.gmatch (string expected, got "..type2..")", 2 )
 	end
-
+	
 	local nPos = 1
 	return function()
 		local nFirst, nLast = string.find( _s, _pattern, nPos )
 		if nFirst == nil then
 			return
-		end
+		end		
 		nPos = nLast + 1
 		return string.match( _s, _pattern, nFirst )
 	end
@@ -146,9 +147,9 @@ function sleep( nTime )
 end
 
 function write( sText )
-	local w,h = term.getSize()
+	local w,h = term.getSize()		
 	local x,y = term.getCursorPos()
-
+	
 	local nLinesPrinted = 0
 	local function newLine()
 		if y + 1 <= h then
@@ -160,7 +161,7 @@ function write( sText )
 		x, y = term.getCursorPos()
 		nLinesPrinted = nLinesPrinted + 1
 	end
-
+	
 	-- Print the line with proper word wrapping
 	while string.len(sText) > 0 do
 		local whitespace = string.match( sText, "^[ \t]+" )
@@ -170,19 +171,19 @@ function write( sText )
 			x,y = term.getCursorPos()
 			sText = string.sub( sText, string.len(whitespace) + 1 )
 		end
-
+		
 		local newline = string.match( sText, "^\n" )
 		if newline then
 			-- Print newlines
 			newLine()
 			sText = string.sub( sText, 2 )
 		end
-
+		
 		local text = string.match( sText, "^[^ \t\n]+" )
 		if text then
 			sText = string.sub( sText, string.len(text) + 1 )
 			if string.len(text) > w then
-				-- Print a multiline word
+				-- Print a multiline word				
 				while string.len( text ) > 0 do
 					if x > w then
 						newLine()
@@ -201,7 +202,7 @@ function write( sText )
 			end
 		end
 	end
-
+	
 	return nLinesPrinted
 end
 
@@ -231,16 +232,16 @@ function read( _sReplaceChar, _tHistory )
     if _sReplaceChar then
 		_sReplaceChar = string.sub( _sReplaceChar, 1, 1 )
 	end
-
+	
 	local w, h = term.getSize()
-	local sx, sy = term.getCursorPos()
-
+	local sx, sy = term.getCursorPos()	
+	
 	local function redraw( _sCustomReplaceChar )
 		local nScroll = 0
 		if sx + nPos >= w then
 			nScroll = (sx + nPos) - w
 		end
-
+			
 		term.setCursorPos( sx, sy )
 		local sReplace = _sCustomReplaceChar or _sReplaceChar
 		if sReplace then
@@ -250,7 +251,7 @@ function read( _sReplaceChar, _tHistory )
 		end
 		term.setCursorPos( sx + nPos - nScroll, sy )
 	end
-
+	
 	while true do
 		local sEvent, param = os.pullEvent()
 		if sEvent == "char" then
@@ -264,27 +265,27 @@ function read( _sReplaceChar, _tHistory )
 			sLine = string.sub( sLine, 1, nPos ) .. param .. string.sub( sLine, nPos + 1 )
 		    nPos = nPos + string.len( param )
 		    redraw()
-
+			
 		elseif sEvent == "key" then
 		    if param == keys.enter then
 				-- Enter
 				break
-
+				
 			elseif param == keys.left then
 				-- Left
 				if nPos > 0 then
 					nPos = nPos - 1
 					redraw()
 				end
-
+				
 			elseif param == keys.right then
-				-- Right
+				-- Right				
 				if nPos < string.len(sLine) then
 					redraw(" ")
 					nPos = nPos + 1
 					redraw()
 				end
-
+			
 			elseif param == keys.up or param == keys.down then
                 -- Up or down
 				if _tHistory then
@@ -304,11 +305,11 @@ function read( _sReplaceChar, _tHistory )
 							nHistoryPos = nil
 						elseif nHistoryPos ~= nil then
 							nHistoryPos = nHistoryPos + 1
-						end
+						end						
 					end
 					if nHistoryPos then
                     	sLine = _tHistory[nHistoryPos]
-                    	nPos = string.len( sLine )
+                    	nPos = string.len( sLine ) 
                     else
 						sLine = ""
 						nPos = 0
@@ -320,19 +321,19 @@ function read( _sReplaceChar, _tHistory )
 				if nPos > 0 then
 					redraw(" ")
 					sLine = string.sub( sLine, 1, nPos - 1 ) .. string.sub( sLine, nPos + 1 )
-					nPos = nPos - 1
+					nPos = nPos - 1					
 					redraw()
 				end
 			elseif param == keys.home then
 				-- Home
 				redraw(" ")
 				nPos = 0
-				redraw()
+				redraw()		
 			elseif param == keys.delete then
                 -- Delete
 				if nPos < string.len(sLine) then
 					redraw(" ")
-					sLine = string.sub( sLine, 1, nPos ) .. string.sub( sLine, nPos + 2 )
+					sLine = string.sub( sLine, 1, nPos ) .. string.sub( sLine, nPos + 2 )				
 					redraw()
 				end
 			elseif param == keys["end"] then
@@ -343,11 +344,11 @@ function read( _sReplaceChar, _tHistory )
 			end
 		end
 	end
-
+	
 	term.setCursorBlink( false )
 	term.setCursorPos( w + 1, sy )
 	print()
-
+	
 	return sLine
 end
 
@@ -393,7 +394,6 @@ function os.run( _tEnv, _sPath, ... )
     end
     if err and err ~= "" then
 		printError( err )
-        printError( "bar" )
 	end
     return false
 end
@@ -417,7 +417,7 @@ function os.loadAPI( _sPath )
 		return false
 	end
 	tAPIsLoading[sName] = true
-
+		
 	local tEnv = {}
 	setmetatable( tEnv, { __index = _G } )
 	local fnAPI, err = loadfile( _sPath )
@@ -429,13 +429,13 @@ function os.loadAPI( _sPath )
         tAPIsLoading[sName] = nil
 		return false
 	end
-
+	
 	local tAPI = {}
 	for k,v in pairs( tEnv ) do
 		tAPI[k] =  v
 	end
-
-	_G[sName] = tAPI
+	
+	_G[sName] = tAPI	
 	tAPIsLoading[sName] = nil
 	return true
 end
@@ -477,9 +477,9 @@ if http then
 			elseif event == "http_failure" and param1 == _url then
 				return nil
 			end
-		end
+		end		
 	end
-
+	
 	http.get = function( _url )
 		return wrapRequest( _url, nil )
 	end
@@ -514,7 +514,7 @@ end
 
 -- Run the shell
 local ok, err = pcall( function()
-	parallel.waitForAny(
+	parallel.waitForAny( 
 		function()
             if term.isColour() then
     			os.run( {}, "rom/programs/advanced/multishell" )

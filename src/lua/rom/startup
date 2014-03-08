@@ -7,11 +7,7 @@ end
 if turtle then
 	sPath = sPath..":/rom/programs/turtle"
 else
-    sPath = sPath..":/rom/programs/computer/rednet"
-	sPath = sPath..":/rom/programs/computer/fun"
-    if term.isColor() then
-    	sPath = sPath..":/rom/programs/computer/advanced"
-    end
+    sPath = sPath..":/rom/programs/rednet:/rom/programs/fun"
 end
 if http then
 	sPath = sPath..":/rom/programs/http"
@@ -51,7 +47,7 @@ end
 local sUserStartup = shell.resolveProgram( "/startup" )
 for n,sName in pairs( peripheral.getNames() ) do
     if disk.isPresent( sName ) and disk.hasData( sName ) then
-        local sDiskStartup = shell.resolveProgram( "/" .. fs.combine( disk.getMountPath( sName ), "startup" ) )
+        local sDiskStartup = shell.resolveProgram( "/" .. disk.getMountPath( sName ) .. "/startup" )
         if sDiskStartup then
             sUserStartup = sDiskStartup
             break
