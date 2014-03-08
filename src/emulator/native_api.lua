@@ -1,23 +1,23 @@
 NativeAPI = class('NativeAPI')
 
---[[
-	TODO
-	term.write with correct formatting of lua types. https://github.com/Sorroko/cclite/issues/12
-]]
-
 function api_error(msg, level)
-	level = level or 1
-	local info = debug.getinfo(level + 2, "S")
-	if info then
-		msg = info.source .. ":" .. info.linedefined .. ": " .. msg
+	level = type(level) == "number" and level or 1
+	if level < 1 then level = 1 end
+	msg = type(msg) == "string" and msg or ""
+	local info = debug.getinfo(level + 1)
+	if info  and msg ~= "" then
+		if info.source == "=[C]" then
+			msg = info.name .. ": " .. msg
+		else
+			msg = info.source .. ":" .. info.currentline .. ": " .. msg
+		end
 	end
-	--error(msg, level + 2)
-	error(msg, math.huge) -- Make sure error is always without a level
+	error(msg, -1) -- Get rid of the default error trace
 end
 
 function api_assert(test, msg, ...)
 	if test then return test, msg, ... end
-	api_error(msg, 2)
+	api_error(msg, 3)
 end
 
 local function HTTPHandle(contents, status)
@@ -76,12 +76,20 @@ function NativeAPI:initialize(_computer)
 		rawset = rawset,
 		rawget = rawget,
 		rawequal = rawequal,
+		setmetatable = setmetatable,
 		getmetatable = getmetatable,
 		next = next,
 		type = type,
 		select = select,
-		assert = assert,
-		error = error,
+		assert = function ( test, msg )
+			if test then return test, msg end
+			api_error(msg, 3)
+		end,
+		error = api_error,
+		pcall = pcall,
+		xpcall = xpcall,
+		pairs = pairs,
+		ipairs = ipairs,
 		math = Util.deep_copy(math),
 		string = Util.deep_copy(string),
 		table = Util.deep_copy(table),
@@ -90,6 +98,7 @@ function NativeAPI:initialize(_computer)
 	}
 
 	-- safe native function replacements
+	--[[
 	self.env.pairs = function( _t )
 		local typeT = type( _t )
 		if typeT ~= "table" then
@@ -189,6 +198,7 @@ function NativeAPI:initialize(_computer)
 			end
 		)
 	end
+	]]
 	self.env.loadstring = function(str, source)
 		local f, err = loadstring(str, source)
 		if f then
@@ -469,14 +479,14 @@ function NativeAPI:initialize(_computer)
 		self.env.http = {}
 		self.env.http.request = function( sUrl, sParams )
 			api_assert(type(sUrl) == "string", "String expected, got nil")
-			
+
 			-- Trim URL
 			local backupUrl = sUrl
 			sUrl = sUrl:match'^%s*(.*%S)' or ''
-			
+
 			api_assert(sUrl:sub(1, 4) ~= "ftp:" and sUrl:sub(1, 7) ~= "mailto:" and sUrl:sub(1, 5) ~= "file:", "Not an HTTP URL") -- Any others that report this error?
 			api_assert(sUrl:sub(1, 5) == "http:" or sUrl:sub(1, 6) == "https:", "Invalid URL")
-			
+
 			local http = HttpRequest.new()
 			local method = sParams and "POST" or "GET"
 

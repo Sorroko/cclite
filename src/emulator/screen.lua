@@ -1,13 +1,12 @@
 Screen = class('Screen')
 
 -- Constants
-Screen.static.width = 51
-Screen.static.height = 19
-Screen.static.pixelWidth = 6 * 2
-Screen.static.pixelHeight = 9 * 2
-Screen.static.textOffset = 3 -- Small correction for font, align the bottom of font with bottom of pixel.
 Screen.font = nil
 Screen.tCharOffset = {}
+Screen.width = 51
+Screen.height = 19
+Screen.pixelWidth = 6 * 2
+Screen.pixelHeight = 9 * 2
 
 -- Internal helpers
 local lsetCol = love.graphics.setColor
@@ -39,6 +38,11 @@ function Screen:initialize(isColor)
 	self.isColor = isColor or false
 	self.col_rgb = config:get("strict-colors") and Util.COLOUR_RGB_CC or Util.COLOUR_RGB
 	self:reset()
+	self.width = 51
+	self.height = 19
+	self.pixelWidth = 6 * 2
+	self.pixelHeight = 9 * 2
+	self.textOffset = 3 -- Small correction for font, align the bottom of font with bottom of pixel.
 end
 
 function Screen:reset()
@@ -49,11 +53,11 @@ function Screen:reset()
 	self.backgroundColourB = {}
 	self.textColourB = {}
 	local x,y
-	for y = 1, Screen.height do
+	for y = 1, self.height do
 		self.textB[y] = {}
 		self.backgroundColourB[y] = {}
 		self.textColourB[y] = {}
-		for x = 1, Screen.width do
+		for x = 1, self.width do
 			self.textB[y][x] = " "
 			self.backgroundColourB[y][x] = 16
 			self.textColourB[y][x] = 1
@@ -68,8 +72,8 @@ function Screen:reset()
 end
 
 function Screen:clear()
-	for y = 1, Screen.height do
-		for x = 1, Screen.width do
+	for y = 1, self.height do
+		for x = 1, self.width do
 			self.textB[y][x] = " "
 			if self.isColor then
 				self.backgroundColourB[y][x] = self.bg
@@ -80,9 +84,9 @@ function Screen:clear()
 end
 
 function Screen:clearLine()
-	if self.cursorY > Screen.height
+	if self.cursorY > self.height
 			or self.cursorY < 1 then return end
-	for x = 1, Screen.width do
+	for x = 1, self.width do
 		self.textB[self.cursorY][x] = " "
 		if self.isColor then
 			self.backgroundColourB[self.cursorY][x] = self.bg
@@ -91,7 +95,7 @@ function Screen:clearLine()
 	end
 end
 
-function Screen:getSize() return Screen.width, Screen.height end
+function Screen:getSize() return self.width, self.height end
 function Screen:getCursorPos() return self.cursorX, self.cursorY end
 
 function Screen:setCursorPos(x, y)
@@ -100,7 +104,7 @@ function Screen:setCursorPos(x, y)
 end
 
 function Screen:write( text )
-	if self.cursorY > Screen.height
+	if self.cursorY > self.height
 		or self.cursorY < 1 then
 		self.cursorX = self.cursorX + #text
 		return
@@ -108,7 +112,7 @@ function Screen:write( text )
 
 	for i = 1, #text do
 		local char = string.sub( text, i, i )
-		if self.cursorX + i - 1 <= Screen.width
+		if self.cursorX + i - 1 <= self.width
 			and self.cursorX + i - 1 >= 1 then
 			self.textB[self.cursorY][self.cursorX + i - 1] = char
 			if self.isColor then
@@ -171,18 +175,18 @@ function Screen:draw()
 
 	-- term api draws directly to buffer
 	if self.isColor then
-		for y = 0, Screen.height - 1 do
-			for x = 0, Screen.width - 1 do
+		for y = 0, self.height - 1 do
+			for x = 0, self.width - 1 do
 				setColor( self.col_rgb[colour_code[ self.backgroundColourB[y + 1][x + 1] ]] )
-				ldrawRect("fill", x * Screen.pixelWidth, y * Screen.pixelHeight, Screen.pixelWidth, Screen.pixelHeight )
+				ldrawRect("fill", x * self.pixelWidth, y * self.pixelHeight, self.pixelWidth, self.pixelHeight )
 			end
 		end
 	end
 
 	-- Two seperate for loops to not setColor all the time and allow batch gl calls.
 	local text, byte, offset
-	for y = 0, Screen.height - 1 do
-		for x = 0, Screen.width - 1 do
+	for y = 0, self.height - 1 do
+		for x = 0, self.width - 1 do
 			text = self.textB[y + 1][x + 1]
 			byte = string.byte(text)
 			if byte == 9 then
@@ -194,7 +198,7 @@ function Screen:draw()
 				setColor( self.col_rgb[colour_code[ self.textColourB[y + 1][x + 1] ]] )
 			end
 			if Screen.tCharOffset[text] then -- Just incase
-				lprint( text, (x * Screen.pixelWidth) + Screen.tCharOffset[text], (y * Screen.pixelHeight) + Screen.textOffset)
+				lprint( text, (x * self.pixelWidth) + self.tCharOffset[text], (y * self.pixelHeight) + self.textOffset)
 			end
 		end
 	end
@@ -212,7 +216,7 @@ function Screen:draw()
 			if self.isColor then
 				setColor(self.col_rgb[colour_code[ self.fg ]])
 			end
-			lprint("_", ((self.cursorX - 1) * Screen.pixelWidth) + Screen.tCharOffset["_"], (self.cursorY - 1) * Screen.pixelHeight + Screen.textOffset)
+			lprint("_", ((self.cursorX - 1) * self.pixelWidth) + Screen.tCharOffset["_"], (self.cursorY - 1) * self.pixelHeight + self.textOffset)
 		end
 	end
 end

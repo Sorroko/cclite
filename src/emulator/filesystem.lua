@@ -148,10 +148,9 @@ function FileSystem:open( sPath, sMode )
 			else
 				local data = ""
 				for line in iterator do
-  					data = data .. "\n" .. line
+  					data = data .. line .. "\n"
 				end
-				data = data .. "\n"
-				return data
+				return data:sub(1, -2)
 			end
 		end
 		return handle
