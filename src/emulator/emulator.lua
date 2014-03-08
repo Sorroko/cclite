@@ -38,6 +38,13 @@ local tShortcuts = {
 			local clipboard = love.system.getClipboardText():sub(1,128):gsub("\r\n","\n")
 			activeComp:pushEvent({"paste", clipboard})
 		end
+	},
+	["paste_text_improved"] = { -- Fakes input, and makes newlines work.
+		keys = {"ctrl", "shift", "v"},
+		action = function(activeComp)
+			local clipboard = love.system.getClipboardText():sub(1,128):gsub("\r\n","\n")
+			activeComp:textinput(clipboard)
+		end
 	}
 }
 

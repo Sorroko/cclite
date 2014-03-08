@@ -102,6 +102,10 @@ Util.static.COLOUR_CODE = {
 Util.static.isKeyDown = function(key)
 	if key == "ctrl" then
 		return Util.isKeyDown("lctrl") or Util.isKeyDown("rctrl")
+	elseif key == "shift" then
+		return Util.isKeyDown("lshift") or Util.isKeyDown("rshift")
+	elseif key == "alt" then
+		return Util.isKeyDown("lalt") or Util.isKeyDown("ralt")
 	else
 		return love.keyboard.isDown(key)
 	end
