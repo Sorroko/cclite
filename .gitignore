@@ -12,6 +12,5 @@ Thumbs.db
 # Project #
 ###########
 misc/
-love-dist/
-build/
+dist/
 /.project
