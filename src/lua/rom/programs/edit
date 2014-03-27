@@ -403,9 +403,11 @@ while bRunning do
 			-- Page Up
 			if not bMenu then
 				-- Move up a page
-				local sx,sy=term.getSize()
-				y=y-sy-1
-				if y<1 then	y=1 end
+				if y - (h - 1) >= 1 then
+					y = y - (h - 1)
+				else
+					y = 1
+				end
 				x = math.min( x, string.len( tLines[y] ) + 1 )
 				setCursor( x, y )
 			end
@@ -413,9 +415,8 @@ while bRunning do
 			-- Page Down
 			if not bMenu then
 				-- Move down a page
-				local sx,sy=term.getSize()
-				if y<#tLines-sy-1 then
-					y = y+sy-1
+				if y + (h - 1) <= #tLines then
+					y = y + (h - 1)
 				else
 					y = #tLines
 				end
@@ -606,6 +607,13 @@ while bRunning do
 				
 			end
 		end
+
+	elseif sEvent == "term_resize" then
+	    w,h = term.getSize()
+        setCursor( x, y )
+        redrawMenu()
+        redrawText()
+
 	end
 end
 

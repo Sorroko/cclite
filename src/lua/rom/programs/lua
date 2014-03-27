@@ -56,7 +56,17 @@ while bRunning do
         if tResults[1] then
         	local n = 1
         	while (tResults[n + 1] ~= nil) or (n <= nForcePrint) do
-        		print( tostring( tResults[n + 1] ) )
+        	    local value = tResults[ n + 1 ]
+        	    if type( value ) == "table" then
+            	    local ok, serialised = pcall( textutils.serialise, value )
+            	    if ok then
+            	        print( serialised )
+            	    else
+            	        print( tostring( value ) )
+            	    end
+            	else
+            	    print( tostring( value ) )
+            	end
         		n = n + 1
         	end
         else

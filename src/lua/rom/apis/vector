@@ -37,11 +37,12 @@ local vector = {
 	normalize = function( self )
 		return self:mul( 1 / self:length() )
 	end,
-	round = function( self )
+	round = function( self, nTolerance )
+	    nTolerance = nTolerance or 1.0
 		return vector.new(
-			math.floor( self.x + 0.5 ),
-			math.floor( self.y + 0.5 ),
-			math.floor( self.z + 0.5 )
+			math.floor( (self.x + (nTolerance * 0.5)) / nTolerance ) * nTolerance,
+			math.floor( (self.y + (nTolerance * 0.5)) / nTolerance ) * nTolerance,
+			math.floor( (self.z + (nTolerance * 0.5)) / nTolerance ) * nTolerance
 		)
 	end,
 	tostring = function( self )

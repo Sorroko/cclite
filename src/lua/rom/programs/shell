@@ -188,8 +188,8 @@ function shell.aliases()
 	return tCopy
 end
 
-function shell.launch( ... )
-    if multishell then
+if multishell then
+    function shell.openTab( ... )
         local tWords = tokenise( ... )
         local sCommand = tWords[1]
         if sCommand then
@@ -203,15 +203,11 @@ function shell.launch( ... )
             end
         end
     end
-    return nil
-end
-	
-function shell.switch( nID )
-    if multishell then
+
+    function shell.switchTab( nID )
         multishell.setFocus( nID )
     end
 end
-
 
 local tArgs = { ... }
 if #tArgs > 0 then

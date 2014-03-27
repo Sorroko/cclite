@@ -21,7 +21,11 @@ if sCommand == "locate" then
 elseif sCommand == "host" then
 	-- "gps host"
 	-- Act as a GPS host
-	
+	if pocket then
+	    print( "GPS Hosts must be stationary" )
+	    return
+	end
+
 	-- Find a modem
 	local sModemSide = nil
 	for n,sSide in ipairs( rs.getSides() ) do

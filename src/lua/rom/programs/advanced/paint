@@ -48,6 +48,13 @@ end
 -- Functions --
 ---------------
 
+local function getCanvasPixel( x, y )
+    if canvas[y] then
+        return canvas[y][x]
+    end
+    return nil
+end
+
 --[[
 	Converts a colour value to a text character
 	params: colour = the number to convert to a hex value
@@ -98,12 +105,6 @@ local function load(path)
 		end
 		file.close()
 	end
-	
-	-- Any extra space is filled in here
-	local lineCount = #canvas
-	for i=lineCount+1, h-1 do
-		table.insert( canvas, {} )
-	end
 end
 
 --[[  
@@ -130,7 +131,7 @@ local function save(path)
 	    local sLine = ""
 	    local nLastChar = 0
 		for x=1,w-2 do
-		    local c = getCharOf( canvas[y][x] )
+		    local c = getCharOf( getCanvasPixel( x, y ) )
 		    sLine = sLine .. c
 		    if c ~= " " then
 		        nLastChar = x
@@ -209,7 +210,7 @@ end
 	returns: nil
 ]]
 local function drawCanvasPixel( x, y )
-	local pixel = canvas[y][x]
+	local pixel = getCanvasPixel( x, y )
 	if pixel then
 		term.setBackgroundColour( pixel or canvasColour )
 		term.setCursorPos(x, y)
@@ -227,7 +228,6 @@ end
 	returns: nil
 ]]
 local function drawCanvasLine( y )
-	local line = canvas[y]
 	for x = 1, w-2 do
 		drawCanvasPixel( x, y )
 	end
@@ -238,7 +238,7 @@ end
 	returns: nil
 ]]
 local function drawCanvas()
-	for y = 1, #canvas do
+	for y = 1, h-1 do
 		drawCanvasLine( y )
 	end
 end
@@ -359,8 +359,11 @@ local function handleEvents()
 				elseif p1==2 then
 					paintColour = rightColour
 				end
-				
-				canvas[p3][p2] = paintColour
+				if not canvas[p3] then
+                    canvas[p3] = {}
+    			end
+                canvas[p3][p2] = paintColour
+
 				drawCanvasPixel( p2, p3 )
 			end
 		elseif id=="key" then
@@ -368,7 +371,11 @@ local function handleEvents()
 				programActive = not accessMenu()
 				drawInterface()
 			end
-		end
+		elseif id=="term_resize" then
+		    w,h = term.getSize()
+            drawCanvas()
+            drawInterface()
+        end
 	end
 end
 

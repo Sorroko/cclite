@@ -1,7 +1,7 @@
 
 local tArgs = { ... }
 if #tArgs > 0 then
-    shell.launch( unpack( tArgs ) )
+    shell.openTab( unpack( tArgs ) )
 else
-    shell.launch( "shell" )
+    shell.openTab( "shell" )
 end

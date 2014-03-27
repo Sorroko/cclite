@@ -2,7 +2,7 @@ The rednet API provides a simple computer networking model using modems.
 
 Functions in the rednet API:
 rednet.open( side )
-rednet.close( side )
+rednet.close( [side] )
 rednet.isOpen( [side] )
 rednet.send( receiverID, message, [protocol] ) -- Send to a specific computer
 rednet.broadcast( message, [protocol] ) -- Send to all computers

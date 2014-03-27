@@ -36,6 +36,9 @@ term.current = function()
 end
 
 term.native = function()
+    -- NOTE: please don't use this function unless you have to.
+    -- If you're running in a redirected or multitasked enviorment, term.native() will NOT be
+    -- the current terminal when your program starts up. It is far better to use term.current()
     return native
 end
 

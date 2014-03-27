@@ -2,13 +2,15 @@
 -- Display the start screen
 local w,h = term.getSize()
 
-local headingColour, textColour, wormColour, fruitColour
+local titleColour, headingColour, textColour, wormColour, fruitColour
 if term.isColour() then
+    titleColour = colours.red
 	headingColour = colours.yellow
 	textColour = colours.white
 	wormColour = colours.green
 	fruitColour = colours.red
 else
+    titleColour = colours.white
 	headingColour = colours.white
 	textColour = colours.white
 	wormColour = colours.white
@@ -165,6 +167,9 @@ end
 -- Display the frontend
 term.clear()
 local function drawFrontend()
+	--term.setTextColour( titleColour )
+    --printCentred( math.floor(h/2) - 4, " W O R M " )
+
 	term.setTextColour( headingColour )
 	printCentred( math.floor(h/2) - 3, "" )
 	printCentred( math.floor(h/2) - 2, " SELECT DIFFICULTY " )

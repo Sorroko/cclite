@@ -408,20 +408,21 @@ local function main(arc, argv)
 end
 
 -- create a terminal object with a non-advanced computer safe version of setting colors
+local oldTermObj = term.current()
 local termObj = {
-  setTextColor = function(n) if term.isColor and term.isColor() then local ok, err = pcall(term.native.setTextColor , n) if not ok then error(err, 2) end end end,
-  setBackgroundColor = function(n) if term.isColor and term.isColor() then local ok, err = pcall(term.native.setBackgroundColor , n) if not ok then error(err, 2) end end end
+  setTextColor = function(n) if term.isColor and term.isColor() then local ok, err = pcall(oldTermObj.setTextColor , n) if not ok then error(err, 2) end end end,
+  setBackgroundColor = function(n) if term.isColor and term.isColor() then local ok, err = pcall(oldTermObj.setBackgroundColor , n) if not ok then error(err, 2) end end end
 }
 -- also override the English spelling of the colour functions
 termObj.setTextColour = termObj.setTextColor
 termObj.setBackgroundColour = termObj.setBackgroundColor
 
 -- make the terminal object refer to the native terminal for every other function
-termObj.__index = term.native
+termObj.__index = oldTermObj
 setmetatable(termObj, termObj)
 
 -- redirect the terminal to the new object
-local oldTermObj = term.redirect(termObj)
+term.redirect(termObj)
 
 -- run the program
 local ok, err = pcall(main, #{...}, {...})

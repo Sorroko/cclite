@@ -4,14 +4,16 @@ New Features in ComputerCraft 1.6:
 * Added a multi-tasking system for Advanced Computers and Turtles
 * Turtles can now swap out their tools and peripherals at runtime
 * Turtles can now carry two tools or peripherals at once in any combination
+* Turtles and Computers can now be labelled using Name Tags and Anvils
 * Added a configurable fuel limit for Turtles
 * Added hostnames, protocols and long distance routing to the rednet API
 * Added a peer-to-peer chat program to demonstrate new rednet capabilities
+* Added a new game, only on Pocket Computers: "falling" by GopherATL
 * File system commands in the shell now accept wildcard arguments
 * The shell now accepts long arguments in quotes
 * Terminal redirection now no longer uses a stack-based system. Instead: term.current() gets the current terminal object and term.redirect() replaces it. term.restore() has been removed.
 * Added a new Windowing API for addressing sub-areas of the terminal
-* New programs: fg, bg, multishell, chat, repeat, redstone
+* New programs: fg, bg, multishell, chat, repeat, redstone, equip, unequip, falling
 * Improved programs: copy, move, delete, rename, paint, shell
 * Removed programs: redset, redprobe, redpulse
 * New APIs: window, multishell
@@ -19,9 +21,12 @@ New Features in ComputerCraft 1.6:
 * New peripheral functions: peripheral.find( [type] )
 * New rednet functions: rednet.host( protocol, hostname ), rednet.unhost( protocol ), rednet.locate( protocol, [hostname] )
 * New fs function: fs.find( wildcard )
+* New shell functions: shell.openTab(), shell.switchTab( [number] )
+* New event "term_resize" fired when the size of a terminal changes
 * Improved rednet functions: rednet.send(), rednet.broadcast() and rednet.receive() now take optional protocol parameters
 * turtle.craft(0) and turtle.refuel(0) now return true if there is a valid recipe or fuel item, but do not craft of refuel anything
 * turtle.suck( [limit] ) can now be used to limit the number of items picked up
+* Users of turtle.dig() and turtle.attack() can now specify which side of the turtle to look for a tool to use (by default, both will be considered)
 * textutils.serialise( text ) now produces human-readable output
 * Refactored most of the codebase and fixed many old bugs and instabilities, turtles should never ever lose their content now
 * Fixed the "turtle_inventory" event firing when it shouldn't have

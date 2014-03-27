@@ -7,6 +7,7 @@ local tProcesses = {}
 local nCurrentProcess = nil
 local nRunningProcess = nil
 local bShowMenu = false
+local bWindowsResized = false
 
 local function selectProcess( n )
     if nCurrentProcess ~= n then
@@ -134,14 +135,25 @@ local function redrawMenu()
 end
 
 local function resizeWindows()
+    local windowY, windowHeight
+    if bShowMenu then
+        windowY = 2
+        windowHeight = h-1
+    else
+        windowY = 1
+        windowHeight = h
+    end
     for n=1,#tProcesses do
         local tProcess = tProcesses[n]
-        if bShowMenu then
-            tProcess.window.reposition( 1, 2, w, h-1 )
-        else
-            tProcess.window.reposition( 1, 1, w, h )
+        local window = tProcess.window
+        local x,y = tProcess.window.getCursorPos()
+        if y > windowHeight then
+            tProcess.window.scroll( y - windowHeight )
+            tProcess.window.setCursorPos( x, windowHeight )
         end
+        tProcess.window.reposition( 1, windowY, w, windowHeight )
     end
+    bWindowsResized = true
 end
 
 local function setMenuVisible( bVis )
@@ -212,7 +224,13 @@ while #tProcesses > 0 do
     -- Get the event
     local tEventData = { os.pullEventRaw() }
     local sEvent = tEventData[1]
-    if sEvent == "char" or sEvent == "key" or sEvent == "paste" or sEvent == "terminate" then
+    if sEvent == "term_resize" then
+        -- Resize event
+        w,h = parentTerm.getSize()
+        resizeWindows()
+        redrawMenu()
+
+    elseif sEvent == "char" or sEvent == "key" or sEvent == "paste" or sEvent == "terminate" then
         -- Keyboard event
         -- Passthrough to current process
         resumeProcess( nCurrentProcess, unpack( tEventData ) )
@@ -264,6 +282,19 @@ while #tProcesses > 0 do
         for n=1,nLimit do
             resumeProcess( n, unpack( tEventData ) )
         end
+        if cullProcesses() then
+            setMenuVisible( #tProcesses >= 2 )
+            redrawMenu()
+        end
+    end
+
+    if bWindowsResized then
+        -- Pass term_resize to all processes
+        local nLimit = #tProcesses -- Storing this ensures any new things spawned don't get the event
+        for n=1,nLimit do
+            resumeProcess( n, "term_resize" )
+        end
+        bWindowsResized = false
         if cullProcesses() then
             setMenuVisible( #tProcesses >= 2 )
             redrawMenu()

@@ -18,14 +18,24 @@ function open( sModem )
 end
 
 function close( sModem )
-	if type( sModem ) ~= "string" then
-		error( "expected string", 2 )
-	end
-	if peripheral.getType( sModem ) ~= "modem" then	
-		error( "No such modem: "..sModem, 2 )
-	end
-	peripheral.call( sModem, "close", os.getComputerID() )
-	peripheral.call( sModem, "close", CHANNEL_BROADCAST )
+    if sModem then
+        -- Close a specific modem
+        if type( sModem ) ~= "string" then
+            error( "expected string", 2 )
+        end
+        if peripheral.getType( sModem ) ~= "modem" then
+            error( "No such modem: "..sModem, 2 )
+        end
+        peripheral.call( sModem, "close", os.getComputerID() )
+        peripheral.call( sModem, "close", CHANNEL_BROADCAST )
+    else
+        -- Close all modems
+        for n,sModem in ipairs( peripheral.getNames() ) do
+            if isOpen( sModem ) then
+                close( sModem )
+            end
+        end
+    end
 end
 
 function isOpen( sModem )
@@ -127,10 +137,12 @@ function host( sProtocol, sHostname )
     if sHostname == "localhost" then
         error( "Reserved hostname", 2 )
     end
-    if lookup( sProtocol, sHostname ) ~= nil then
-        error( "Hostname in use", 2 )
+    if tHostnames[ sProtocol ] ~= sHostname then
+        if lookup( sProtocol, sHostname ) ~= nil then
+            error( "Hostname in use", 2 )
+        end
+        tHostnames[ sProtocol ] = sHostname
     end
-    tHostnames[ sProtocol ] = sHostname
 end
 
 function unhost( sProtocol )
@@ -195,7 +207,7 @@ function lookup( sProtocol, sHostname )
         else
             -- Got a timer event, check it's the end of our timeout
             if p1 == timer then
-                return nil
+                break
             end
         end
     end

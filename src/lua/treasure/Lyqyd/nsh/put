@@ -11,25 +11,23 @@ end
 
 local fileData = ""
 
-nsh.send("FQ:;"..args[1])
+nsh.send("FQ:;t="..args[1])
 local message = nsh.receive()
 if message ~= "fileNotFound" then
 	while true do
 		message = nsh.receive()
 		pType = string.sub(message, 1, 2)
 		if pType == "FD" then
-			fileData = fileData..string.match(message, "^FD:;(.*)")
+			fileData = fileData..string.match(message, "^FD:;t=(.*)")
 		elseif pType == "FE" then
 			break
 		end
 	end
 	if #fileData > 0 then
-		local file = io.open(args[2], "w")
-		if file then
-			file:write(fileData)
-			file:close()
-		else
-			print("Could not save file!")
+		local handle = io.open(args[2], "w")
+		if handle then
+			handle:write(fileData)
+			handle:close()
 		end
 	else
 		print("Empty file not written!")

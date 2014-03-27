@@ -9,6 +9,9 @@ if turtle then
 else
     sPath = sPath..":/rom/programs/rednet:/rom/programs/fun"
 end
+if pocket then
+    sPath = sPath..":/rom/programs/pocket"
+end
 if http then
 	sPath = sPath..":/rom/programs/http"
 end

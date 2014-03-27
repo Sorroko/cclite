@@ -52,6 +52,11 @@ local ok, param = pcall( function()
 				sFilter = resume( "mouse_click", 1, unpack( tEvent, 3 ) )
 			end
 		end
+		if coroutine.status( co ) ~= "dead" and (sFilter == nil or sFilter == "term_resize") then
+			if tEvent[1] == "monitor_resize" and tEvent[2] == sName then
+				sFilter = resume( "term_resize" )
+			end
+		end
 	end
 end )
 

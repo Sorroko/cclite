@@ -7,14 +7,34 @@ local function printUsage()
 	print( "chat join <hostname> <username>" )
 end
 
+local sOpenedModem = nil
+local function openModem()
+    for n,sModem in ipairs( peripheral.getNames() ) do
+        if peripheral.getType( sModem ) == "modem" then
+            if not rednet.isOpen( sModem ) then
+                rednet.open( sModem )
+                sOpenedModem = sModem
+            end
+            return true
+        end
+    end
+    print( "No modems found." )
+    return false
+end
+
+local function closeModem()
+    if sOpenedModem ~= nil then
+        rednet.close( sOpenedModem )
+        sOpenedModem = nil
+    end
+end
+
 -- Colours
-local highlightColour, textColour, bgColour
+local highlightColour, textColour
 if term.isColour() then
-	bgColour = colours.black
 	textColour = colours.white
 	highlightColour = colours.yellow
 else
-	bgColour = colours.black
 	textColour = colours.white
 	highlightColour = colours.white
 end
@@ -30,9 +50,14 @@ if sCommand == "host" then
     end
 
     -- Host server
+    if not openModem() then
+        return
+    end
     rednet.host( "chat", sHostname )
+    print( "0 users connected." )
 
     local tUsers = {}
+    local nUsers = 0
     function send( sText )
         for nUserID, tUser in pairs( tUsers ) do
             rednet.send( tUser.nID, {
@@ -57,6 +82,17 @@ if sCommand == "host" then
         tPingPongTimer[ timer ] = nUserID
     end
 
+    function printUsers()
+        local x,y = term.getCursorPos()
+        term.setCursorPos( 1, y - 1 )
+        term.clearLine()
+        if nUsers == 1 then
+            print( nUsers .. " user connected." )
+        else
+            print( nUsers .. " users connected." )
+        end
+    end
+
     -- Handle messages
     local ok, error = pcall( function()
         parallel.waitForAny( function()
@@ -64,11 +100,13 @@ if sCommand == "host" then
                 local sEvent, timer = os.pullEvent( "timer" )
                 local nUserID = tPingPongTimer[ timer ]
                 if nUserID and tUsers[ nUserID ] then
-                    local tUser = tUsers[ nUser ]
+                    local tUser = tUsers[ nUserID ]
                     if tUser then
                         if not tUser.bPingPonged then
                             send( "* "..tUser.sUsername.." has timed out" )
                             tUsers[ nUserID ] = nil
+                            nUsers = nUsers - 1
+                            printUsers()
                         else
                             ping( nUserID )
                         end
@@ -89,6 +127,8 @@ if sCommand == "host" then
                                 nID = nSenderID,
                                 sUsername = sUsername,
                             }
+                            nUsers = nUsers + 1
+                            printUsers()
                             send( "* "..sUsername.." has joined the chat" )
                             ping( nUserID )
                         end
@@ -101,6 +141,8 @@ if sCommand == "host" then
                             if tMessage.sType == "logout" then
                                 send( "* "..tUser.sUsername.." has left the chat" )
                                 tUsers[ nUserID ] = nil
+                                nUsers = nUsers - 1
+                                printUsers()
 
                             elseif tMessage.sType == "chat" then
                                 local sMessage = tMessage.sText
@@ -136,6 +178,7 @@ if sCommand == "host" then
         }, "chat" )
     end
     rednet.unhost( "chat" )
+    closeModem()
 
 elseif sCommand == "join" then
     -- "chat join"
@@ -148,6 +191,9 @@ elseif sCommand == "join" then
     end
 
     -- Connect
+    if not openModem() then
+        return
+    end
     write( "Looking up " .. sHostname .. "... " )
     local nHostID = rednet.lookup( "chat", sHostname )
     if nHostID == nil then
@@ -179,66 +225,74 @@ elseif sCommand == "join" then
     end
 
     -- Handle messages
-    local tMessageHistory = {}
-    function redrawHistory()
-        local x,y = term.getCursorPos()
-        local w,h = term.getSize()
-        for n = 2, h-1 do
-            term.setCursorPos( 1, n )
-            term.clearLine()
-            local nMessage = #tMessageHistory - ((h-1) - n)
-            if nMessage >= 1 then
-                local sMessage = tMessageHistory[ nMessage ]
-                if string.match( sMessage, "^\*" ) then
-                    -- Information
-                    term.setTextColour( highlightColour )
-                    term.write( sMessage )
-                    term.setTextColour( textColour )
-                else
-                    -- Chat
-                    local sUsernameBit = string.match( sMessage, "^\<[^\>]*\>" )
-                    if sUsernameBit then
-                        term.setTextColour( highlightColour )
-                        term.write( sUsernameBit )
-                        term.setTextColour( textColour )
-                        term.write( string.sub( sMessage, string.len( sUsernameBit ) + 1 ) )
-                    else
-                        term.write( sMessage )
-                    end
-                end
-            end
-        end
-        term.setCursorPos( x, y )
-    end
-
-    function redrawTitle()
-        local w,h = term.getSize()
-        local sTitle = sUsername.." on "..sHostname
-        term.setCursorPos( math.floor( w/2 - string.len(sTitle)/2 ), 1 )
-        term.clearLine()
-        term.setTextColour( highlightColour )
-        term.write( sTitle )
-        term.setTextColour( textColour )
-    end
+    local w,h = term.getSize()
+    local parentTerm = term.current()
+    local titleWindow = window.create( parentTerm, 1, 1, w, 1, true )
+    local historyWindow = window.create( parentTerm, 1, 2, w, h-2, true )
+    local promptWindow = window.create( parentTerm, 1, h, w, 1, true )
+    historyWindow.setCursorPos( 1, h-2 )
 
     term.clear()
-    term.setBackgroundColour( bgColour )
     term.setTextColour( textColour )
-    redrawTitle()
-    redrawHistory()
+    term.redirect( promptWindow )
+    promptWindow.restoreCursor()
+
+    function drawTitle()
+        local x,y = titleWindow.getCursorPos()
+        local w,h = titleWindow.getSize()
+        local sTitle = sUsername.." on "..sHostname
+        titleWindow.setTextColour( highlightColour )
+        titleWindow.setCursorPos( math.floor( w/2 - string.len(sTitle)/2 ), 1 )
+        titleWindow.clearLine()
+        titleWindow.write( sTitle )
+        promptWindow.restoreCursor()
+    end
+
+    function printMessage( sMessage )
+        term.redirect( historyWindow )
+        print()
+        if string.match( sMessage, "^\*" ) then
+            -- Information
+            term.setTextColour( highlightColour )
+            write( sMessage )
+            term.setTextColour( textColour )
+        else
+            -- Chat
+            local sUsernameBit = string.match( sMessage, "^\<[^\>]*\>" )
+            if sUsernameBit then
+                term.setTextColour( highlightColour )
+                write( sUsernameBit )
+                term.setTextColour( textColour )
+                write( string.sub( sMessage, string.len( sUsernameBit ) + 1 ) )
+            else
+                write( sMessage )
+            end
+        end
+        term.redirect( promptWindow )
+        promptWindow.restoreCursor()
+    end
+
+    drawTitle()
 
     local ok, error = pcall( function()
         parallel.waitForAny( function()
             while true do
-                local sEvent, timer = os.pullEvent( "timer" )
-                if timer == pingPongTimer then
-                    if not bPingPonged then
-                        table.insert( tMessageHistory, "Server timeout." )
-                        redrawHistory()
-                        return
-                    else
-                        ping()
+                local sEvent, timer = os.pullEvent()
+                if sEvent == "timer" then
+                    if timer == pingPongTimer then
+                        if not bPingPonged then
+                            printMessage( "Server timeout." )
+                            return
+                        else
+                            ping()
+                        end
                     end
+
+                elseif sEvent == "term_resize" then
+                    local w,h = parentTerm.getSize()
+                    titleWindow.reposition( 1, 1, w, 1 )
+                    historyWindow.reposition( 1, 2, w, h-2 )
+                    promptWindow.reposition( 1, h, w, 1 )
                 end
             end
         end,
@@ -249,8 +303,7 @@ elseif sCommand == "join" then
                     if tMessage.sType == "text" then
                         local sText = tMessage.sText
                         if sText then
-                            table.insert( tMessageHistory, sText )
-                            redrawHistory()
+                            printMessage( sText )
                         end
 
                     elseif tMessage.sType == "ping to client" then
@@ -272,12 +325,11 @@ elseif sCommand == "join" then
         function()
             local tSendHistory = {}
             while true do
-                local w,h = term.getSize()
-                term.setCursorPos( 1, h )
-                term.clearLine()
-                term.setTextColour( highlightColour )
-                write( ": " )
-                term.setTextColour( textColour )
+                promptWindow.setCursorPos( 1,1 )
+                promptWindow.clearLine()
+                promptWindow.setTextColor( highlightColour )
+                promptWindow.write( ": ")
+                promptWindow.setTextColor( textColour )
 
                 local sChat = read( nil, tSendHistory )
                 rednet.send( nHostID, {
@@ -286,12 +338,12 @@ elseif sCommand == "join" then
                     sText = sChat,
                 }, "chat" )
                 table.insert( tSendHistory, sChat )
-
-                redrawTitle()
-                redrawHistory()
             end
         end )
     end )
+
+    -- Close the windows
+    term.redirect( parentTerm )
 
     -- Print error notice
     local w,h = term.getSize()
@@ -307,6 +359,7 @@ elseif sCommand == "join" then
         sType = "logout",
         nUserID = nUserID,
     }, "chat" )
+    closeModem()
 
     -- Print disconnection notice
     print( "Disconnected." )

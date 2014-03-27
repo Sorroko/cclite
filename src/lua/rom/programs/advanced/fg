@@ -1,13 +1,13 @@
 
 local tArgs = { ... }
 if #tArgs > 0 then
-    local nTask = shell.launch( unpack( tArgs ) )
+    local nTask = shell.openTab( unpack( tArgs ) )
     if nTask then
-        shell.switch( nTask )
+        shell.switchTab( nTask )
     end
 else
-    local nTask = shell.switch( shell.launch( "shell" ) )
+    local nTask = shell.openTab( shell.launch( "shell" ) )
     if nTask then
-        shell.switch( nTask )
+        shell.switchTab( nTask )
     end
 end

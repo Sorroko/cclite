@@ -18,8 +18,10 @@ if turtle.getFuelLevel() ~= "unlimited" then
 		if nLimit > 0 and nCount > 0 and turtle.getFuelLevel() < turtle.getFuelLimit() then
 		    local nBurn = math.min( nLimit, nCount )
 			turtle.select( n )
-			turtle.refuel( nBurn )
-			nLimit = nLimit - nBurn
+			if turtle.refuel( nBurn ) then
+			    local nNewCount = turtle.getItemCount(n)
+    			nLimit = nLimit - (nCount - nNewCount)
+    		end
 		end
 	end
     print( "Fuel level is "..turtle.getFuelLevel() )

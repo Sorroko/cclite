@@ -10,16 +10,14 @@ if #args < 2 then
 end
 
 if fs.exists(args[1]) then
-	nsh.send("FS:;"..args[2])
+	nsh.send("FS:;t="..args[2])
 	local message = nsh.receive()
 	if message == "FR:;ok" then
-		local file = io.open(args[1], "r")
-		if file then
-			nsh.send("FH:;"..args[1])
-			nsh.send("FD:;"..file:read("*a"))
-			file:close()
-		else
-			nsh.send("FH:;fileNotFound")
+		nsh.send("FH:;"..args[1])
+		local handle = io.open(args[1], "r")
+		if handle then
+			nsh.send("FD:;t="..handle:read("*a"))
+			handle:close()
 		end
 		nsh.send("FE:;end")
 	else

@@ -17,6 +17,9 @@ function getNames()
 end
 
 function isPresent( _sSide )
+    if type( _sSide ) ~= "string" then
+        error( "Expected string", 2 )
+    end
 	if native.isPresent( _sSide ) then
 		return true
 	end
@@ -31,6 +34,9 @@ function isPresent( _sSide )
 end
 
 function getType( _sSide )
+    if type( _sSide ) ~= "string" then
+        error( "Expected string", 2 )
+    end
 	if native.isPresent( _sSide ) then
 		return native.getType( _sSide )
 	end
@@ -45,6 +51,9 @@ function getType( _sSide )
 end
 
 function getMethods( _sSide )
+    if type( _sSide ) ~= "string" then
+        error( "Expected string", 2 )
+    end
 	if native.isPresent( _sSide ) then
 		return native.getMethods( _sSide )
 	end
@@ -59,6 +68,9 @@ function getMethods( _sSide )
 end
 
 function call( _sSide, _sMethod, ... )
+    if type( _sSide ) ~= "string" or type( _sMethod ) ~= "string" then
+        error( "Expected string, string", 2 )
+    end
 	if native.isPresent( _sSide ) then
 		return native.call( _sSide, _sMethod, ... )
 	end
@@ -73,6 +85,9 @@ function call( _sSide, _sMethod, ... )
 end
 
 function wrap( _sSide )
+    if type( _sSide ) ~= "string"  then
+        error( "Expected string", 2 )
+    end
 	if peripheral.isPresent( _sSide ) then
 		local tMethods = peripheral.getMethods( _sSide )
 		local tResult = {}
@@ -87,6 +102,9 @@ function wrap( _sSide )
 end
 
 function find( sType, fnFilter )
+    if type( sType ) ~= "string" or (fnFilter ~= nil and type( fnFilter ) ~= "function") then
+        error( "Expected string, [function]", 2 )
+    end
 	local tResults = {}
 	for n,sName in ipairs( peripheral.getNames() ) do
 		if peripheral.getType( sName ) == sType then

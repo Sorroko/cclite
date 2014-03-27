@@ -2,8 +2,8 @@
 CHANNEL_GPS = 65534
 
 local function trilaterate( A, B, C )
-	local a2b = B.position - A.position
-	local a2c = C.position - A.position
+	local a2b = B.vPosition - A.vPosition
+	local a2c = C.vPosition - A.vPosition
 		
 	if math.abs( a2b:normalize():dot( a2c:normalize() ) ) > 0.999 then
 		return nil
@@ -16,14 +16,14 @@ local function trilaterate( A, B, C )
 	local j = ey:dot( a2c )
 	local ez = ex:cross( ey )
 
-	local r1 = A.distance
-	local r2 = B.distance
-	local r3 = C.distance
+	local r1 = A.nDistance
+	local r2 = B.nDistance
+	local r3 = C.nDistance
 		
 	local x = (r1*r1 - r2*r2 + d*d) / (2*d)
 	local y = (r1*r1 - r3*r3 - x*x + (x-i)*(x-i) + j*j) / (2*j)
 		
-	local result = A.position + (ex * x) + (ey * y)
+	local result = A.vPosition + (ex * x) + (ey * y)
 
 	local zSquared = r1*r1 - x*x - y*y
 	if zSquared > 0 then
@@ -31,27 +31,27 @@ local function trilaterate( A, B, C )
 		local result1 = result + (ez * z)
 		local result2 = result - (ez * z)
 		
-		local rounded1, rounded2 = result1:round(), result2:round()
+		local rounded1, rounded2 = result1:round( 0.01 ), result2:round( 0.01 )
 		if rounded1.x ~= rounded2.x or rounded1.y ~= rounded2.y or rounded1.z ~= rounded2.z then
 			return rounded1, rounded2
 		else
 			return rounded1
 		end
 	end
-	return result:round()
+	return result:round( 0.01 )
 	
 end
 
 local function narrow( p1, p2, fix )
-	local dist1 = math.abs( (p1 - fix.position):length() - fix.distance )
-	local dist2 = math.abs( (p2 - fix.position):length() - fix.distance )
+	local dist1 = math.abs( (p1 - fix.vPosition):length() - fix.nDistance )
+	local dist2 = math.abs( (p2 - fix.vPosition):length() - fix.nDistance )
 	
-	if math.abs(dist1 - dist2) < 0.05 then
+	if math.abs(dist1 - dist2) < 0.01 then
 		return p1, p2
 	elseif dist1 < dist2 then
-		return p1:round()
+		return p1:round( 0.01 )
 	else
-		return p2:round()
+		return p2:round( 0.01 )
 	end
 end
 
@@ -90,7 +90,7 @@ function locate( _nTimeout, _bDebug )
 		
 	-- Wait for the responses
 	local tFixes = {}
-	local pos1, pos2 = nil
+	local pos1, pos2 = nil, nil
 	local timeout = os.startTimer( _nTimeout or 2 )
 	while true do
 		local e, p1, p2, p3, p4, p5 = os.pullEvent()
@@ -100,19 +100,22 @@ function locate( _nTimeout, _bDebug )
 			if sSide == sModemSide and sChannel == os.getComputerID() and sReplyChannel == CHANNEL_GPS then
 				-- Received the correct message from the correct modem: use it to determine position
 				if type(tMessage) == "table" and #tMessage == 3 then
-					local tFix = { position = vector.new( tMessage[1], tMessage[2], tMessage[3] ), distance = nDistance }
+					local tFix = { vPosition = vector.new( tMessage[1], tMessage[2], tMessage[3] ), nDistance = nDistance }
 					if _bDebug then
-						print( tFix.distance.." metres from "..tostring( tFix.position ) )
+						print( tFix.nDistance.." metres from "..tostring( tFix.vPosition ) )
 					end
-					table.insert( tFixes, tFix )
-					if #tFixes >= 3 then
-						if not pos1 then
-							pos1, pos2 = trilaterate( tFixes[1], tFixes[2], tFixes[#tFixes] )
-						else
-							pos1, pos2 = narrow( pos1, pos2, tFixes[#tFixes] )
-						end
-					end
-					
+					if tFix.nDistance == 0 then
+					    pos1, pos2 = tFix.vPosition, nil
+					else
+                        table.insert( tFixes, tFix )
+                        if #tFixes >= 3 then
+                            if not pos1 then
+                                pos1, pos2 = trilaterate( tFixes[1], tFixes[2], tFixes[#tFixes] )
+                            else
+                                pos1, pos2 = narrow( pos1, pos2, tFixes[#tFixes] )
+                            end
+                        end
+                    end
 					if pos1 and not pos2 then
 						break
 					end
