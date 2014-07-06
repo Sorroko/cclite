@@ -42,10 +42,12 @@ FAQ
 
 They are saved in the following places depending on your OS:
 
-- Windows XP: `C:\Documents and Settings\user\Application Data\LOVE\cclite` or `%appdata%\LOVE\cclite`
-- Windows Vista and above: `C:\Users\user\AppData\Roaming\LOVE\cclite` or `%appdata%\LOVE\cclite`
-- Linux: `$HOME/love/cclite` or `~/.local/share/love/cclite`
-- Mac OSX: `/Users/user/Library/Application Support/LOVE/cclite`
+- Windows XP: `C:\Documents and Settings\user\Application Data\cclite` or `%appdata%\cclite`
+- Windows Vista and above: `C:\Users\user\AppData\Roaming\cclite` or `%appdata%\cclite`
+- Linux: `$HOME/cclite` or `~/.local/share/cclite`
+- Mac OSX: `/Users/user/Library/Application Support/cclite`
+
+NOTE: Files may be saved to `some/path/love/cclite` rather than `some/path/cclite` when running from source or the .love file. This does not apply to native builds.
 
 License
 -------
