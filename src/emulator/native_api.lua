@@ -71,8 +71,6 @@ function NativeAPI:initialize(_computer)
 		tostring = tostring,
 		tonumber = tonumber,
 		unpack = unpack,
-		getfenv = getfenv,
-		setfenv = setfenv,
 		rawset = rawset,
 		rawget = rawget,
 		rawequal = rawequal,
@@ -96,6 +94,30 @@ function NativeAPI:initialize(_computer)
 		coroutine = Util.deep_copy(coroutine),
 		bit = Util.deep_copy(bit),
 	}
+
+	local is_childenv = setmetatable({}, {__mode = 'k'})
+	local getfenv = getfenv
+	local setfenv = setfenv
+	self.env.getfenv = function( f )
+		f = (f == nil) and 1 + 1 or
+			(type(f) == 'number') and (f >= 1 and f + 1 or self.env) or
+			(type(f) == 'function' and f) or
+			error('invalid argument #1', 2)
+		if type(f) == 'table' then return f end
+    	local env = getfenv(f)
+    	return is_childenv[env] and env or self.env
+	end
+
+	self.env.setfenv = function(f, table)
+		f = (type(f) == 'number') and (f >= 1 and f + 1 or self.env) or
+			(type(f) == 'function') and f or
+			error('invalid argument #1', 2)
+		if type(f) == 'table' then return api_error("'setfenv' cannot change environment of given object") end
+		assert(is_childenv[getfenv(f)])
+		is_childenv[table] = true
+		return setfenv(f, table)
+	end
+	is_childenv[self.env] = true
 
 	-- safe native function replacements
 	--[[
