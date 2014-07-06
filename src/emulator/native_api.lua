@@ -310,6 +310,8 @@ function NativeAPI:initialize(_computer)
 	self.env.fs.makeDir = function(sPath)
 		api_assert(type(sPath) == "string", "Expected string")
 		sPath = FileSystem.cleanPath(sPath)
+		if self.computer.fileSystem:isReadOnly(sPath) then return api_error("Access Denied") end
+
 		return self.computer.fileSystem:makeDirectory(sPath)
 	end
 	self.env.fs.move = function(fromPath, toPath)
@@ -331,6 +333,8 @@ function NativeAPI:initialize(_computer)
 	self.env.fs.delete = function(sPath)
 		api_assert(type(sPath) == "string", "Expected string")
 		sPath = FileSystem.cleanPath(sPath)
+		if self.computer.fileSystem:isReadOnly(sPath) then return api_error("Access Denied") end
+
 		return self.computer.fileSystem:delete(sPath)
 	end
 	self.env.fs.combine = function(basePath, localPath)
@@ -416,7 +420,7 @@ function NativeAPI:initialize(_computer)
 	self.env.os.setAlarm = function(nTime)
 		api_assert(type(nTime) == "number", "Expected number")
 		if nTime < 0 or nTime > 24 then
-			api_error( "Number out of range")
+			api_error("Number out of range")
 		end
 		local alarm = {
 			time = nTime,
