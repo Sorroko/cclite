@@ -263,11 +263,11 @@ function create( parent, nX, nY, nWidth, nHeight, bStartVisible )
     end
 
     function window.isColour()
-        return term.isColor()
+        return parent.isColor()
     end
 
     local function setTextColor( color )
-        if not term.isColor() then
+        if not parent.isColor() then
             if color ~= colors.white and color ~= colors.black then
                 error( "Colour not supported", 3 )
             end
@@ -287,7 +287,7 @@ function create( parent, nX, nY, nWidth, nHeight, bStartVisible )
     end
 
     local function setBackgroundColor( color )
-        if not term.isColor() then
+        if not parent.isColor() then
             if color ~= colors.white and color ~= colors.black then
                 error( "Colour not supported", 3 )
             end

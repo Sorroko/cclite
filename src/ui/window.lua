@@ -43,8 +43,10 @@ function Window:create()
 		fullscreen = false,
 		vsync = true,
 		fsaa = 0,
-		resizable = false,
-		borderless = false
+		resizable = true,
+		borderless = false,
+		minwidth = 200,
+		minheight = 200
 	} )
 	if not ok then return false end
 

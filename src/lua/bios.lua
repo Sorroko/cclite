@@ -406,15 +406,35 @@ function os.run( _tEnv, _sPath, ... )
     return false
 end
 
-local nativegetmetatable = getmetatable
-local nativetype = type
-local nativeerror = error
-function getmetatable( _t )
-    if nativetype( _t ) == "string" then
-        nativeerror( "Attempt to access string metatable", 2 )
-        return nil
+-- Prevent access to metatables of strings, as these are global between all computers
+do
+    local nativegetfenv = getfenv
+    local nativegetmetatable = getmetatable
+    local nativeerror = error
+    local nativetype = type
+    local string_metatable = nativegetfenv(("").gsub)
+    function getmetatable( t )
+        local mt = nativegetmetatable( t )
+        if mt == string_metatable then
+            nativeerror( "Attempt to access string metatable", 2 )
+        else
+            return mt
+        end
     end
-    return nativegetmetatable( _t )
+    function getfenv( env )
+        if env == nil then
+            env = 2
+        elseif nativetype( env ) == "number" and env > 0 then
+            env = env + 1
+        end
+        local fenv = nativegetfenv(env)
+        if fenv == string_metatable then
+            --nativeerror( "Attempt to access string metatable", 2 )
+            return nativegetfenv( 0 )
+        else
+            return fenv
+        end
+    end
 end
 
 local tAPIsLoading = {}

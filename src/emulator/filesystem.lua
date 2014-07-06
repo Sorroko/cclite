@@ -49,8 +49,8 @@ function FileSystem.static.cleanPath( sPath )
 	local tPath = {}
 	for part in sPath:gmatch("[^/]+") do
 	   	if part ~= "" and part ~= "." then
-	   		if part == ".." and #tPath > 0 then
-	   			table.remove(tPath)
+	   		if part == ".." then
+	   			if #tPath > 0 then table.remove(tPath) end
 	   		else
 	   			table.insert(tPath, part)
 	   		end

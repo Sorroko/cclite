@@ -96,7 +96,7 @@
     </move>
     <copy file="${dist.dir}/${dist.love}" tofile="${dist.dir}/${game.app}/Contents/Resources/${game.love}"/>
     <replace file="${dist.dir}/${game.app}/Contents/Info.plist" token="&lt;string&gt;org.love2d.love&lt;/string&gt;" value="&lt;string&gt;${game.package}&lt;/string&gt;"/>
-    <replace file="${dist.dir}/${game.app}/Contents/Info.plist" token="&lt;string&gt;LÖVE&lt;/string&gt;" value="&lt;string&gt;${game.name}&lt;/string&gt;"/>
+    <replace file="${dist.dir}/${game.app}/Contents/Info.plist" token="&lt;string&gt;LÖVE&lt;/string&gt;" value="&lt;string&gt;${game.name}&lt;/string&gt;"/>
     <replaceregexp file="${dist.dir}/${game.app}/Contents/Info.plist" match="&lt;key&gt;UTExportedTypeDeclarations&lt;/key&gt;.*&lt;/array&gt;.*&lt;/array&gt;.*&lt;/array&gt;" replace="" flags="s"/>
     <zip destfile="${dist.dir}/${dist.osx.zip}">
       <zipfileset dir="${dist.dir}/${game.app}" prefix="${game.name}/${game.app}"/>

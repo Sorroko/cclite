@@ -6,4 +6,4 @@ ex:
 "redstone set right blue false" turns off the blue wire in the bundled cable on the right redstone output.
 "redstone pulse front 10 1" emits 10 one second redstone pulses on the front redstone output.
 
-Type "help redstone" or "help rs" for information on the redstone Lua API.
+Type "help redstoneapi" or "help rs" for information on the redstone Lua API.

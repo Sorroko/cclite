@@ -57,9 +57,15 @@ function Computer:resume( ... )
 	if self.waitForEvent ~= nil and #tEvent > 0 then
 		if tEvent[1] ~= self.waitForEvent then return end
 	end
-	debug.sethook(function() error("Too long without yielding.", 3) end, "", 500000) -- Doesn't work in all cases
+
+	debug.sethook(function()
+		error("Too long without yielding.", 3)
+	end, "", 500000) -- Doesn't work in all cases
+
 	local ok, param = coroutine.resume(self.proc, ...)
+
 	debug.sethook()
+
 	if self.proc and coroutine.status(self.proc) == "dead" then -- Which could cause an error here
 		self:stop()
 	end

@@ -73,10 +73,10 @@ pcall( function()
             elseif sEvent == "timer" then
                 -- Got a timer event, use it to clear the message history
                 local nTimer = sModem
-                local nMessage = tReceivedMessageTimeout[ nTimer ]
-                if nMessage then
-                    tReceivedMessageTimeout[ nTimer ] = nil
-                    tReceivedMessages[ nMessage ] = nil
+                local nMessageID = tReceivedMessageTimeouts[ nTimer ]
+                if nMessageID then
+                    tReceivedMessageTimeouts[ nTimer ] = nil
+                    tReceivedMessages[ nMessageID ] = nil
                 end
 
             end

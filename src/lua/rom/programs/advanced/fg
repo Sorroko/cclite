@@ -6,7 +6,7 @@ if #tArgs > 0 then
         shell.switchTab( nTask )
     end
 else
-    local nTask = shell.openTab( shell.launch( "shell" ) )
+    local nTask = shell.openTab( "shell" )
     if nTask then
         shell.switchTab( nTask )
     end
