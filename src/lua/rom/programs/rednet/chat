@@ -4,7 +4,7 @@ local tArgs = { ... }
 local function printUsage()
 	print( "Usages:" )
 	print( "chat host <hostname>" )
-	print( "chat join <hostname> <username>" )
+	print( "chat join <hostname> <nickname>" )
 end
 
 local sOpenedModem = nil
@@ -58,13 +58,24 @@ if sCommand == "host" then
 
     local tUsers = {}
     local nUsers = 0
-    function send( sText )
-        for nUserID, tUser in pairs( tUsers ) do
-            rednet.send( tUser.nID, {
-                sType = "text",
-                nUserID = nUserID,
-                sText = sText,
-            }, "chat" )
+    function send( sText, nUserID )
+        if nUserID then
+            local tUser = tUsers[ nUserID ]
+            if tUser then
+                rednet.send( tUser.nID, {
+                    sType = "text",
+                    nUserID = nUserID,
+                    sText = sText,
+                }, "chat" )
+            end
+        else
+            for nUserID, tUser in pairs( tUsers ) do
+                rednet.send( tUser.nID, {
+                    sType = "text",
+                    nUserID = nUserID,
+                    sText = sText,
+                }, "chat" )
+            end
         end
     end
 
@@ -116,6 +127,42 @@ if sCommand == "host" then
         end,
         function()
             while true do
+                local tCommands
+                tCommands = {
+                    ["me"] = function( tUser, sContent )
+                        if string.len(sContent) > 0 then
+                            send( "* "..tUser.sUsername.." "..sContent )
+                        else
+                            send( "* Usage: /me [words]", tUser.nUserID )
+                        end
+                    end,
+                    ["nick"] = function( tUser, sContent )
+                        if string.len(sContent) > 0 then
+                            local sOldName = tUser.sUsername
+                            tUser.sUsername = sContent
+                            send( "* "..sOldName.." is now known as "..tUser.sUsername )
+                        else
+                            send( "* Usage: /nick [nickname]", tUser.nUserID )
+                        end
+                    end,
+                    ["users"] = function( tUser, sContent )
+                        send( "* Connected Users:", tUser.nUserID )
+                        local sUsers = "*"
+                        for nUserID, tUser in pairs( tUsers ) do
+                            sUsers = sUsers .. " " .. tUser.sUsername
+                        end
+                        send( sUsers, tUser.nUserID )
+                    end,
+                    ["help"] = function( tUser, sContent )
+                        send( "* Available commands:", tUser.nUserID )
+                        local sCommands = "*"
+                        for sCommand, fnCommand in pairs( tCommands ) do
+                            sCommands = sCommands .. " /" .. sCommand
+                        end
+                        send( sCommands.." /logout", tUser.nUserID )
+                    end,
+                }
+
                 local nSenderID, tMessage = rednet.receive( "chat" )
                 if type( tMessage ) == "table" then
                     if tMessage.sType == "login" then
@@ -125,6 +172,7 @@ if sCommand == "host" then
                         if nUserID and sUsername then
                             tUsers[ nUserID ] = {
                                 nID = nSenderID,
+                                nUserID = nUserID,
                                 sUsername = sUsername,
                             }
                             nUsers = nUsers + 1
@@ -147,7 +195,18 @@ if sCommand == "host" then
                             elseif tMessage.sType == "chat" then
                                 local sMessage = tMessage.sText
                                 if sMessage then
-                                    send( "<"..tUser.sUsername.."> "..tMessage.sText )
+                                    local sCommand = string.match( sMessage, "^/([a-z]+)" )
+                                    if sCommand then
+                                        local fnCommand = tCommands[ sCommand ]
+                                        if fnCommand then
+                                            local sContent = string.sub( sMessage, string.len(sCommand)+3 )
+                                            fnCommand( tUser, sContent )
+                                        else
+                                            send( "* Unrecognised command: /"..sCommand, tUser.nUserID )
+                                        end
+                                    else
+                                        send( "<"..tUser.sUsername.."> "..tMessage.sText )
+                                    end
                                 end
 
                             elseif tMessage.sType == "ping to server" then
@@ -293,6 +352,7 @@ elseif sCommand == "join" then
                     titleWindow.reposition( 1, 1, w, 1 )
                     historyWindow.reposition( 1, 2, w, h-2 )
                     promptWindow.reposition( 1, h, w, 1 )
+
                 end
             end
         end,
@@ -332,12 +392,16 @@ elseif sCommand == "join" then
                 promptWindow.setTextColor( textColour )
 
                 local sChat = read( nil, tSendHistory )
-                rednet.send( nHostID, {
-                    sType = "chat",
-                    nUserID = nUserID,
-                    sText = sChat,
-                }, "chat" )
-                table.insert( tSendHistory, sChat )
+                if string.match( sChat, "^/logout" ) then
+                    break
+                else
+                    rednet.send( nHostID, {
+                        sType = "chat",
+                        nUserID = nUserID,
+                        sText = sChat,
+                    }, "chat" )
+                    table.insert( tSendHistory, sChat )
+                end
             end
         end )
     end )

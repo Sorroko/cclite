@@ -56,6 +56,10 @@ local function narrow( p1, p2, fix )
 end
 
 function locate( _nTimeout, _bDebug )
+    -- Let command computers use their magic fourth-wall-breaking special abilities
+    if commands then
+        return commands.getBlockPosition()
+    end
 
 	-- Find a modem
 	local sModemSide = nil

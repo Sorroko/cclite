@@ -34,13 +34,13 @@ print( "0 messages repeated." )
 open( rednet.CHANNEL_REPEAT )
 
 -- Main loop (terminate to break)
-pcall( function()
+local ok, error = pcall( function()
     local tReceivedMessages = {}
     local tReceivedMessageTimeouts = {}
     local nTransmittedMessages = 0
 
     while true do
-        local sEvent, sModem, nChannel, nReplyChannel, tMessage = os.pullEventRaw()
+        local sEvent, sModem, nChannel, nReplyChannel, tMessage = os.pullEvent()
         if sEvent == "modem_message" then
             -- Got a modem message, rebroadcast it if it's a rednet thing
             if nChannel == rednet.CHANNEL_REPEAT then
@@ -69,20 +69,23 @@ pcall( function()
                         end
                     end
                 end
-
-            elseif sEvent == "timer" then
-                -- Got a timer event, use it to clear the message history
-                local nTimer = sModem
-                local nMessageID = tReceivedMessageTimeouts[ nTimer ]
-                if nMessageID then
-                    tReceivedMessageTimeouts[ nTimer ] = nil
-                    tReceivedMessages[ nMessageID ] = nil
-                end
-
             end
+
+        elseif sEvent == "timer" then
+            -- Got a timer event, use it to clear the message history
+            local nTimer = sModem
+            local nMessageID = tReceivedMessageTimeouts[ nTimer ]
+            if nMessageID then
+                tReceivedMessageTimeouts[ nTimer ] = nil
+                tReceivedMessages[ nMessageID ] = nil
+            end
+
         end
     end
 end )
+if not ok then
+    printError( error )
+end
 
 -- Close channels
 close( rednet.CHANNEL_REPEAT )

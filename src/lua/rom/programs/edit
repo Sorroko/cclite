@@ -49,6 +49,9 @@ else
 end
 	
 local sStatus = "Press Ctrl to access menu"
+if string.len( sStatus ) > w - 5 then
+    sStatus = "Press Ctrl for menu"
+end
 
 local function load( _sPath )
 	tLines = {}

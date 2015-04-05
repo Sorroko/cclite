@@ -1,6 +1,6 @@
 
 local function drawPixelInternal( xPos, yPos )
-    term.setCursorPos(xPos, yPos)
+    term.setCursorPos( xPos, yPos )
     term.write(" ")
 end
 
@@ -33,17 +33,19 @@ function loadImage( sPath )
 end
 
 function drawPixel( xPos, yPos, nColour )
-    if type( xPos ) ~= "number" or type( yPos ) ~= "number" or type( nColour ) ~= "number" then
+    if type( xPos ) ~= "number" or type( yPos ) ~= "number" or (nColour ~= nil and type( nColour ) ~= "number") then
         error( "Expected x, y, colour", 2 )
     end
-    term.setBackgroundColor( nColour )
+    if nColour then
+        term.setBackgroundColor( nColour )
+    end
     drawPixelInternal( xPos, yPos )
 end
 
 function drawLine( startX, startY, endX, endY, nColour )
     if type( startX ) ~= "number" or type( startX ) ~= "number" or
        type( endX ) ~= "number" or type( endY ) ~= "number" or
-       type( nColour ) ~= "number" then
+       (nColour ~= nil and type( nColour ) ~= "number") then
         error( "Expected startX, startY, endX, endY, colour", 2 )
     end
     
@@ -51,8 +53,10 @@ function drawLine( startX, startY, endX, endY, nColour )
     startY = math.floor(startY)
     endX = math.floor(endX)
     endY = math.floor(endY)
-    
-    term.setBackgroundColor( nColour )
+
+    if nColour then
+        term.setBackgroundColor( nColour )
+    end
     if startX == endX and startY == endY then
         drawPixelInternal( startX, startY )
         return
@@ -68,6 +72,8 @@ function drawLine( startX, startY, endX, endY, nColour )
         maxX = startX
         maxY = startY
     end
+
+    -- TODO: clip to screen rectangle?
         
     local xDiff = maxX - minX
     local yDiff = maxY - minY
@@ -92,6 +98,88 @@ function drawLine( startX, startY, endX, endY, nColour )
                 drawPixelInternal( math.floor( x + 0.5 ), y )
                 x = x - dx
             end
+        end
+    end
+end
+
+function drawBox( startX, startY, endX, endY, nColour )
+    if type( startX ) ~= "number" or type( startX ) ~= "number" or
+       type( endX ) ~= "number" or type( endY ) ~= "number" or
+       (nColour ~= nil and type( nColour ) ~= "number") then
+        error( "Expected startX, startY, endX, endY, colour", 2 )
+    end
+
+    startX = math.floor(startX)
+    startY = math.floor(startY)
+    endX = math.floor(endX)
+    endY = math.floor(endY)
+
+    if nColour then
+        term.setBackgroundColor( nColour )
+    end
+    if startX == endX and startY == endY then
+        drawPixelInternal( startX, startY )
+        return
+    end
+
+    local minX = math.min( startX, endX )
+    if minX == startX then
+        minY = startY
+        maxX = endX
+        maxY = endY
+    else
+        minY = endY
+        maxX = startX
+        maxY = startY
+    end
+
+    for x=minX,maxX do
+        drawPixelInternal( x, minY )
+        drawPixelInternal( x, maxY )
+    end
+
+    if (maxY - minY) >= 2 then
+        for y=(minY+1),(maxY-1) do
+            drawPixelInternal( minX, y )
+            drawPixelInternal( maxX, y )
+        end
+    end
+end
+
+function drawFilledBox( startX, startY, endX, endY, nColour )
+    if type( startX ) ~= "number" or type( startX ) ~= "number" or
+       type( endX ) ~= "number" or type( endY ) ~= "number" or
+       (nColour ~= nil and type( nColour ) ~= "number") then
+        error( "Expected startX, startY, endX, endY, colour", 2 )
+    end
+
+    startX = math.floor(startX)
+    startY = math.floor(startY)
+    endX = math.floor(endX)
+    endY = math.floor(endY)
+
+    if nColour then
+        term.setBackgroundColor( nColour )
+    end
+    if startX == endX and startY == endY then
+        drawPixelInternal( startX, startY )
+        return
+    end
+
+    local minX = math.min( startX, endX )
+    if minX == startX then
+        minY = startY
+        maxX = endX
+        maxY = endY
+    else
+        minY = endY
+        maxX = startX
+        maxY = startY
+    end
+
+    for x=minX,maxX do
+        for y=minY,maxY do
+            drawPixelInternal( x, y )
         end
     end
 end

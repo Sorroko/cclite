@@ -8,9 +8,15 @@ if turtle then
 	sPath = sPath..":/rom/programs/turtle"
 else
     sPath = sPath..":/rom/programs/rednet:/rom/programs/fun"
+    if term.isColor() then
+    	sPath = sPath..":/rom/programs/fun/advanced"
+    end
 end
 if pocket then
     sPath = sPath..":/rom/programs/pocket"
+end
+if commands then
+    sPath = sPath..":/rom/programs/command"
 end
 if http then
 	sPath = sPath..":/rom/programs/http"
@@ -48,12 +54,15 @@ end
 
 -- Run the user created startup, either from disk drives or the root
 local sUserStartup = shell.resolveProgram( "/startup" )
-for n,sName in pairs( peripheral.getNames() ) do
-    if disk.isPresent( sName ) and disk.hasData( sName ) then
-        local sDiskStartup = shell.resolveProgram( "/" .. disk.getMountPath( sName ) .. "/startup" )
-        if sDiskStartup then
-            sUserStartup = sDiskStartup
-            break
+local bEnableDiskStartup = (commands == nil)
+if bEnableDiskStartup then
+    for n,sName in pairs( peripheral.getNames() ) do
+        if disk.isPresent( sName ) and disk.hasData( sName ) then
+            local sDiskStartup = shell.resolveProgram( "/" .. disk.getMountPath( sName ) .. "/startup" )
+            if sDiskStartup then
+                sUserStartup = sDiskStartup
+                break
+            end
         end
     end
 end

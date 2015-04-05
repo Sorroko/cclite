@@ -21,6 +21,20 @@ local vector = {
 			self.z * m
 		)
 	end,
+	div = function( self, m )
+		return vector.new(
+			self.x / m,
+			self.y / m,
+			self.z / m
+		)
+	end,
+	unm = function( self )
+		return vector.new(
+			-self.x,
+			-self.y,
+			-self.z
+		)
+	end,
 	dot = function( self, o )
 		return self.x*o.x + self.y*o.y + self.z*o.z
 	end,
@@ -55,7 +69,8 @@ local vmetatable = {
 	__add = vector.add,
 	__sub = vector.sub,
 	__mul = vector.mul,
-	__unm = function( v ) return v:mul(-1) end,
+	__div = vector.div,
+	__unm = vector.unm,
 	__tostring = vector.tostring,
 }
 

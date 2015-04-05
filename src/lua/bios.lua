@@ -123,7 +123,7 @@ end
 
 -- Install lua parts of the os api
 function os.version()
-    return "CraftOS 1.6"
+    return "CraftOS 1.7"
 end
 
 function os.pullEventRaw( sFilter )
@@ -140,7 +140,7 @@ end
 
 -- Install globals
 function sleep( nTime )
-    local timer = os.startTimer( nTime )
+    local timer = os.startTimer( nTime or 0 )
     repeat
         local sEvent, param = os.pullEvent( "timer" )
     until param == timer
@@ -219,6 +219,7 @@ function printError( ... )
     if term.isColour() then
         term.setTextColour( colours.red )
     end
+    local x,y = term.getCursorPos()
     print( ... )
     term.setTextColour( colours.white )
 end
@@ -246,7 +247,7 @@ function read( _sReplaceChar, _tHistory )
         term.setCursorPos( sx, cy )
         local sReplace = _sCustomReplaceChar or _sReplaceChar
         if sReplace then
-            term.write( string.rep( sReplace, string.len(sLine) - nScroll ) )
+            term.write( string.rep( sReplace, math.max( string.len(sLine) - nScroll, 0 ) ) )
         else
             term.write( string.sub( sLine, nScroll + 1 ) )
         end
@@ -406,16 +407,17 @@ function os.run( _tEnv, _sPath, ... )
     return false
 end
 
--- Prevent access to metatables of strings, as these are global between all computers
+-- Prevent access to metatables or environments of strings, as these are global between all computers
 do
     local nativegetfenv = getfenv
     local nativegetmetatable = getmetatable
     local nativeerror = error
     local nativetype = type
-    local string_metatable = nativegetfenv(("").gsub)
+    local string_metatable = nativegetmetatable("")
+    local string_env = nativegetfenv(("").gsub)
     function getmetatable( t )
         local mt = nativegetmetatable( t )
-        if mt == string_metatable then
+        if mt == string_metatable or mt == string_env then
             nativeerror( "Attempt to access string metatable", 2 )
         else
             return mt
@@ -428,7 +430,7 @@ do
             env = env + 1
         end
         local fenv = nativegetfenv(env)
-        if fenv == string_metatable then
+        if fenv == string_metatable or fenv == string_env then
             --nativeerror( "Attempt to access string metatable", 2 )
             return nativegetfenv( 0 )
         else
@@ -451,7 +453,12 @@ function os.loadAPI( _sPath )
     local fnAPI, err = loadfile( _sPath )
     if fnAPI then
         setfenv( fnAPI, tEnv )
-        fnAPI()
+        local ok, err = pcall( fnAPI )
+        if not ok then
+            printError( err )
+            tAPIsLoading[sName] = nil
+            return false
+        end
     else
         printError( err )
         tAPIsLoading[sName] = nil
@@ -496,60 +503,118 @@ end
 
 -- Install the lua part of the HTTP api (if enabled)
 if http then
-    local function wrapRequest( _url, _post )
-        local requestID = http.request( _url, _post )
-        while true do
-            local event, param1, param2 = os.pullEvent()
-            if event == "http_success" and param1 == _url then
-                return param2
-            elseif event == "http_failure" and param1 == _url then
-                return nil
+    local nativeHTTPRequest = http.request
+
+    local function wrapRequest( _url, _post, _headers )
+        local ok, err = nativeHTTPRequest( _url, _post, _headers )
+        if ok then
+            while true do
+                local event, param1, param2 = os.pullEvent()
+                if event == "http_success" and param1 == _url then
+                    return param2
+                elseif event == "http_failure" and param1 == _url then
+                    return nil, param2
+                end
             end
-        end        
+        end
+        return nil, err
     end
     
-    http.get = function( _url )
-        return wrapRequest( _url, nil )
+    http.get = function( _url, _headers )
+        return wrapRequest( _url, nil, _headers )
     end
 
-    http.post = function( _url, _post )
-        return wrapRequest( _url, _post or "" )
+    http.post = function( _url, _post, _headers )
+        return wrapRequest( _url, _post or "", _headers )
+    end
+
+    http.request = function( _url, _post, _headers )
+        local ok, err = nativeHTTPRequest( _url, _post, _headers )
+        if not ok then
+            os.queueEvent( "http_failure", _url, err )
+        end
+        return ok, err
     end
 end
 
 -- Load APIs
+local bAPIError = false
 local tApis = fs.list( "rom/apis" )
 for n,sFile in ipairs( tApis ) do
     if string.sub( sFile, 1, 1 ) ~= "." then
         local sPath = fs.combine( "rom/apis", sFile )
         if not fs.isDir( sPath ) then
-            os.loadAPI( sPath )
+            if not os.loadAPI( sPath ) then
+                bAPIError = true
+            end
         end
     end
 end
 
 if turtle then
+    -- Load turtle APIs
     local tApis = fs.list( "rom/apis/turtle" )
     for n,sFile in ipairs( tApis ) do
         if string.sub( sFile, 1, 1 ) ~= "." then
             local sPath = fs.combine( "rom/apis/turtle", sFile )
             if not fs.isDir( sPath ) then
-                os.loadAPI( sPath )
+                if not os.loadAPI( sPath ) then
+                    bAPIError = true
+                end
             end
         end
     end
 end
 
 if pocket and fs.isDir( "rom/apis/pocket" ) then
+    -- Load pocket APIs
     local tApis = fs.list( "rom/apis/pocket" )
     for n,sFile in ipairs( tApis ) do
         if string.sub( sFile, 1, 1 ) ~= "." then
             local sPath = fs.combine( "rom/apis/pocket", sFile )
             if not fs.isDir( sPath ) then
-                os.loadAPI( sPath )
+                if not os.loadAPI( sPath ) then
+                    bAPIError = true
+                end
             end
         end
     end
+end
+
+if commands and fs.isDir( "rom/apis/command" ) then
+    -- Load command APIs
+    if os.loadAPI( "rom/apis/command/commands" ) then
+        -- Add a special case-insensitive metatable to the commands api
+        local tCaseInsensitiveMetatable = {
+            __index = function( table, key )
+                local value = rawget( table, key )
+                if value ~= nil then
+                    return value
+                end
+                if type(key) == "string" then
+                    local value = rawget( table, string.lower(key) )
+                    if value ~= nil then
+                        return value
+                    end
+                end
+                return nil
+            end
+        }
+        setmetatable( commands, tCaseInsensitiveMetatable )
+        setmetatable( commands.async, tCaseInsensitiveMetatable )
+
+        -- Add global "exec" function
+        exec = commands.exec
+    else
+        bAPIError = true
+    end
+end
+
+if bAPIError then
+    print( "Press any key to continue" )
+    os.pullEvent( "key" )
+    term.clear()
+    term.setCursorPos( 1,1 )
 end
 
 -- Run the shell

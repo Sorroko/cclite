@@ -1,0 +1,41 @@
+
+if not commands then
+	error( "Cannot load command API on normal computer", 2 )
+end
+native = commands.native or commands
+
+local function collapseArgs( errorDepth, arg1, ... )
+    if arg1 ~= nil then
+        if type(arg1) == "boolean" or type(arg1) == "number" or type(arg1) == "string" then
+            return tostring(arg1) .. " " .. collapseArgs( errorDepth + 1, ... )
+        elseif type(arg1) == "table" then
+            return textutils.serialiseJSON(arg1) .. " " .. collapseArgs( errorDepth + 1, ... )
+        else
+            error( "Expected string, number, boolean or table", errorDepth )
+        end
+    end
+    return ""
+end
+
+-- Put native functions into the environment
+local env = getfenv()
+for k,v in pairs( native ) do
+    env[k] = v
+end
+
+-- Create wrapper functions for all the commands
+local tAsync = {}
+local tCommands = native.list()
+for n,sCommandName in ipairs(tCommands) do
+    if env[ sCommandName ] == nil then
+        env[ sCommandName ] = function( ... )
+            local sCommand = sCommandName .. " " .. collapseArgs( 3, ... )
+            return native.exec( sCommand )
+        end
+        tAsync[ sCommandName ] = function( ... )
+            local sCommand = sCommandName .. " " .. collapseArgs( 3, ... )
+            return native.execAsync( sCommand )
+        end
+    end
+end
+env.async = tAsync

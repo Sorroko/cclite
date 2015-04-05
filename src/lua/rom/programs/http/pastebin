@@ -14,7 +14,7 @@ end
  
 if not http then
     printError( "Pastebin requires http API" )
-    printError( "Set enableAPI_http to true in ComputerCraft.cfg" )
+    printError( "Set http_enable to true in ComputerCraft.cfg" )
     return
 end
  

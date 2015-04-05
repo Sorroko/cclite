@@ -12,7 +12,7 @@ if #tArgs < 1 then
 	return
 end
 	
-local sCommand = tArgs[1]
+ local sCommand = tArgs[1]
 if sCommand == "locate" then
 	-- "gps locate"
 	-- Just locate this computer (this will print the results)
@@ -39,11 +39,6 @@ elseif sCommand == "host" then
 		print( "No wireless modems found. 1 required." )
 		return
 	end
-	
-	-- Open a channel
-	local modem = peripheral.wrap( sModemSide )
-    print( "Opening channel on modem "..sModemSide )
-    modem.open( gps.CHANNEL_GPS )
 
 	-- Determine position
 	local x,y,z
@@ -70,6 +65,11 @@ elseif sCommand == "host" then
 		end
 	end
 	
+	-- Open a channel
+	local modem = peripheral.wrap( sModemSide )
+    print( "Opening channel on modem "..sModemSide )
+    modem.open( gps.CHANNEL_GPS )
+
 	-- Serve requests indefinately
 	local nServed = 0
 	while true do
@@ -91,7 +91,8 @@ elseif sCommand == "host" then
 			end
 		end
 	end
-	
+
+	-- Close the channel
     print( "Closing channel" )
     modem.close( gps.CHANNEL_GPS )
 

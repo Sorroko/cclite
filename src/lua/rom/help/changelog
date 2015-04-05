@@ -1,3 +1,47 @@
+New Features in ComputerCraft 1.73:
+
+* The "exec" program, commands.exec() and all related Command Computer functions now return the console output of the command.
+* Fixed two multiplayer crash bugs.
+
+New Features in ComputerCraft 1.7:
+
+* Added Command Computers
+* Added new API: commands
+* Added new programs: commands, exec
+* Added textutils.serializeJSON()
+* Added ILuaContext.executeMainThreadTask() for peripheral developers
+* Disk Drives and Printers can now be renamed with Anvils
+* Fixed various bugs, crashes and exploits
+* Fixed problems with HD texture packs
+* Documented the new features in the in-game help
+
+New Features in ComputerCraft 1.65:
+
+* Fixed a multiplayer-only crash with turtle.place()
+* Fixed some problems with http.post()
+* Fixed fs.getDrive() returning incorrect results on remote peripherals
+
+New Features in ComputerCraft 1.64:
+
+* Ported to Minecraft 1.7.10
+* New turtle functions: turtle.inspect(), turtle.inspectUp(), turtle.inspectDown(), turtle.getItemDetail()
+* Lots of bug and crash fixes, a huge stability improvement over previous versions
+
+New Features in ComputerCraft 1.63:
+
+* Turtles can now be painted with dyes, and cleaned with water buckets
+* Added a new game: Redirection - ComputerCraft Edition
+* Turtle label nameplates now only show when the Turtle is moused-over
+* The HTTP API is now enabled by default, and can be configured with a whitelist of permitted domains
+* http.get() and http.post() now accept parameters to control the request headers
+* New fs function: fs.getDir( path )
+* Fixed some bugs
+
+New Features in ComputerCraft 1.62:
+
+* Added IRC-style commands to the "chat" program
+* Fixed some bugs and crashes
+
 New Features in ComputerCraft 1.6:
 
 * Added Pocket Computers
