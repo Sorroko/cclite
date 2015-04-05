@@ -36,6 +36,10 @@ Once installed execute `ant` in the root directory to see all available commands
 
 `ant run` and `ant debug` will run the source assuming you have `love` in your path.
 
+The ant script will build all distributions, you can run individual builds or build all with `ant all`
+
+NOTE: In order to build an android apk you will need the android sdk and the android ndk in your path! Make sure you set all environment variables correctly. Do not use NDK version 10 as it causes the app to crash.
+
 FAQ
 ------------
 **Where do my files get saved?**

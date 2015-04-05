@@ -8,7 +8,7 @@
   </tstamp>
 
   <property name="game.id"       value="${game.name}"/>
-  <property name="game.package"  value="${game.name}"/>
+  <property name="game.package"  value="${game.package}"/>
   <property name="game.version"  value="${tstamp}"/>
   <property name="game.dir"      value="${game.name}"/>
   <property name="game.src"      value="src"/>
@@ -20,11 +20,45 @@
   <property name="dist.files"    value=""/>
   <property name="dist.love"     value="${game.title}.love"/>
   <property name="dist.zip"      value="${game.title}.zip"/>
-  <property name="love.url"      value="http://cdn.bitbucket.org/rude/love/downloads"/>
+  <property name="game.apk"      value="${game.title}.apk"/>
+
+  <property name="love.url"      value="https://bitbucket.org/rude/love/downloads"/>
   <property name="love.name"     value="love"/>
-  <property name="love.version"  value="0.9.0"/>
+  <property name="love.version"  value="0.9.2"/>
   <property name="love.app"      value="${love.name}.app"/>
   <property name="love.exe"      value="${love.name}.exe"/>
+
+  <property name="love-android.git"      value="https://bitbucket.org/MartinFelis/love-android-sdl2.git"/>
+  <property name="love-android.name"     value="love-android-sdl2"/>
+  <property name="love-android.package-path" value="${game.package-path}"/>
+  <property name="love-android.activity" value="${game.activity}"/>
+  <property name="love-android.gen-apk" value="love_android_sdl2-debug.apk"/>
+
+  <macrodef name = "git">
+      <attribute name = "command" />
+      <attribute name = "dir" default = "" />
+      <element name = "args" optional = "true" />
+      <sequential>
+          <echo message = "git @{command}" />
+          <exec executable = "git" dir = "@{dir}">
+              <arg value = "@{command}" />
+              <args/>
+          </exec>
+      </sequential>
+  </macrodef>
+  <macrodef name = "git-clone-pull">
+      <attribute name = "repository" />
+      <attribute name = "dest" />
+      <sequential>
+          <git command = "clone">
+              <args>
+                  <arg value = "@{repository}" />
+                  <arg value = "@{dest}" />
+              </args>
+          </git>
+          <git command = "pull" dir = "@{dest}" />
+      </sequential>
+  </macrodef>
 
   <target name="help" description="Prints all targets and their description.">
     <java classname="org.apache.tools.ant.Main">
@@ -34,11 +68,12 @@
     </java>
   </target>
 
-  <target name="all" depends="love, dist, dist-win-32, dist-win-64, dist-osx" description="Creates everything."/>
+  <target name="all" depends="love, dist, dist-win-32, dist-win-64, dist-osx, dist-android" description="Creates everything."/>
 
   <target name="init" description="Initializes build.">
     <!-- <antcall target="clean"/> -->
     <mkdir dir="${dist.dir}"/>
+    <mkdir dir="${dist.dir}/cache"/>
   </target>
 
   <target name="love" depends="init" description="Creates LOVE file.">
@@ -71,28 +106,28 @@
     <property name="love.dir"     value="${love.title}"/>
     <property name="love.zip"     value="${love.title}.zip"/>
     <property name="dist.win.zip" value="${game.title}-${suffix}.zip"/>
-    <get src="${love.url}/${love.zip}" dest="${dist.dir}/${love.zip}" skipexisting="true"/>
-    <unzip src="${dist.dir}/${love.zip}" dest="${dist.dir}"/>
+    <get src="${love.url}/${love.zip}" dest="${dist.dir}/cache/${love.zip}" skipexisting="true"/>
+    <unzip src="${dist.dir}/cache/${love.zip}" dest="${dist.dir}/cache/"/>
     <concat destfile="${dist.dir}/${game.exe}" binary="true">
-      <fileset file="${dist.dir}/${love.dir}/${love.exe}"/>
+      <fileset file="${dist.dir}/cache/${love.dir}/${love.exe}"/>
       <fileset file="${dist.dir}/${dist.love}"/>
     </concat>
     <zip destfile="${dist.dir}/${dist.win.zip}">
       <zipfileset dir="${dist.dir}" includes="${game.exe}" prefix="${game.dir}"/>
-      <zipfileset dir="${dist.dir}/${love.dir}" includes="*.dll" prefix="${game.dir}"/>
+      <zipfileset dir="${dist.dir}/cache/${love.dir}" includes="*.dll" prefix="${game.dir}"/>
       <!-- <zipfileset dir="." includes="${dist.files}" prefix="${game.dir}"/> -->
     </zip>
-    <delete dir="${dist.dir}/${love.dir}"/>
+    <delete dir="${dist.dir}/cache/${love.dir}"/>
     <delete file="${dist.dir}/${game.exe}"/>
   </target>
 
   <target name="dist-osx" depends="init, love" description="Creates distribution zip for OS X.">
     <property name="love.zip"     value="${love.name}-${love.version}-macosx-x64.zip"/>
     <property name="dist.osx.zip" value="${game.title}-osx.zip"/>
-    <get src="${love.url}/${love.zip}" dest="${dist.dir}/${love.zip}" skipexisting="true"/>
-    <unzip src="${dist.dir}/${love.zip}" dest="${dist.dir}"/>
+    <get src="${love.url}/${love.zip}" dest="${dist.dir}/cache/${love.zip}" skipexisting="true"/>
+    <unzip src="${dist.dir}/cache/${love.zip}" dest="${dist.dir}/cache/"/>
     <move todir="${dist.dir}/${game.app}">
-      <fileset dir="${dist.dir}/${love.app}"/>
+      <fileset dir="${dist.dir}/cache/${love.app}"/>
     </move>
     <copy file="${dist.dir}/${dist.love}" tofile="${dist.dir}/${game.app}/Contents/Resources/${game.love}"/>
     <replace file="${dist.dir}/${game.app}/Contents/Info.plist" token="&lt;string&gt;org.love2d.love&lt;/string&gt;" value="&lt;string&gt;${game.package}&lt;/string&gt;"/>
@@ -103,6 +138,35 @@
       <!-- <zipfileset dir="." includes="${dist.files}" prefix="${game.name}"/> -->
     </zip>
     <delete dir="${dist.dir}/${game.app}"/>
+  </target>
+
+  <target name="dist-android" depends="init, love" description="Creates distribution apk for Android.">
+    <!-- <mkdir dir="${dist.dir}/cache/${love-android.name}"/> -->
+    <git-clone-pull repository="${love-android.git}" dest="${dist.dir}/cache/${love-android.name}" />
+    <exec executable="ndk-build" dir="${dist.dir}/cache/${love-android.name}"/>
+
+    <mkdir dir="${dist.dir}/cache/${love-android.name}/assets"/>
+    <copy file="${dist.dir}/${dist.love}" tofile="${dist.dir}/cache/${love-android.name}/assets/game.love"/>
+    <copy file="assets/ic_launcher-hdpi.png" tofile="${dist.dir}/cache/${love-android.name}/res/drawable-hdpi/ic_launcher.png" overwrite="true" />
+    <copy file="assets/ic_launcher-mdpi.png" tofile="${dist.dir}/cache/${love-android.name}/res/drawable-mdpi/ic_launcher.png" overwrite="true" />
+    <copy file="assets/ic_launcher-xhdpi.png" tofile="${dist.dir}/cache/${love-android.name}/res/drawable-xhdpi/ic_launcher.png" overwrite="true" />
+    <copy file="assets/ic_launcher-xxhdpi.png" tofile="${dist.dir}/cache/${love-android.name}/res/drawable-xxhdpi/ic_launcher.png" overwrite="true" />
+
+    <replace file="${dist.dir}/cache/${love-android.name}/AndroidManifest.xml" token="package=&quot;org.love2d.android&quot;" value="package=&quot;${game.package}&quot;"/>
+    <replace file="${dist.dir}/cache/${love-android.name}/AndroidManifest.xml" token="android:name=&quot;GameActivity&quot;" value="android:name=&quot;${love-android.activity}&quot;"/>
+    <replaceregexp file="${dist.dir}/cache/${love-android.name}/AndroidManifest.xml" match="android:versionName=&quot;(.*?)&quot;" replace="android:versionName=&quot;${game.version}&quot;" flags="s"/>
+    <replaceregexp file="${dist.dir}/cache/${love-android.name}/AndroidManifest.xml" match="android:label=&quot;(.*?)&quot;" replace="android:label=&quot;${game.name}&quot;" flags="sg"/>
+    <mkdir dir="${dist.dir}/cache/${love-android.name}/src/${love-android.package-path}"/>
+    <echo file="${dist.dir}/cache/${love-android.name}/src/${love-android.package-path}/${love-android.activity}.java">
+package ${game.package};
+import org.love2d.android.GameActivity;
+
+public class ${love-android.activity} extends GameActivity {}
+    </echo>
+
+    <ant dir="${dist.dir}/cache/${love-android.name}" target="debug" />
+
+    <move tofile="${dist.dir}/${game.apk}" file="${dist.dir}/cache/${love-android.name}/bin/${love-android.gen-apk}" />
   </target>
 
   <target name="run" description="Runs game.">
