@@ -84,6 +84,7 @@ function Computer:draw( ... )
 	if self.running then
 		self.screen:draw()
 	else
+		love.graphics.setFont(Screen.font)
 		local text = "Press any key..."
 		love.graphics.print(text, ((Screen.width * Screen.pixelWidth) / 2) - (Screen.font:getWidth(text) / 2), (Screen.height * Screen.pixelHeight) / 2)
 	end

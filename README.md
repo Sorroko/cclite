@@ -40,6 +40,8 @@ The ant script will build all distributions, you can run individual builds or bu
 
 NOTE: In order to build an android apk you will need the android sdk and the android ndk in your path! Make sure you set all environment variables correctly. Do not use NDK version 10 as it causes the app to crash.
 
+For more information on setting up to build an android version: [Building LÖVE for Android - Linux][https://bitbucket.org/MartinFelis/love-android-sdl2/wiki/Building%20L%C3%96VE%20for%20Android%20-%20Linux]
+
 FAQ
 ------------
 **Where do my files get saved?**

@@ -13,6 +13,7 @@ end
 function Window:addComponent(component)
 	table.insert(self.components, component)
 	local changed = false
+
 	if component.x + component:getWidth() > self.w then
 		self.w = component.x + component:getWidth()
 		changed = true

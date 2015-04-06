@@ -152,10 +152,12 @@
     <copy file="assets/ic_launcher-xhdpi.png" tofile="${dist.dir}/cache/${love-android.name}/res/drawable-xhdpi/ic_launcher.png" overwrite="true" />
     <copy file="assets/ic_launcher-xxhdpi.png" tofile="${dist.dir}/cache/${love-android.name}/res/drawable-xxhdpi/ic_launcher.png" overwrite="true" />
 
-    <replace file="${dist.dir}/cache/${love-android.name}/AndroidManifest.xml" token="package=&quot;org.love2d.android&quot;" value="package=&quot;${game.package}&quot;"/>
+    <copy file="assets/AndroidManifest.xml" tofile="${dist.dir}/cache/${love-android.name}/AndroidManifest.xml" overwrite="true" />
+    <!-- <replace file="${dist.dir}/cache/${love-android.name}/AndroidManifest.xml" token="package=&quot;org.love2d.android&quot;" value="package=&quot;${game.package}&quot;"/>
     <replace file="${dist.dir}/cache/${love-android.name}/AndroidManifest.xml" token="android:name=&quot;GameActivity&quot;" value="android:name=&quot;${love-android.activity}&quot;"/>
     <replaceregexp file="${dist.dir}/cache/${love-android.name}/AndroidManifest.xml" match="android:versionName=&quot;(.*?)&quot;" replace="android:versionName=&quot;${game.version}&quot;" flags="s"/>
-    <replaceregexp file="${dist.dir}/cache/${love-android.name}/AndroidManifest.xml" match="android:label=&quot;(.*?)&quot;" replace="android:label=&quot;${game.name}&quot;" flags="sg"/>
+    <replaceregexp file="${dist.dir}/cache/${love-android.name}/AndroidManifest.xml" match="android:label=&quot;(.*?)&quot;" replace="android:label=&quot;${game.name}&quot;" flags="sg"/> -->
+
     <mkdir dir="${dist.dir}/cache/${love-android.name}/src/${love-android.package-path}"/>
     <echo file="${dist.dir}/cache/${love-android.name}/src/${love-android.package-path}/${love-android.activity}.java">
 package ${game.package};

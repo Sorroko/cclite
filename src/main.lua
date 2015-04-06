@@ -1,7 +1,3 @@
---[[
-	TODO LIST MOVED TO https://docs.google.com/spreadsheet/ccc?key=0AsWKyU5tfdZ7dFJqQ2xwTkpNQmFMYnVPNnFCTURjMVE&usp=sharing
-]]
-
 -- Simple logger
 function log(msg, level)
 	if not _DEBUG then return end
@@ -21,10 +17,12 @@ require 'config'
 require 'emulator.emulator'
 require 'ui.window'
 require 'ui.panel'
+require 'ui.android'
 
 -- Global variables
 _FPS = 30
- _DEBUG = false
+_DEBUG = false
+PLATFORM = love.system.getOS()
 
 function love.load(args)
 
@@ -61,14 +59,32 @@ function love.load(args)
 	love.keyboard.setKeyRepeat( 0.5, 0.05 )
 
 	main_window = Window( "ComputerCraft Emulator" )
-	emulator = Emulator(main_window, 0, 0)
+
+	local _, _, flags = love.window.getMode()
+	width, height = love.window.getDesktopDimensions( flags.display )
+
+	if PLATFORM == "Android" then
+		android = Android(main_window, 0, 0, width, height) -- blue background and UI
+		androidMenu = AndroidMenu(main_window, 0, 0, width)
+		emulator = Emulator(main_window, 0, androidMenu:getHeight(), width, height) -- scale to largest size possible
+
+		androidMenu.onPower = function(self)
+			emulator:getActiveComputer():stop()
+		end
+	else
+		emulator = Emulator(main_window, 0, 0)
+	end
 	--panel = Panel(emulator:getWidth(), 0, emulator)
 
 	main_window:create()
 
-	-- TODO: Some nice icons? love.window.setIcon
-
-	local font = love.graphics.newFont( 'res/minecraft.ttf', 16 )
+	local font
+	if PLATFORM == "Android" then
+		font = love.graphics.newFont( 'res/minecraft.ttf', 16 )-- * love.window.getPixelScale() )
+		androidMenu:postInitialize()
+	else
+		font = love.graphics.newFont( 'res/minecraft.ttf', 16 )
+	end
 	-- local glyphs = ""
 	-- for i = 32,126 do
 	--     glyphs = glyphs .. string.char(i)
@@ -76,6 +92,21 @@ function love.load(args)
 	-- local font = love.graphics.newImageFont("res/minecraft.png", glyphs)
 	-- font:setFilter("nearest","nearest")
 	Screen.setFont(font)
+
+	if PLATFORM == "Android" then
+		love.keyboard.setTextInput(true)
+
+		love.on("touchreleased", function ( id, x, y, pressure )
+			love.keyboard.setTextInput(true)
+		end)
+
+		-- Spoof key events
+		love.on("textinput", function ( ... )
+			love.emit("keypressed", ...) -- TODO: Check if multiple chars in text and set isRepeat to false
+		end)
+	end
+
+	log(love.filesystem.getSaveDirectory())
 
 	local computer = emulator:registerComputer({advanced = config:getBoolean("advanced-computer", true)})
 	computer:start()

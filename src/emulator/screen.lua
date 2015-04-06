@@ -5,8 +5,13 @@ Screen.font = nil
 Screen.tCharOffset = {}
 Screen.width = 51
 Screen.height = 19
-Screen.pixelWidth = 6 * 2
-Screen.pixelHeight = 9 * 2
+if PLATFORM == "Android" then
+	Screen.pixelWidth = 6 * 2 --* love.window.getPixelScale()
+	Screen.pixelHeight = 9 * 2 --* love.window.getPixelScale()
+else
+	Screen.pixelWidth = 6 * 2
+	Screen.pixelHeight = 9 * 2
+end
 
 -- Internal helpers
 local lsetCol = love.graphics.setColor
@@ -40,8 +45,13 @@ function Screen:initialize(isColor)
 	self:reset()
 	self.width = 51
 	self.height = 19
-	self.pixelWidth = 6 * 2
-	self.pixelHeight = 9 * 2
+	if PLATFORM == "Android" then
+		self.pixelWidth = 6 * 2 --* love.window.getPixelScale()
+		self.pixelHeight = 9 * 2 --* love.window.getPixelScale()
+	else
+		self.pixelWidth = 6 * 2
+		self.pixelHeight = 9 * 2
+	end
 	self.textOffset = 3 -- Small correction for font, align the bottom of font with bottom of pixel.
 end
 
@@ -172,6 +182,8 @@ end
 local colour_code = Util.COLOUR_CODE
 function Screen:draw()
 	local now = love.timer.getTime()
+
+	love.graphics.setFont(Screen.font)
 
 	-- term api draws directly to buffer
 	if self.isColor then

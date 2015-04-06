@@ -1,6 +1,7 @@
 Button = class('Button')
 
-function Button:initialize(x, y, w, h, func, component) -- If button belongs to component then x, y, is relative
+function Button:initialize(label, x, y, w, h, func, component) -- If button belongs to component then x, y, is relative
+	self.label = label
 	self.x = x
 	self.y = y
 	self.w = w
@@ -33,5 +34,9 @@ function Button:mousepressed( x, y, _button )
 end
 
 function Button:draw()
-	 love.graphics.rectangle("fill", self.x, self.y, self.w, self.h )
+	--love.graphics.setColor()
+	--love.graphics.rectangle("fill", self.x, self.y, self.w, self.h )
+	love.graphics.setFont(self.component.font)
+	love.graphics.setColor(255, 255, 255)
+	love.graphics.print(self.label, self.x, self.y)
 end

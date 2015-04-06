@@ -48,7 +48,38 @@ local tShortcuts = {
 	}
 }
 
-function Emulator:initialize(window, x, y)
+function Emulator:resize(width, height)
+
+	if PLATFORM == "Android" then
+		log("RESIZE: " .. width .. " " .. height)
+
+		local windowAspect = width / height
+		local screenAspect = (Screen.width * Screen.pixelWidth) / (Screen.height * Screen.pixelHeight)
+		local clippingWidth, clippingHeight
+		if windowAspect <= screenAspect then -- Make one side match the aspect ratio depends on which side fits
+			clippingWidth = width
+			clippingHeight = width / screenAspect
+		else
+			clippingWidth = height  * screenAspect
+			clippingHeight = height
+		end
+
+		self.width = math.ceil(clippingWidth)
+		self.height = math.ceil(clippingHeight)
+
+		self.scaleW = self.width / (Screen.width * Screen.pixelWidth)
+		self.scaleH = self.height / (Screen.height * Screen.pixelHeight)
+
+		self.x = (width / 2) - (self.width / 2) -- center emulator
+	else
+		self.width = Screen.width * Screen.pixelWidth
+		self.height = Screen.height * Screen.pixelHeight
+	end
+end
+
+function Emulator:initialize(window, x, y, mwidth, mheight)
+	self:resize(mwidth, mheight)
+
 	Component.initialize(self, window, x, y)
 
 	self.UUID = 1
@@ -67,6 +98,9 @@ function Emulator:initialize(window, x, y)
 	end)
 	love.on("textinput", function ( ... )
 		self:textinput(...)
+	end)
+	love.on("resize", function ( ... )
+		self:resize(...)
 	end)
 end
 
@@ -100,16 +134,25 @@ function Emulator:getActiveComputer() -- Active does not mean it must be on, it 
 end
 
 function Emulator:getWidth()
-	return Screen.width * Screen.pixelWidth
+	return self.width
 end
 
 function Emulator:getHeight()
-	return Screen.height * Screen.pixelHeight
+	return self.height
 end
 
 function Emulator:draw()
+	if PLATFORM == "Android" then
+		love.graphics.push()
+		love.graphics.scale(self.scaleW, self.scaleH)
+	end
+
 	if self.activeId ~= nil then
 		self.computers[self.activeId]:draw()
+	end
+
+	if PLATFORM == "Android" then
+		love.graphics.pop()
 	end
 end
 
@@ -140,10 +183,9 @@ function Emulator:update(dt)
 		end
 
 		--MOUSE
-		-- TODO: Possibly account for this components x and y
 		if self:getActiveComputer().isAdvanced and mouse.isPressed then
-	    	local mouseX     = love.mouse.getX()
-	    	local mouseY     = love.mouse.getY()
+	    	local mouseX     = love.mouse.getX() - self.x
+	    	local mouseY     = love.mouse.getY() - self.y
 	    	local termMouseX = math.floor( mouseX / Screen.pixelWidth ) + 1
 	    	local termMouseY = math.floor( mouseY / Screen.pixelHeight ) + 1
 	    	if (termMouseX ~= mouse.lastTermX or termMouseY ~= mouse.lastTermY)
@@ -159,7 +201,7 @@ function Emulator:update(dt)
 	end
 
     -- UPDATE
-    for i = 0, #self.computers do -- Update all computers, bot just active
+    for i = 0, #self.computers do -- Update all computers, not just active
     	if self.computers[i] ~= nil then
     		self.computers[i]:update(dt)
     	end
