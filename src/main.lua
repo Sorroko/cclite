@@ -21,7 +21,7 @@ require 'ui.android'
 
 -- Global variables
 _FPS = 30
-_DEBUG = false
+_DEBUG = true
 PLATFORM = love.system.getOS()
 
 function love.load(args)
@@ -56,7 +56,9 @@ function love.load(args)
 	config:setDefault("terminal-scale", 2)
 	config:load()
 
-	love.keyboard.setKeyRepeat( 0.5, 0.05 )
+	if PLATFORM ~= "Android" then
+		love.keyboard.setKeyRepeat( 0.5, 0.05 )
+	end
 
 	main_window = Window( "ComputerCraft Emulator" )
 
@@ -68,8 +70,16 @@ function love.load(args)
 		androidMenu = AndroidMenu(main_window, 0, 0, width)
 		emulator = Emulator(main_window, 0, androidMenu:getHeight(), width, height) -- scale to largest size possible
 
-		androidMenu.onPower = function(self)
+		androidMenu.onPower = function( self )
 			emulator:getActiveComputer():stop()
+		end
+		androidMenu.onControl = function( self, active )
+			Util.setKeyDown("ctrl", active )
+			if active then emulator:keypressed("ctrl", false) end
+		end
+		androidMenu.onShift = function( self, active )
+			Util.setKeyDown("shift", active )
+			if active then emulator:keypressed("shift", false) end
 		end
 	else
 		emulator = Emulator(main_window, 0, 0)
@@ -101,12 +111,20 @@ function love.load(args)
 		end)
 
 		-- Spoof key events
-		love.on("textinput", function ( ... )
-			love.emit("keypressed", ...) -- TODO: Check if multiple chars in text and set isRepeat to false
+		love.on("textinput", function ( key )
+			if string.len(key) > 1 then
+				for _key in string.gmatch(key, ".") do
+					Util.setKeyDown(_key, true )
+					love.emit("keypressed", _key, false )
+					Util.setKeyDown(_key, false )
+				end
+			else
+				Util.setKeyDown(key, true )
+				love.emit("keypressed", key, false )
+				Util.setKeyDown(key, false )
+			end
 		end)
 	end
-
-	log(love.filesystem.getSaveDirectory())
 
 	local computer = emulator:registerComputer({advanced = config:getBoolean("advanced-computer", true)})
 	computer:start()

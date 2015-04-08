@@ -28,7 +28,7 @@
   <property name="love.app"      value="${love.name}.app"/>
   <property name="love.exe"      value="${love.name}.exe"/>
 
-  <property name="love-android.git"      value="https://bitbucket.org/MartinFelis/love-android-sdl2.git"/>
+  <property name="love-android.git"      value="https://github.com/Sorroko/love-android-sdl2.git"/>
   <property name="love-android.name"     value="love-android-sdl2"/>
   <property name="love-android.package-path" value="${game.package-path}"/>
   <property name="love-android.activity" value="${game.activity}"/>

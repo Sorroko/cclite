@@ -53,6 +53,9 @@ function Emulator:resize(width, height)
 	if PLATFORM == "Android" then
 		log("RESIZE: " .. width .. " " .. height)
 
+		-- TODO: Monkey patch.
+		height = height - androidMenu:getHeight()
+
 		local windowAspect = width / height
 		local screenAspect = (Screen.width * Screen.pixelWidth) / (Screen.height * Screen.pixelHeight)
 		local clippingWidth, clippingHeight
@@ -186,6 +189,10 @@ function Emulator:update(dt)
 		if self:getActiveComputer().isAdvanced and mouse.isPressed then
 	    	local mouseX     = love.mouse.getX() - self.x
 	    	local mouseY     = love.mouse.getY() - self.y
+	    	if PLATFORM == "Android" then
+	    		mouseX = mouseX / self.scaleW
+	    		mouseY = mouseY / self.scaleH
+	    	end
 	    	local termMouseX = math.floor( mouseX / Screen.pixelWidth ) + 1
 	    	local termMouseY = math.floor( mouseY / Screen.pixelHeight ) + 1
 	    	if (termMouseX ~= mouse.lastTermX or termMouseY ~= mouse.lastTermY)
@@ -227,7 +234,7 @@ function Emulator:keypressed( key, isrepeat )
 		end
 		if allDown then
 			if not isrepeat then
-				if shortcut.delay ~= nil then
+				if shortcut.delay ~= nil and PLATFORM ~= "Android" then
 					-- Delayed action
 					shortcut.nSince = now
 				else
@@ -253,11 +260,18 @@ end
 function Emulator:mousepressed( x, y, _button )
 	if not self.activeId or not self:getActiveComputer().isAdvanced then return end
 
-	if x > 0 and x < Screen.width * Screen.pixelWidth
-		and y > 0 and y < Screen.height * Screen.pixelHeight then -- Within screen bounds.
+	local mouseX = x - self.x
+	local mouseY = y - self.y
+	if PLATFORM == "Android" then
+	    mouseX = mouseX / self.scaleW
+	    mouseY = mouseY / self.scaleH
+	end
 
-		local termMouseX = math.floor( x / Screen.pixelWidth ) + 1
-    	local termMouseY = math.floor( y / Screen.pixelHeight ) + 1
+	if mouseX > 0 and mouseX < Screen.width * Screen.pixelWidth
+		and mouseY > 0 and mouseY < Screen.height * Screen.pixelHeight then -- Within screen bounds.
+
+		local termMouseX = math.floor( mouseX / Screen.pixelWidth ) + 1
+    	local termMouseY = math.floor( mouseY / Screen.pixelHeight ) + 1
 
 		if _button == "r" or _button == "l" then
 			mouse.isPressed = true

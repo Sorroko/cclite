@@ -1,8 +1,8 @@
 Component = class('Component')
 
 function Component:initialize( window, x, y )
-	self.x = x
-	self.y = y
+	self.x = self.x or x
+	self.y = self.y or y
 	window:addComponent(self)
 end
 

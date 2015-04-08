@@ -98,8 +98,16 @@ Util.static.COLOUR_CODE = {
 	[16] = "BLACK",
 }
 
+-- Used to simulate modifier keys on android platform
+local aKeysDown = {}
+Util.static.setKeyDown = function(key, value)
+	aKeysDown[key] = value
+end
+
 -- Better key down check
 Util.static.isKeyDown = function(key)
+	if aKeysDown[key] then return true end
+
 	if key == "ctrl" then
 		return Util.isKeyDown("lctrl") or Util.isKeyDown("rctrl")
 	elseif key == "shift" then
