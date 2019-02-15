@@ -43,7 +43,7 @@ function Window:create()
 	local ok = love.window.setMode( self.w, self.h, {
 		fullscreen = false,
 		vsync = true,
-		fsaa = 0,
+		msaa = 0,
 		resizable = true,
 		borderless = false,
 		minwidth = 200,
