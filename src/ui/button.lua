@@ -37,6 +37,6 @@ function Button:draw()
 	--love.graphics.setColor()
 	--love.graphics.rectangle("fill", self.x, self.y, self.w, self.h )
 	love.graphics.setFont(self.component.font)
-	love.graphics.setColor(255, 255, 255)
+	love.graphics.setColor(255/255, 255/255, 255/255)
 	love.graphics.print(self.label, self.x, self.y)
 end

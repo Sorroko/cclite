@@ -17,7 +17,7 @@ function Android:getHeight()
 end
 
 function Android:draw()
-	love.graphics.setColor(172, 232, 250)
+	love.graphics.setColor(172/255, 232/255, 250/255)
 	love.graphics.rectangle("fill", 0, 0, self:getWidth(), self:getHeight() )
 end
 
@@ -45,10 +45,10 @@ function AndroidMenu:postInitialize()
 	self.ctrl.draw = function(self)
 		love.graphics.setFont(self.component.font)
 		if ctrl_state then
-			love.graphics.setColor(255, 0, 0)
+			love.graphics.setColor(255/255, 0, 0)
 			love.graphics.rectangle("fill", self.x, self.y, self.w, self.h )
 		end
-		love.graphics.setColor(255, 255, 255)
+		love.graphics.setColor(255/255, 255/255, 255/255)
 		love.graphics.print(self.label, self.x, self.y)
 	end
 
@@ -60,10 +60,10 @@ function AndroidMenu:postInitialize()
 	self.shift.draw = function(self)
 		love.graphics.setFont(self.component.font)
 		if shift_state then
-			love.graphics.setColor(255, 0, 0)
+			love.graphics.setColor(255/255, 0, 0)
 			love.graphics.rectangle("fill", self.x, self.y, self.w, self.h )
 		end
-		love.graphics.setColor(255, 255, 255)
+		love.graphics.setColor(255/255, 255, 255)
 		love.graphics.print(self.label, self.x, self.y)
 	end
 end
@@ -81,7 +81,7 @@ function AndroidMenu:getHeight()
 end
 
 function AndroidMenu:draw()
-	love.graphics.setColor(63, 81, 181)
+	love.graphics.setColor(63/255, 81/255, 181/255)
 	love.graphics.rectangle("fill", 0, 0, self:getWidth(), self:getHeight() )
 
 	self.power:draw()
