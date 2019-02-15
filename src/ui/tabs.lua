@@ -31,6 +31,7 @@ end
 
 function Tabs:draw()
 	-- Draw tab bar
+	-- Not sure what this referes to, but "bodycolor" is never assigned in all of the src folder. (Should probably set to self.bodycolor but that should be unset as well)
 	love.graphics.setColor(bodycolor)
 	love.graphics.rectangle("fill", self.x, self.y + self.topHeight, self.width, self.height - self.topHeight)
 

@@ -14,7 +14,7 @@ function FileSystem.static.deleteTree(sFolder)
 
 			if love.filesystem.isFile(pObject) then
 				love.filesystem.remove(pObject)
-			elseif love.filesystem.isDirectory(pObject) then
+			elseif love.filesystem.getInfo(pObject).type == "directory" then
 				FileSystem.deleteTree(pObject)
 			end
 		end
@@ -26,7 +26,7 @@ function FileSystem.static.copyTree(sFolder, sToFolder)
 	log("FileSystem -> deleteTree(): source - " .. tostring(sFolder) .. ", destination - " .. tostring(sToFolder))
 	FileSystem.deleteTree(sToFolder) -- Overwrite existing file for both copy and move
 	-- Is this vanilla behaviour or does it merge files?
-	if not love.filesystem.isDirectory(sFolder) then
+	if not love.filesystem.getInfo(sFolder).type == "directory" then
 		love.filesystem.write(sToFolder, love.filesystem.read( sFolder ))
 	end
 	local tObjects = love.filesystem.getDirectoryItems(sFolder)
@@ -37,7 +37,7 @@ function FileSystem.static.copyTree(sFolder, sToFolder)
 
 			if love.filesystem.isFile(pObject) then
 				love.filesystem.write(sToFolder .. "/" .. sObject, love.filesystem.read( pObject ))
-			elseif love.filesystem.isDirectory(pObject) then
+			elseif love.filesystem.getInfo(pObject).type == "directory" then
 				FileSystem.copyTree(pObject)
 			end
 		end
@@ -101,7 +101,7 @@ function FileSystem:find(sPath)
 		_tFlags = v[3]
 		if startsWith(sPath, _sMount) then
 			local bPath = string.sub(sPath, #_sMount + 1, -1)
-			if love.filesystem.exists(_sPath .. "/" .. bPath) then
+			if love.filesystem.getInfo(_sPath .. "/" .. bPath) then
 				if self.enableCache then
 					self.cache.find[sPath] = { _sPath .. "/" .. bPath, _sMount }
 				end
@@ -124,7 +124,7 @@ function FileSystem:isDirectory(sPath)
 	local file, mount = self:find(sPath)
 	if not file then return false end -- false or nil?
 
-	return love.filesystem.isDirectory(file)
+	return love.filesystem.getInfo(file).type == "directory"
 end
 
 function FileSystem:open( sPath, sMode )
@@ -260,7 +260,7 @@ function FileSystem:list( sPath )
 		if startsWith(sPath, _sMount) then
 			local bPath = string.sub(sPath, #_sMount + 1, -1)
 			local fsPath = _sPath .. "/" .. bPath
-			if love.filesystem.exists(fsPath) and love.filesystem.isDirectory(fsPath) then
+			if love.filesystem.getInfo(fsPath) and love.filesystem.getInfo(fsPath).type == "directory" then
 				local items = love.filesystem.getDirectoryItems(fsPath)
 				for k,_v in pairs(items) do table.insert(res, _v) end
 			end

@@ -18,7 +18,7 @@ function Config:resetToDefault()
 end
 
 function Config:load()
-	if love.filesystem.exists(self.path) then
+	if love.filesystem.getInfo(self.path) then
 		for line in love.filesystem.lines(self.path) do
 			key, value = string.match(line,"(.-)=(.-)$")
 			if key and value then
@@ -33,7 +33,7 @@ end
 function Config:save()
 	local lines, saved_keys = {}, {}
 
-	if love.filesystem.exists(self.path) then
+	if love.filesystem.getInfo(self.path) then
 		for line in love.filesystem.lines(self.path) do
 			key, value = string.match(line,"(.-)=(.-)$")
 			if self.data[key] then

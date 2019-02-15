@@ -38,7 +38,7 @@ function love.load(args)
 	log("Application starting...")
 
 	love.filesystem.setIdentity( "cclite" )
-	if not love.filesystem.exists( "data/" ) then
+	if not love.filesystem.getInfo("data/") then
 		log("Creating save directory")
 		love.filesystem.createDirectory( "data/" )
 	end
@@ -57,7 +57,7 @@ function love.load(args)
 	config:load()
 
 	if PLATFORM ~= "Android" then
-		love.keyboard.setKeyRepeat( 0.5, 0.05 )
+		love.keyboard.setKeyRepeat( true ) -- Love2D no longer sets the interval so...
 	end
 
 	main_window = Window( "ComputerCraft Emulator" )
@@ -196,7 +196,7 @@ function love.run()
 		-- Call update and draw
 		if love.update then love.update(dt) end -- will pass 0 if love.timer is disabled
 
-		if love.window and love.graphics and love.window.isCreated() then
+		if love.window and love.graphics and love.window.isOpen() then
 			love.graphics.clear()
 			love.graphics.origin()
 			if love.draw then love.draw() end
